@@ -4,9 +4,9 @@ The site runs entirely in the browser. Vite emits a static bundle and copies the
 
 ## Rendering lifecycle
 
-The foundation fetches and validates the exhibit manifest, creates the scene, draws the first frame, and dismisses the loading state. ResizeObserver updates the drawing buffer and the camera projection when layout changes. Device pixel ratio is capped at 2. The static preview redraws on resize and context restoration. Vite hot disposal releases renderer, observers, geometries, and materials.
+The app fetches and validates the exhibit manifest, creates the greybox scene, and starts the renderer. The perspective camera faces forward at a standing eye height of 1.65 m. ResizeObserver updates the drawing buffer and camera projection when layout changes. Device pixel ratio is capped at 2.
 
-The playable version will use a timed render loop. Bound elapsed time after backgrounding the tab and keep movement and collision updates independent of frame rate. Pause input when an overlay has focus, pointer lock is lost, or the tab loses focus.
+The Three.js animation loop renders at the browser’s frame cadence. Tab visibility and WebGL context events stop and resume rendering without rebuilding the camera or changing its pose. Vite hot disposal stops the loop and releases listeners, observers, geometries, materials, and the renderer. When movement is added, bound elapsed time after backgrounding the tab and keep simulation updates independent of frame rate. Pause input when an overlay has focus, pointer lock is lost, or the tab loses focus.
 
 ## Player, collision, and interaction
 

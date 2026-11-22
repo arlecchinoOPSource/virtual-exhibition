@@ -6,7 +6,7 @@ test('draws the preview in WebGL and resizes the canvas', async ({ page }) => {
 
   await page.goto('/');
   const canvas = page.getByRole('img', {
-    name: 'Illuminated geometric shapes on a floor',
+    name: 'Eye-level view inside a greybox room',
   });
   await expect(canvas).toHaveAttribute('data-exhibit-count', '12');
   await expect(page.getByRole('status')).toBeHidden();
@@ -39,4 +39,55 @@ test('shows an accessible error when the manifest fails', async ({ page }) => {
   await expect(page.getByRole('status')).toContainText(
     'Could not load the preview.',
   );
+});
+
+test('pauses frame rendering while hidden and preserves the view on resume', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const drawElements = WebGL2RenderingContext.prototype.drawElements;
+    WebGL2RenderingContext.prototype.drawElements = function (
+      this: WebGL2RenderingContext,
+      ...args: Parameters<typeof drawElements>
+    ) {
+      if (this.canvas instanceof HTMLCanvasElement) {
+        const canvas = this.canvas;
+        canvas.dataset.drawCount = String(
+          Number(canvas.dataset.drawCount ?? 0) + 1,
+        );
+      }
+      drawElements.apply(this, args);
+    };
+  });
+  await page.goto('/');
+  const canvas = page.getByRole('img', {
+    name: 'Eye-level view inside a greybox room',
+  });
+  await expect(canvas).toHaveAttribute('data-exhibit-count', '12');
+  const readDrawCount = async () =>
+    Number(await canvas.getAttribute('data-draw-count'));
+  const initialDrawCount = await readDrawCount();
+  await expect.poll(readDrawCount).toBeGreaterThan(initialDrawCount);
+  const before = await canvas.screenshot();
+
+  // Dispatch the visibility signal while Chromium still delivers test-side RAFs.
+  const setHidden = (hidden: boolean) =>
+    page.evaluate((value) => {
+      Object.defineProperty(document, 'hidden', { configurable: true, value });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, hidden);
+
+  await setHidden(true);
+  const pausedDrawCount = await readDrawCount();
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+  );
+  expect(await readDrawCount()).toBe(pausedDrawCount);
+
+  await setHidden(false);
+  await expect.poll(readDrawCount).toBeGreaterThan(pausedDrawCount);
+  expect(await canvas.screenshot()).toEqual(before);
 });

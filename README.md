@@ -4,7 +4,7 @@ Virtual Exhibition is a browser-based 3D academic art exhibition. Visitors will 
 
 ## Status
 
-Project Foundation contains a WebGL 2 rendering preview, a perspective camera, responsive sizing, and a validated twelve-entry exhibit manifest. The Doraemon academic essay is listed as awaiting assets. The eleven other entries reserve space for future content.
+The current preview renders a greybox room in WebGL 2 from a stationary eye-height camera. The canvas resizes with the viewport, and rendering pauses when the tab is hidden. The project includes a validated twelve-entry exhibit manifest. The Doraemon academic essay is listed as awaiting assets. The eleven other entries reserve space for future content.
 
 The planned first-person experience includes WASD and mouse controls, click and E interactions, collision and stair traversal, a pause menu, optional touch controls, and graphics and audio settings. A 2D directory will provide another route to the exhibition and its essays.
 
