@@ -1,12 +1,12 @@
 import { readFile } from 'node:fs/promises';
-import { Euler, Quaternion, Vector3 } from 'three';
+import { Box3, Euler, Group, Quaternion, SpotLight, Vector3 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { createGallery } from '../../src/environments/gallery';
 import { stepBody } from '../../src/player/collision';
 
-async function parseGallery() {
-  const file = await readFile('public/models/gallery.glb');
+async function parseModel(name: 'gallery' | 'frame') {
+  const file = await readFile(`public/models/${name}.glb`);
   const buffer = file.buffer.slice(
     file.byteOffset,
     file.byteOffset + file.byteLength,
@@ -14,9 +14,13 @@ async function parseGallery() {
   return (await new GLTFLoader().parseAsync(buffer, '')).scene;
 }
 
+async function loadWorld() {
+  return createGallery(await parseModel('gallery'), await parseModel('frame'));
+}
+
 describe('gallery blockout', () => {
   it('spawns at the left end facing down the gallery', async () => {
-    const world = createGallery(await parseGallery());
+    const world = await loadWorld();
     expect(world.spawn.feet.x).toBeCloseTo(-8.5);
     expect(world.spawn.feet.y).toBeCloseTo(0);
     expect(world.spawn.feet.z).toBeCloseTo(0);
@@ -28,7 +32,7 @@ describe('gallery blockout', () => {
   });
 
   it('places twelve anchors on display surfaces facing open floor', async () => {
-    const world = createGallery(await parseGallery());
+    const world = await loadWorld();
     expect(world.anchors.map((anchor) => anchor.name)).toEqual(
       Array.from(
         { length: 12 },
@@ -56,7 +60,7 @@ describe('gallery blockout', () => {
   });
 
   it('blocks walls and islands and reaches both ends', async () => {
-    const world = createGallery(await parseGallery());
+    const world = await loadWorld();
     const body = {
       feet: world.spawn.feet.clone(),
       grounded: true,
@@ -85,8 +89,68 @@ describe('gallery blockout', () => {
   });
 
   it('rejects an export with a missing anchor', async () => {
-    const root = await parseGallery();
+    const root = await parseModel('gallery');
     root.getObjectByName('Exhibit_05')?.removeFromParent();
-    expect(() => createGallery(root)).toThrow('exactly one Exhibit_05');
+    expect(() => createGallery(root, new Group())).toThrow(
+      'exactly one Exhibit_05',
+    );
+  });
+});
+
+describe('display frames and gallery lights', () => {
+  it('models the frame in front of its origin with an upright, unmirrored canvas', async () => {
+    const frame = await parseModel('frame');
+    const bounds = new Box3().setFromObject(frame);
+    const size = bounds.getSize(new Vector3());
+    expect(size.x).toBeCloseTo(1.3);
+    expect(size.y).toBeCloseTo(1.0);
+    expect(bounds.min.z).toBeCloseTo(0);
+    expect(bounds.max.z).toBeCloseTo(0.05);
+    // A visitor faces the frame looking down -Z, so their top-left is -X, +Y.
+    const mark = frame.getObjectByName('Frame_TestMark');
+    const markCenter = new Box3().setFromObject(mark!).getCenter(new Vector3());
+    expect(markCenter.x).toBeLessThan(-0.4);
+    expect(markCenter.y).toBeGreaterThan(0.25);
+  });
+
+  it('hangs one frame on each anchor', async () => {
+    const world = await loadWorld();
+    for (const anchor of world.anchors) {
+      const canvases: string[] = [];
+      anchor.traverse((node) => {
+        if (node.name === 'Frame_TestCanvas') canvases.push(node.name);
+      });
+      expect(canvases, anchor.name).toHaveLength(1);
+    }
+    world.dispose();
+  });
+
+  it('aims one spot light at each display from above the walkway', async () => {
+    const world = await loadWorld();
+    const spots: SpotLight[] = [];
+    world.scene.traverse((node) => {
+      if (node instanceof SpotLight) spots.push(node);
+    });
+    expect(spots).toHaveLength(12);
+
+    for (const anchor of world.anchors) {
+      const target = anchor.getWorldPosition(new Vector3());
+      const aimed = spots.filter((spot) => {
+        const origin = spot.getWorldPosition(new Vector3());
+        const direction = spot.target
+          .getWorldPosition(new Vector3())
+          .sub(origin)
+          .normalize();
+        const offset = target.clone().sub(origin);
+        const along = offset.dot(direction);
+        return (
+          along > 0 &&
+          offset.addScaledVector(direction, -along).length() < 0.1 &&
+          origin.y > 3
+        );
+      });
+      expect(aimed, anchor.name).toHaveLength(1);
+    }
+    world.dispose();
   });
 });
