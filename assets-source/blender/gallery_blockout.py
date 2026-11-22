@@ -72,7 +72,6 @@ FLOOR = material("Blockout_Floor", (0.08, 0.085, 0.095))
 WALLS = material("Blockout_Wall", (0.33, 0.34, 0.36))
 DISPLAY = material("Blockout_Display", (0.14, 0.17, 0.2))
 CEILING = material("Blockout_Ceiling", (0.25, 0.25, 0.26))
-DOORWAY = material("Blockout_Doorway", (0.02, 0.02, 0.02))
 FIXTURE = material("Fixture_Housing", (0.03, 0.03, 0.035), 0.5)
 FRAME = material("Frame_Moulding", (0.04, 0.035, 0.03), 0.6)
 CANVAS = material("Frame_Canvas", (0.75, 0.73, 0.68))
@@ -181,17 +180,105 @@ box("Wall_West", -10 - WALL, -10, -5, 5, 0, HEIGHT, WALLS)
 box("Wall_East_North", 10, 10 + WALL, 0.8, 5, 0, HEIGHT, WALLS)
 box("Wall_East_South", 10, 10 + WALL, -5, -0.8, 0, HEIGHT, WALLS)
 box("Wall_East_Lintel", 10, 10 + WALL, -0.8, 0.8, 2.4, HEIGHT, WALLS)
-# Seals the opening until the basement door lands in Milestone 5.
-box(
-    "Basement_Opening_Placeholder",
-    10 + WALL,
-    10 + 2 * WALL,
-    -0.8,
-    0.8,
-    0,
-    2.4,
-    DOORWAY,
+# Basement entrance in the right end wall: a hinged door, its frame, a sign,
+# and a statue. The door collider is a separate proxy the engine toggles.
+DOOR = material("Door_Basement", (0.05, 0.045, 0.04), 0.7)
+IRON = material("Entrance_Iron", (0.06, 0.06, 0.065), 0.45)
+BONE = material("Sign_Lettering", (0.78, 0.74, 0.66), 0.6)
+CLOTH = material("Statue_Robe", (0.015, 0.015, 0.018), 0.9)
+BLADE = material("Statue_Blade", (0.55, 0.56, 0.58), 0.3)
+WOOD = material("Statue_Staff", (0.12, 0.08, 0.05), 0.8)
+
+hinge = bpy.data.objects.new("Door_Basement_Hinge", None)
+hinge.empty_display_type = "PLAIN_AXES"
+hinge.location = (10 + WALL / 2, 0.8, 0)
+collections["Gallery_Markers"].objects.link(hinge)
+door = bpy.data.objects.new("Door_Basement", box_mesh("Door_Basement", (0.06, 1.6, 2.4)))
+door.data.materials.append(DOOR)
+door.parent = hinge
+door.location = (0, -0.8, 1.2)
+collections["Gallery_Render"].objects.link(door)
+proxy = bpy.data.objects.new("COL_Door_Basement", box_mesh("COL_Door_Basement", (0.06, 1.6, 2.4)))
+proxy.location = (10 + WALL / 2, 0, 1.2)
+proxy.display_type = "WIRE"
+collections["Gallery_Collision"].objects.link(proxy)
+
+for name, y0, y1, z0, z1 in (
+    ("Door_Frame_North", 0.8, 0.95, 0, 2.55),
+    ("Door_Frame_South", -0.95, -0.8, 0, 2.55),
+    ("Door_Frame_Top", -0.95, 0.95, 2.4, 2.55),
+):
+    box(name, 9.94, 10, y0, y1, z0, z1, IRON, collide=False)
+
+# Sign: a spiked iron board with raised lettering facing the gallery (-X).
+box("Sign_Board", 9.95, 10, -1.75, 1.75, 2.72, 3.2, IRON, collide=False)
+for index in range(9):
+    y = -1.6 + index * 0.4
+    spike = bpy.data.meshes.new(f"Sign_Spike_{index:02}")
+    spike.from_pydata(
+        [(9.95, y - 0.08, 3.2), (9.95, y + 0.08, 3.2), (9.95, y, 3.38 + 0.06 * (index % 2)),
+         (10, y - 0.08, 3.2), (10, y + 0.08, 3.2), (10, y, 3.38 + 0.06 * (index % 2))],
+        [],
+        [(0, 1, 2), (3, 5, 4), (0, 3, 4, 1), (1, 4, 5, 2), (2, 5, 3, 0)],
+    )
+    spike.materials.append(IRON)
+    obj = bpy.data.objects.new(f"Sign_Spike_{index:02}", spike)
+    collections["Gallery_Render"].objects.link(obj)
+
+text_curve = bpy.data.curves.new("Sign_Basement", "FONT")
+text_curve.body = "BASEMENT OF DOOM"
+text_curve.size = 0.3
+text_curve.extrude = 0.012
+text_curve.align_x = "CENTER"
+text_curve.align_y = "CENTER"
+text_obj = bpy.data.objects.new("Sign_Basement_Text", text_curve)
+scene.collection.objects.link(text_obj)
+text_obj.location = (9.935, 0, 2.96)
+# Stand the text up and turn it to face -X so it reads left to right.
+text_obj.rotation_euler = (math.pi / 2, 0, -math.pi / 2)
+bpy.context.view_layer.update()
+lettering = bpy.data.meshes.new_from_object(
+    text_obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
 )
+lettering.materials.clear()
+lettering.materials.append(BONE)
+sign = bpy.data.objects.new("Sign_Basement", lettering)
+sign.matrix_world = text_obj.matrix_world
+sign["text"] = text_curve.body
+collections["Gallery_Render"].objects.link(sign)
+bpy.data.objects.remove(text_obj)
+
+# An original Grim Reaper statue on a plinth in the south-east corner, clear
+# of the walkway and the doorway.
+sx, sy = 9.3, -3.6
+box("Statue_Plinth", sx - 0.35, sx + 0.35, sy - 0.35, sy + 0.35, 0, 0.4, IRON, collide=False)
+bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.38, radius2=0.12, depth=1.5, location=(sx, sy, 1.15))
+robe = bpy.context.active_object
+robe.name = "Statue_Robe"
+robe.data.materials.append(CLOTH)
+bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.2, location=(sx - 0.03, sy, 2.0))
+hood = bpy.context.active_object
+hood.name = "Statue_Hood"
+hood.scale = (1.0, 0.9, 1.25)
+hood.data.materials.append(CLOTH)
+bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.025, depth=2.3, location=(sx - 0.25, sy + 0.25, 1.55))
+staff = bpy.context.active_object
+staff.name = "Statue_Staff"
+staff.rotation_euler = (0.12, 0, 0)
+staff.data.materials.append(WOOD)
+blade = bpy.data.objects.new("Statue_Blade", box_mesh("Statue_Blade", (0.03, 0.75, 0.12)))
+blade.location = (sx - 0.25, sy + 0.05, 2.62)
+blade.rotation_euler = (-0.35, 0, 0)
+blade.data.materials.append(BLADE)
+for obj in (robe, hood, staff):
+    for owner in obj.users_collection:
+        owner.objects.unlink(obj)
+    collections["Gallery_Render"].objects.link(obj)
+collections["Gallery_Render"].objects.link(blade)
+proxy = bpy.data.objects.new("COL_Statue", box_mesh("COL_Statue", (0.7, 0.7, 2.4)))
+proxy.location = (sx, sy, 1.2)
+proxy.display_type = "WIRE"
+collections["Gallery_Collision"].objects.link(proxy)
 
 # Two freestanding islands and a smaller central partition.
 box("Island_Left", -5.5, -2.5, -0.3, 0.3, 0, 2.4, DISPLAY)
@@ -262,6 +349,8 @@ def join(name, prefixes, collection):
 join("Gallery_Walls", ("Wall_", "Pier_"), "Gallery_Render")
 join("Gallery_Displays", ("Island_", "Partition_"), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
+join("Door_Frame", ("Door_Frame_", "Sign_Board", "Sign_Spike_", "Statue_Plinth"), "Gallery_Render")
+join("Statue_Cloak", ("Statue_Robe", "Statue_Hood"), "Gallery_Render")
 join(
     "Frame_Moulding",
     ("Frame_Top", "Frame_Bottom", "Frame_Left", "Frame_Right"),
@@ -283,6 +372,7 @@ def export(path, collection_names):
         export_cameras=False,
         export_lights=True,
         export_import_convert_lighting_mode="RAW",
+        export_extras=True,
     )
 
 

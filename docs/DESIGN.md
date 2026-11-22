@@ -14,6 +14,6 @@ Use a restrained crosshair and a contextual prompt in first-person mode. Provide
 
 ## Basement of Doom
 
-A metal-band-inspired “BASEMENT OF DOOM” sign and a Grim Reaper statue mark the entrance. The door opens onto descending stairs. The rendering treatment will contrast the modern academic gallery with weathered concrete, deteriorated plaster, and atmospheric light.
+A metal-band-inspired “BASEMENT OF DOOM” sign and a Grim Reaper statue mark the entrance. The blockout builds both from primitives in `gallery_blockout.py`: a spiked iron board with raised Blender-font lettering, and a hooded figure with a scythe on a plinth in the south-east corner. Final lettering and statue styling still need art direction approval. The door opens onto descending stairs. The rendering treatment will contrast the modern academic gallery with weathered concrete, deteriorated plaster, and atmospheric light.
 
 The room draws on the Helvete record shop basement. Its planned elements include handwritten “BLACK METAL” graffiti, a wooden throne, a metal candle stand, and a bare overhead bulb. Create original meshes, lettering, and texture work and review attribution and permissions for any external assets. Environmental audio is optional. Keep the entrance and staircase outside the primary academic route and fetch basement-specific assets only when needed.
