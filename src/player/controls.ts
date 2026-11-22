@@ -1,7 +1,18 @@
 import type { PerspectiveCamera } from 'three';
 
-const movementKeys = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD']);
+const heldKeys = new Set([
+  'KeyW',
+  'KeyA',
+  'KeyS',
+  'KeyD',
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
+]);
 const LOOK_SPEED = 0.002;
+// Arrow-key look speed in radians per second.
+const TURN_SPEED = 1.8;
 const MAX_PITCH = (85 * Math.PI) / 180;
 
 export function bindControls(
@@ -18,6 +29,7 @@ export function bindControls(
   let active = false;
   let requested = false;
   let pitch = 0;
+  let lookScale = 1;
   // Start from the spawn heading the renderer set on the camera.
   let yaw = camera.rotation.y;
 
@@ -34,11 +46,18 @@ export function bindControls(
     }
   }
 
+  // Without pointer capture (refused, as Firefox does for keyboard activation,
+  // or unsupported), the walk continues with the arrow keys for looking.
+  function startWithoutCapture(reason: string) {
+    requested = false;
+    message.textContent = `${reason} Arrow keys look around · Esc to pause`;
+    active = true;
+    onActiveChange(true);
+  }
+
   function lockError() {
     if (!requested || document.pointerLockElement === canvas) return;
-    requested = false;
-    message.textContent =
-      'Mouse capture failed. Select the button to try again.';
+    startWithoutCapture('Mouse capture is unavailable.');
   }
 
   function syncLock() {
@@ -60,10 +79,11 @@ export function bindControls(
     () => {
       if (requested || active) return;
       if (typeof canvas.requestPointerLock !== 'function') {
-        message.textContent = 'This browser does not support mouse capture.';
+        startWithoutCapture('This browser does not support mouse capture.');
         return;
       }
-      message.textContent = 'WASD to move · Mouse to look · Esc to pause';
+      message.textContent =
+        'WASD to move · Mouse or arrow keys to look · Esc to pause';
       requested = true;
       try {
         void Promise.resolve(canvas.requestPointerLock()).catch(lockError);
@@ -94,7 +114,7 @@ export function bindControls(
         pause();
         return;
       }
-      if (movementKeys.has(event.code)) {
+      if (heldKeys.has(event.code)) {
         event.preventDefault();
         if (!event.repeat) held.add(event.code);
       }
@@ -111,10 +131,10 @@ export function bindControls(
     'mousemove',
     (event) => {
       if (!active) return;
-      yaw = (yaw - event.movementX * LOOK_SPEED) % (2 * Math.PI);
+      yaw = (yaw - event.movementX * LOOK_SPEED * lookScale) % (2 * Math.PI);
       pitch = Math.max(
         -MAX_PITCH,
-        Math.min(MAX_PITCH, pitch - event.movementY * LOOK_SPEED),
+        Math.min(MAX_PITCH, pitch - event.movementY * LOOK_SPEED * lookScale),
       );
       camera.rotation.set(pitch, yaw, 0, 'YXZ');
     },
@@ -133,6 +153,19 @@ export function bindControls(
       return active;
     },
     pause,
+    setLookScale(scale: number) {
+      lookScale = scale;
+    },
+    look(seconds: number) {
+      const turn =
+        Number(held.has('ArrowLeft')) - Number(held.has('ArrowRight'));
+      const tilt = Number(held.has('ArrowUp')) - Number(held.has('ArrowDown'));
+      if (!turn && !tilt) return;
+      const step = TURN_SPEED * lookScale * seconds;
+      yaw = (yaw + turn * step) % (2 * Math.PI);
+      pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pitch + tilt * step));
+      camera.rotation.set(pitch, yaw, 0, 'YXZ');
+    },
     movement(distance: number) {
       const forward = Number(held.has('KeyW')) - Number(held.has('KeyS'));
       const right = Number(held.has('KeyD')) - Number(held.has('KeyA'));

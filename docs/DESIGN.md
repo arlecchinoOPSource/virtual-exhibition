@@ -10,7 +10,7 @@ Reserve exactly twelve anchors, `Exhibit_01` through `Exhibit_12`. Slot 01 is th
 
 ## Visitor experience
 
-Use a restrained crosshair and a contextual prompt in first-person mode. Provide an opening screen that explains WASD, mouse look, click and E, and Escape. Looking at a display within three meters shows its title and description. Opening a display reveals its title, description, and an essay action when a PDF is available. Exiting the viewer restores focus and leaves the player in place. The pause menu will expose controls and graphics and audio settings. A conventional keyboard-accessible 2D directory will provide direct access to content without first-person navigation.
+Use a restrained crosshair and a contextual prompt in first-person mode. Provide an opening screen that explains WASD, mouse look, click and E, and Escape. Looking at a display within three meters shows its title and description. Opening a display reveals its title, description, and an essay action when a PDF is available. Exiting the viewer restores focus and leaves the player in place. The opening screen and pause menu share one overlay: a heading that changes from Explore the exhibition to Paused, the controls list, Start walk or Resume walk, a Settings disclosure, and a link to the directory. Settings currently hold look sensitivity, saved per visitor in local storage. When pointer capture is refused or unsupported, as Firefox does for keyboard activation, the walk starts anyway and the arrow keys look around, so the tour works from the keyboard alone. A conventional keyboard-accessible 2D directory will provide direct access to content without first-person navigation.
 
 ## Basement of Doom
 
