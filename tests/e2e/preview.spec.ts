@@ -6,8 +6,9 @@ test('draws the preview in WebGL and resizes the canvas', async ({ page }) => {
 
   await page.goto('/');
   const canvas = page.getByRole('img', {
-    name: 'Eye-level view inside a greybox room',
+    name: 'Eye-level view inside the exhibition',
   });
+  await expect(canvas).toHaveAttribute('data-environment', 'gallery');
   await expect(canvas).toHaveAttribute('data-exhibit-count', '12');
   await expect(page.getByRole('status')).toBeHidden();
 
@@ -45,6 +46,18 @@ test('shows an accessible error when the manifest fails', async ({ page }) => {
   );
 });
 
+test('shows an accessible error when the gallery model fails', async ({
+  page,
+}) => {
+  await page.route('**/models/gallery.glb', (route) =>
+    route.fulfill({ status: 404 }),
+  );
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText(
+    'Could not load the preview.',
+  );
+});
+
 test('pauses frame rendering while hidden and preserves the view on resume', async ({
   page,
 }) => {
@@ -65,7 +78,7 @@ test('pauses frame rendering while hidden and preserves the view on resume', asy
   });
   await page.goto('/');
   const canvas = page.getByRole('img', {
-    name: 'Eye-level view inside a greybox room',
+    name: 'Eye-level view inside the exhibition',
   });
   await expect(canvas).toHaveAttribute('data-exhibit-count', '12');
   const readDrawCount = async () =>
@@ -99,13 +112,13 @@ test('pauses frame rendering while hidden and preserves the view on resume', asy
 test('captures the pointer, walks to the switch, interacts, and pauses', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/?env=greybox');
   const start = page.getByRole('button', { name: 'Start walk' });
   const resume = page.getByRole('button', { name: 'Resume walk' });
   const prompt = page.locator('#interaction');
   const crosshair = page.locator('#crosshair');
   const canvas = page.getByRole('img', {
-    name: 'Eye-level view inside a greybox room',
+    name: 'Eye-level view inside the exhibition',
   });
   const pointerIsCaptured = () =>
     page.evaluate(() => document.pointerLockElement?.id === 'scene');

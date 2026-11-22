@@ -1,0 +1,172 @@
+"""Build the approved main gallery blockout and export it as a GLB.
+
+Run from the repository root:
+
+    blender --background --factory-startup \
+        --python assets-source/blender/gallery_blockout.py -- public/models/gallery.glb
+
+Units are meters with Z up. The room spans x -10..10 and y -5..5 with a
+3.6 m ceiling. The visitor spawns at the left end (-X) and the basement
+opening is in the right end wall (+X).
+
+Every marker's local +Y axis points the way a visitor looks: forward at the
+spawn and into the display surface at an exhibit anchor. After the glTF Y-up
+conversion that axis becomes the node's local -Z, matching a Three.js camera.
+"""
+
+import math
+import sys
+
+import bpy
+
+HEIGHT = 3.6
+WALL = 0.2
+ANCHOR_HEIGHT = 1.5
+ANCHOR_OFFSET = 0.02
+
+bpy.ops.wm.read_factory_settings(use_empty=True)
+scene = bpy.context.scene
+scene.unit_settings.system = "METRIC"
+scene.unit_settings.scale_length = 1.0
+
+collections = {}
+for name in ("Gallery_Render", "Gallery_Collision", "Gallery_Markers"):
+    collection = bpy.data.collections.new(name)
+    scene.collection.children.link(collection)
+    collections[name] = collection
+
+
+def material(name, rgb):
+    mat = bpy.data.materials.new(name)
+    mat.diffuse_color = (*rgb, 1.0)
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+    bsdf.inputs["Roughness"].default_value = 0.85
+    return mat
+
+
+FLOOR = material("Blockout_Floor", (0.08, 0.085, 0.095))
+WALLS = material("Blockout_Wall", (0.33, 0.34, 0.36))
+DISPLAY = material("Blockout_Display", (0.14, 0.17, 0.2))
+CEILING = material("Blockout_Ceiling", (0.25, 0.25, 0.26))
+DOORWAY = material("Blockout_Doorway", (0.02, 0.02, 0.02))
+
+
+def box_mesh(name, size):
+    sx, sy, sz = (value / 2 for value in size)
+    verts = [(x, y, z) for x in (-sx, sx) for y in (-sy, sy) for z in (-sz, sz)]
+    faces = [
+        (0, 1, 3, 2),
+        (4, 6, 7, 5),
+        (0, 4, 5, 1),
+        (2, 3, 7, 6),
+        (0, 2, 6, 4),
+        (1, 5, 7, 3),
+    ]
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    return mesh
+
+
+def box(name, x0, x1, y0, y1, z0, z1, mat, collide=True):
+    """Add a visible box and, unless disabled, a matching COL_ proxy."""
+    size = (x1 - x0, y1 - y0, z1 - z0)
+    center = ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
+    obj = bpy.data.objects.new(name, box_mesh(name, size))
+    obj.location = center
+    obj.data.materials.append(mat)
+    collections["Gallery_Render"].objects.link(obj)
+    if collide:
+        proxy = bpy.data.objects.new(f"COL_{name}", box_mesh(f"COL_{name}", size))
+        proxy.location = center
+        proxy.display_type = "WIRE"
+        collections["Gallery_Collision"].objects.link(proxy)
+
+
+def marker(name, x, y, z, gaze):
+    """Add an empty whose +Y points along gaze: 'N', 'S', 'E', or 'W'."""
+    empty = bpy.data.objects.new(name, None)
+    empty.empty_display_type = "SINGLE_ARROW"
+    empty.location = (x, y, z)
+    empty.rotation_euler = (
+        0,
+        0,
+        {"N": 0, "S": math.pi, "E": -math.pi / 2, "W": math.pi / 2}[gaze],
+    )
+    collections["Gallery_Markers"].objects.link(empty)
+
+
+# Floor and ceiling. Nothing can reach the ceiling, so it needs no proxy.
+box("Floor", -10 - WALL, 10 + WALL, -5 - WALL, 5 + WALL, -WALL, 0, FLOOR)
+box(
+    "Ceiling",
+    -10 - WALL,
+    10 + WALL,
+    -5 - WALL,
+    5 + WALL,
+    HEIGHT,
+    HEIGHT + WALL,
+    CEILING,
+    collide=False,
+)
+
+# Long walls with piers that recess three display bays per side.
+box("Wall_North", -10 - WALL, 10 + WALL, 5, 5 + WALL, 0, HEIGHT, WALLS)
+box("Wall_South", -10 - WALL, 10 + WALL, -5 - WALL, -5, 0, HEIGHT, WALLS)
+for index, x in enumerate((-6, -2, 2, 6), start=1):
+    box(f"Pier_North_{index:02}", x - 0.3, x + 0.3, 4.65, 5, 0, HEIGHT, WALLS)
+    box(f"Pier_South_{index:02}", x - 0.3, x + 0.3, -5, -4.65, 0, HEIGHT, WALLS)
+
+# Left end wall behind the spawn and right end wall around the basement opening.
+box("Wall_West", -10 - WALL, -10, -5, 5, 0, HEIGHT, WALLS)
+box("Wall_East_North", 10, 10 + WALL, 0.8, 5, 0, HEIGHT, WALLS)
+box("Wall_East_South", 10, 10 + WALL, -5, -0.8, 0, HEIGHT, WALLS)
+box("Wall_East_Lintel", 10, 10 + WALL, -0.8, 0.8, 2.4, HEIGHT, WALLS)
+# Seals the opening until the basement door lands in Milestone 5.
+box(
+    "Basement_Opening_Placeholder",
+    10 + WALL,
+    10 + 2 * WALL,
+    -0.8,
+    0.8,
+    0,
+    2.4,
+    DOORWAY,
+)
+
+# Two freestanding islands and a smaller central partition.
+box("Island_Left", -5.5, -2.5, -0.3, 0.3, 0, 2.4, DISPLAY)
+box("Island_Right", 2.5, 5.5, -0.3, 0.3, 0, 2.4, DISPLAY)
+box("Partition_Center", -0.15, 0.15, -1, 1, 0, 2.4, DISPLAY)
+
+marker("Spawn_Gallery", -8.5, 0, 0, "E")
+
+# 01-06 perimeter bays, 07-10 island faces, 11-12 partition faces.
+anchors = [
+    (-4, 5 - ANCHOR_OFFSET, "N"),
+    (0, 5 - ANCHOR_OFFSET, "N"),
+    (4, 5 - ANCHOR_OFFSET, "N"),
+    (4, -5 + ANCHOR_OFFSET, "S"),
+    (0, -5 + ANCHOR_OFFSET, "S"),
+    (-4, -5 + ANCHOR_OFFSET, "S"),
+    (-4, 0.3 + ANCHOR_OFFSET, "S"),
+    (-4, -0.3 - ANCHOR_OFFSET, "N"),
+    (4, 0.3 + ANCHOR_OFFSET, "S"),
+    (4, -0.3 - ANCHOR_OFFSET, "N"),
+    (-0.15 - ANCHOR_OFFSET, 0, "E"),
+    (0.15 + ANCHOR_OFFSET, 0, "W"),
+]
+for index, (x, y, gaze) in enumerate(anchors, start=1):
+    marker(f"Exhibit_{index:02}", x, y, ANCHOR_HEIGHT, gaze)
+
+output = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "gallery.glb"
+bpy.ops.export_scene.gltf(
+    filepath=output,
+    export_format="GLB",
+    export_yup=True,
+    export_apply=True,
+    export_cameras=False,
+    export_lights=False,
+)

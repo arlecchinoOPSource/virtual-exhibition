@@ -1,5 +1,5 @@
-import { PerspectiveCamera, Vector3, WebGLRenderer } from 'three';
-import { createGreybox } from '../environments/greybox';
+import { PerspectiveCamera, WebGLRenderer } from 'three';
+import type { Box3, Object3D, Scene, Vector3 } from 'three';
 import { stepBody } from '../player/collision';
 import { bindControls } from '../player/controls';
 import { createTargetPicker } from '../player/interaction';
@@ -8,7 +8,18 @@ const STEP = 1 / 120;
 const SPEED = 3.2;
 const EYE_HEIGHT = 1.65;
 
+export interface World {
+  scene: Scene;
+  solids: readonly Box3[];
+  surfaces: Object3D[];
+  spawn: { feet: Vector3; yaw: number };
+  target?: Object3D;
+  setDisplayLight?: (on: boolean) => void;
+  dispose(): void;
+}
+
 export function startRenderer(
+  world: World,
   canvas: HTMLCanvasElement,
   overlay: HTMLElement,
   startButton: HTMLButtonElement,
@@ -17,12 +28,14 @@ export function startRenderer(
   prompt: HTMLElement,
 ) {
   const renderer = new WebGLRenderer({ canvas, antialias: true });
-  const world = createGreybox();
   const camera = new PerspectiveCamera(60, 1, 0.05, 40);
-  const body = { feet: new Vector3(0, 0, 4.2), fallSpeed: 0, grounded: true };
+  const body = { feet: world.spawn.feet.clone(), fallSpeed: 0, grounded: true };
   camera.position.copy(body.feet);
   camera.position.y += EYE_HEIGHT;
-  const hasTarget = createTargetPicker(camera, world.surfaces, world.target, 3);
+  camera.rotation.set(0, world.spawn.yaw, 0, 'YXZ');
+  const hasTarget = world.target
+    ? createTargetPicker(camera, world.surfaces, world.target, 3)
+    : () => false;
   let lightOn = false;
   let previousTime: number | undefined;
   let accumulator = 0;
@@ -48,7 +61,7 @@ export function startRenderer(
     () => {
       if (!hasTarget()) return;
       lightOn = !lightOn;
-      world.setDisplayLight(lightOn);
+      world.setDisplayLight?.(lightOn);
       updatePrompt();
     },
   );

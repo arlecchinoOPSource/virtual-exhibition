@@ -4,7 +4,7 @@ Virtual Exhibition is a browser-based 3D academic art exhibition. Visitors will 
 
 ## Status
 
-Select **Start walk** to explore the WebGL 2 greybox on desktop. Use WASD to move, the mouse to look, and Escape to pause. Try the stairs on the right or approach the display and use E or left click to toggle its light. The project includes a validated twelve-entry exhibit manifest. The Doraemon academic essay is listed as awaiting assets. The eleven other entries reserve space for future content.
+Select **Start walk** to explore the main gallery blockout on desktop with WebGL 2. Use WASD to move, the mouse to look, and Escape to pause. Add `?env=greybox` to the URL for the greybox test room, where E or left click toggles a display light and stairs test traversal. The project includes a validated twelve-entry exhibit manifest. The Doraemon academic essay is listed as awaiting assets. The eleven other entries reserve space for future content.
 
 Future milestones add the finished gallery, optional touch controls, and graphics and audio settings. A 2D directory will provide another route to the exhibition and its essays.
 

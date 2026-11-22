@@ -7,6 +7,7 @@ import {
   Mesh,
   MeshStandardMaterial,
   Scene,
+  Vector3,
 } from 'three';
 
 export function createGreybox() {
@@ -69,6 +70,7 @@ export function createGreybox() {
     solids,
     surfaces,
     target,
+    spawn: { feet: new Vector3(0, 0, 4.2), yaw: 0 },
     setDisplayLight(on: boolean) {
       switchMaterial.emissive.setHex(on ? 0x33b384 : 0x000000);
       switchMaterial.color.setHex(on ? 0x42aa81 : 0xbd771d);
