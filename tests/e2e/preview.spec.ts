@@ -91,3 +91,70 @@ test('pauses frame rendering while hidden and preserves the view on resume', asy
   await expect.poll(readDrawCount).toBeGreaterThan(pausedDrawCount);
   expect(await canvas.screenshot()).toEqual(before);
 });
+
+test('captures the pointer, walks to the switch, interacts, and pauses', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const start = page.getByRole('button', { name: 'Start walk' });
+  const resume = page.getByRole('button', { name: 'Resume walk' });
+  const prompt = page.locator('#interaction');
+  const crosshair = page.locator('#crosshair');
+  const canvas = page.getByRole('img', {
+    name: 'Eye-level view inside a greybox room',
+  });
+  const pointerIsCaptured = () =>
+    page.evaluate(() => document.pointerLockElement?.id === 'scene');
+
+  await start.click();
+  await expect.poll(pointerIsCaptured).toBe(true);
+  await expect(crosshair).toBeVisible();
+  await page.keyboard.press('e');
+  await expect(prompt).toBeEmpty();
+
+  await page.keyboard.down('w');
+  await expect(prompt).toContainText('Turn display light on', {
+    timeout: 8000,
+  });
+  await page.keyboard.up('w');
+
+  // Drive a known mouse delta while the browser's native pointer lock is active.
+  await page.evaluate(() =>
+    document.dispatchEvent(new MouseEvent('mousemove', { movementX: 300 })),
+  );
+  await expect(prompt).toBeEmpty();
+  await page.evaluate(() =>
+    document.dispatchEvent(new MouseEvent('mousemove', { movementX: -300 })),
+  );
+  await expect(prompt).toContainText('Turn display light on');
+
+  await page.keyboard.press('e');
+  await expect(prompt).toContainText('Turn display light off');
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(prompt).toContainText('Turn display light on');
+
+  await page.keyboard.down('w');
+  await page.keyboard.press('Escape');
+  await expect.poll(pointerIsCaptured).toBe(false);
+  await expect(resume).toBeVisible();
+  await expect(crosshair).toBeHidden();
+  await expect(prompt).toBeEmpty();
+  await page.keyboard.press('e');
+  await expect.poll(pointerIsCaptured).toBe(false);
+
+  await resume.click();
+  await expect.poll(pointerIsCaptured).toBe(true);
+  const resumedView = await canvas.screenshot();
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        );
+      }),
+  );
+  expect(await canvas.screenshot()).toEqual(resumedView);
+  await page.keyboard.up('w');
+  await expect(prompt).toContainText('Turn display light on');
+});

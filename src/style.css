@@ -51,3 +51,70 @@ header p {
 #status[hidden] {
   display: none;
 }
+
+#controls {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(21 25 28 / 50%);
+}
+
+#controls[hidden] {
+  display: none;
+}
+
+.control-panel {
+  padding: 1rem 1.25rem;
+  border: 1px solid #52616c;
+  border-radius: 0.5rem;
+  background: #15191c;
+  text-align: center;
+}
+
+#start-walk {
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: #e7edf1;
+  color: #15191c;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#instructions {
+  margin: 0.7rem 0 0;
+  color: #bdc8cf;
+}
+
+#crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 0 1px #15191c;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+#interaction {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  margin: 0;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.25rem;
+  background: #15191c;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+#interaction:empty {
+  padding: 0;
+}

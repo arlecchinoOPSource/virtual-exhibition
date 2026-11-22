@@ -1,4 +1,5 @@
 import {
+  Box3,
   BoxGeometry,
   Color,
   DirectionalLight,
@@ -11,51 +12,71 @@ import {
 export function createGreybox() {
   const scene = new Scene();
   scene.background = new Color(0x252930);
+  const surfaces: Mesh[] = [];
+  const solids: Box3[] = [];
+  const floor = new MeshStandardMaterial({ color: 0x50545b });
+  const wall = new MeshStandardMaterial({ color: 0x999da2 });
+  const display = new MeshStandardMaterial({ color: 0x67727d });
+  const stairs = new MeshStandardMaterial({ color: 0x7f8f99 });
+  const switchMaterial = new MeshStandardMaterial({ color: 0xbd771d });
 
-  // Dimensions are in meters, with the finished floor at y = 0.
-  const floorGeometry = new BoxGeometry(8, 0.16, 12);
-  const sideGeometry = new BoxGeometry(0.16, 3.2, 12);
-  const endGeometry = new BoxGeometry(8, 3.2, 0.16);
-  const plinthGeometry = new BoxGeometry(1.3, 1.05, 1);
-  const floorMaterial = new MeshStandardMaterial({ color: 0x50545b });
-  const wallMaterial = new MeshStandardMaterial({ color: 0x999da2 });
-  const plinthMaterial = new MeshStandardMaterial({ color: 0x67727d });
-
-  const floor = new Mesh(floorGeometry, floorMaterial);
-  floor.position.y = -0.08;
-  scene.add(floor);
-
-  for (const x of [-3.92, 3.92]) {
-    const wall = new Mesh(sideGeometry, wallMaterial);
-    wall.position.set(x, 1.6, 0);
-    scene.add(wall);
+  function addBox(
+    width: number,
+    height: number,
+    depth: number,
+    x: number,
+    bottom: number,
+    z: number,
+    material: MeshStandardMaterial,
+  ) {
+    const mesh = new Mesh(new BoxGeometry(width, height, depth), material);
+    mesh.position.set(x, bottom + height / 2, z);
+    scene.add(mesh);
+    surfaces.push(mesh);
+    return mesh;
   }
-  for (const z of [-5.92, 5.92]) {
-    const wall = new Mesh(endGeometry, wallMaterial);
-    wall.position.set(0, 1.6, z);
-    scene.add(wall);
-  }
 
-  const plinth = new Mesh(plinthGeometry, plinthMaterial);
-  plinth.position.set(0, 0.525, -2.8);
+  // The visible primitive meshes also define the static collision proxies.
+  addBox(8, 0.16, 12, 0, -0.16, 0, floor);
+  for (const x of [-3.92, 3.92]) addBox(0.16, 3.2, 12, x, 0, 0, wall);
+  for (const z of [-5.92, 5.92]) addBox(8, 3.2, 0.16, 0, 0, z, wall);
+  addBox(1.3, 1.85, 1, 0, 0, -2.8, display);
+
+  for (let index = 0; index < 5; index++) {
+    addBox(
+      1.65,
+      (index + 1) * 0.18,
+      0.38,
+      2.15,
+      0,
+      -0.9 - index * 0.38,
+      stairs,
+    );
+  }
+  addBox(1.65, 0.9, 1.2, 2.15, 0, -3.21, stairs);
+
+  scene.updateMatrixWorld(true);
+  for (const mesh of surfaces) solids.push(new Box3().setFromObject(mesh));
+  const target = addBox(0.34, 0.28, 0.06, 0, 1.51, -2.27, switchMaterial);
+  target.updateMatrixWorld();
+
   const keyLight = new DirectionalLight(0xf6f3ee, 2.1);
   keyLight.position.set(2, 5, 3);
-  scene.add(plinth, keyLight, new HemisphereLight(0xe7edf6, 0x43464d, 1.4));
+  scene.add(keyLight, new HemisphereLight(0xe7edf6, 0x43464d, 1.4));
 
   return {
     scene,
+    solids,
+    surfaces,
+    target,
+    setDisplayLight(on: boolean) {
+      switchMaterial.emissive.setHex(on ? 0x33b384 : 0x000000);
+      switchMaterial.color.setHex(on ? 0x42aa81 : 0xbd771d);
+    },
     dispose() {
-      for (const geometry of [
-        floorGeometry,
-        sideGeometry,
-        endGeometry,
-        plinthGeometry,
-      ]) {
-        geometry.dispose();
-      }
-      for (const material of [floorMaterial, wallMaterial, plinthMaterial]) {
+      for (const mesh of surfaces) mesh.geometry.dispose();
+      for (const material of [floor, wall, display, stairs, switchMaterial])
         material.dispose();
-      }
     },
   };
 }

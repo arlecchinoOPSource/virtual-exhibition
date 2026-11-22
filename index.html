@@ -19,6 +19,22 @@
         >
           This preview requires a browser with canvas and WebGL 2 support.
         </canvas>
+        <div id="controls" hidden>
+          <div class="control-panel">
+            <button
+              id="start-walk"
+              type="button"
+              aria-describedby="instructions"
+            >
+              Start walk
+            </button>
+            <p id="instructions" aria-live="polite">
+              WASD to move · Mouse to look · Esc to pause
+            </p>
+          </div>
+        </div>
+        <span id="crosshair" aria-hidden="true" hidden></span>
+        <p id="interaction" aria-live="polite"></p>
         <p id="status" role="status">Loading the 3D preview…</p>
       </section>
       <noscript>Enable JavaScript to load the 3D preview.</noscript>

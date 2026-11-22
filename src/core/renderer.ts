@@ -1,12 +1,57 @@
-import { PerspectiveCamera, WebGLRenderer } from 'three';
+import { PerspectiveCamera, Vector3, WebGLRenderer } from 'three';
 import { createGreybox } from '../environments/greybox';
+import { stepBody } from '../player/collision';
+import { bindControls } from '../player/controls';
+import { createTargetPicker } from '../player/interaction';
 
-export function startRenderer(canvas: HTMLCanvasElement) {
+const STEP = 1 / 120;
+const SPEED = 3.2;
+const EYE_HEIGHT = 1.65;
+
+export function startRenderer(
+  canvas: HTMLCanvasElement,
+  overlay: HTMLElement,
+  startButton: HTMLButtonElement,
+  instructions: HTMLElement,
+  crosshair: HTMLElement,
+  prompt: HTMLElement,
+) {
   const renderer = new WebGLRenderer({ canvas, antialias: true });
-  const { scene, dispose } = createGreybox();
+  const world = createGreybox();
   const camera = new PerspectiveCamera(60, 1, 0.05, 40);
-  // Leave the camera facing straight down -Z from its standing eye height.
-  camera.position.set(0, 1.65, 4.2);
+  const body = { feet: new Vector3(0, 0, 4.2), fallSpeed: 0, grounded: true };
+  camera.position.copy(body.feet);
+  camera.position.y += EYE_HEIGHT;
+  const hasTarget = createTargetPicker(camera, world.surfaces, world.target, 3);
+  let lightOn = false;
+  let previousTime: number | undefined;
+  let accumulator = 0;
+
+  function updatePrompt() {
+    const action = lightOn ? 'Turn display light off' : 'Turn display light on';
+    const text = controls.active && hasTarget() ? `E / Click · ${action}` : '';
+    if (prompt.textContent !== text) prompt.textContent = text;
+  }
+
+  const controls = bindControls(
+    canvas,
+    camera,
+    startButton,
+    instructions,
+    (active) => {
+      overlay.hidden = active;
+      crosshair.hidden = !active;
+      previousTime = undefined;
+      accumulator = 0;
+      updatePrompt();
+    },
+    () => {
+      if (!hasTarget()) return;
+      lightOn = !lightOn;
+      world.setDisplayLight(lightOn);
+      updatePrompt();
+    },
+  );
 
   function resize() {
     const { width, height } = canvas.getBoundingClientRect();
@@ -18,18 +63,33 @@ export function startRenderer(canvas: HTMLCanvasElement) {
     camera.updateProjectionMatrix();
   }
 
-  function draw() {
-    renderer.render(scene, camera);
+  function draw(time: number) {
+    if (controls.active) {
+      accumulator += Math.min((time - (previousTime ?? time)) / 1000, 0.1);
+      previousTime = time;
+      while (accumulator >= STEP) {
+        const { x, z } = controls.movement(SPEED * STEP);
+        stepBody(body, x, z, STEP, world.solids);
+        accumulator -= STEP;
+      }
+      camera.position.copy(body.feet);
+      camera.position.y += EYE_HEIGHT;
+      updatePrompt();
+    }
+    renderer.render(world.scene, camera);
   }
 
   function syncLoop() {
+    previousTime = undefined;
+    accumulator = 0;
     const contextLost = renderer.getContext().isContextLost();
     renderer.setAnimationLoop(document.hidden || contextLost ? null : draw);
   }
 
   resize();
-  if (!document.hidden) draw();
+  if (!document.hidden) draw(0);
   syncLoop();
+  overlay.hidden = false;
 
   const observer = new ResizeObserver(resize);
   observer.observe(canvas);
@@ -39,13 +99,14 @@ export function startRenderer(canvas: HTMLCanvasElement) {
   canvas.addEventListener('webglcontextrestored', syncLoop);
 
   return () => {
+    controls.dispose();
     renderer.setAnimationLoop(null);
     observer.disconnect();
     window.removeEventListener('resize', resize);
     document.removeEventListener('visibilitychange', syncLoop);
     canvas.removeEventListener('webglcontextlost', syncLoop);
     canvas.removeEventListener('webglcontextrestored', syncLoop);
-    dispose();
+    world.dispose();
     renderer.dispose();
   };
 }
