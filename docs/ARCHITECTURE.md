@@ -6,13 +6,13 @@ The site runs entirely in the browser. Vite emits a static bundle and copies the
 
 The app fetches and validates the exhibit manifest, creates the greybox scene, and starts the renderer. The perspective camera faces forward at a standing eye height of 1.65 m. ResizeObserver updates the drawing buffer and camera projection when layout changes. Device pixel ratio is capped at 2.
 
-The Three.js animation loop renders at the browser’s frame cadence. Tab visibility and WebGL context events stop and resume rendering without rebuilding the camera or changing its pose. Vite hot disposal stops the loop and releases listeners, observers, geometries, materials, and the renderer. When movement is added, bound elapsed time after backgrounding the tab and keep simulation updates independent of frame rate. Pause input when an overlay has focus, pointer lock is lost, or the tab loses focus.
+The Three.js animation loop renders at the browser’s frame cadence. Tab visibility and WebGL context events stop and resume rendering without rebuilding the camera or changing its pose. Vite hot disposal stops the loop and releases listeners, observers, geometries, materials, and the renderer. Simulation advances in 120 Hz steps with a capped frame delta. Pausing clears accumulated time and held keys.
 
 ## Player, collision, and interaction
 
-A player controller will own movement, camera orientation, gravity, and grounded state. The controller will consume keyboard and pointer-lock input, with touch input added when supported. Collision proxies authored alongside the scenery will provide walls, island boundaries, doors, floors, and stair ramps or steps. Use a player volume and test corners and stairs at multiple frame rates.
+The player controls use pointer lock for yaw and pitch and normalized, yaw-relative WASD input. The player body uses axis-aligned collision proxies, a standing volume, gravity and a step-height limit. The greybox derives its proxies from visible primitives and includes stairs and a display obstacle.
 
-A center-camera ray and distance limit will select the nearest visible interactable. Left click and E will invoke the same action when the visitor is exploring. Walls must occlude targets. Escape will release pointer lock and pause input. The crosshair and contextual prompts are interface elements.
+A center-camera ray checks the first surface within three meters. Left click and E share the same action for the greybox display light, and intervening geometry blocks the ray. The DOM crosshair and prompt reflect the current capture and targeting state. Escape releases pointer lock, clears input and returns focus to Resume walk.
 
 ## Exhibit data and PDF state
 

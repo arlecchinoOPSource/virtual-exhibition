@@ -4,21 +4,21 @@ Virtual Exhibition is a browser-based 3D academic art exhibition. Visitors will 
 
 ## Status
 
-The current preview renders a greybox room in WebGL 2 from a stationary eye-height camera. The canvas resizes with the viewport, and rendering pauses when the tab is hidden. The project includes a validated twelve-entry exhibit manifest. The Doraemon academic essay is listed as awaiting assets. The eleven other entries reserve space for future content.
+Select **Start walk** to explore the WebGL 2 greybox on desktop. Use WASD to move, the mouse to look, and Escape to pause. Try the stairs on the right or approach the display and use E or left click to toggle its light. The project includes a validated twelve-entry exhibit manifest. The Doraemon academic essay is listed as awaiting assets. The eleven other entries reserve space for future content.
 
-The planned first-person experience includes WASD and mouse controls, click and E interactions, collision and stair traversal, a pause menu, optional touch controls, and graphics and audio settings. A 2D directory will provide another route to the exhibition and its essays.
+Future milestones add the finished gallery, optional touch controls, and graphics and audio settings. A 2D directory will provide another route to the exhibition and its essays.
 
 ## Development
 
-Use Node.js 24 and npm. Install the Chromium test browser once per machine.
+Use Node.js 24 and npm. Install the Chromium and Firefox test browsers once per machine.
 
 ```sh
 npm ci
-npx playwright install chromium
+npx playwright install chromium firefox
 npm run dev
 ```
 
-Open the URL Vite prints. Use a browser with WebGL 2 support to see the scene.
+Open the URL Vite prints. Run `npm run test:e2e -- --headed` for the native pointer-capture smoke tests. Linux CI can use a virtual display. Use a browser with WebGL 2 support to see the scene.
 
 | Command                | Purpose                                           |
 | ---------------------- | ------------------------------------------------- |
@@ -28,7 +28,7 @@ Open the URL Vite prints. Use a browser with WebGL 2 support to see the scene.
 | `npm run format:check` | Check formatting with Prettier                    |
 | `npm run format`       | Apply Prettier formatting                         |
 | `npm test`             | Run Vitest unit tests                             |
-| `npm run test:e2e`     | Run Playwright Chromium smoke tests               |
+| `npm run test:e2e`     | Run Playwright Chromium and Firefox smoke tests   |
 | `npm run build`        | Type-check and produce the static site in `dist/` |
 | `npm run preview`      | Serve the production build locally                |
 
