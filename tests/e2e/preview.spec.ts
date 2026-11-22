@@ -236,8 +236,8 @@ test('opens exhibit details with the essay and resumes in place', async ({
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('An essay in Filipino');
   await expect(
-    dialog.getByRole('link', { name: 'Read the essay (PDF)' }),
-  ).toHaveAttribute('href', '/essays/doraemon-filipino.pdf');
+    dialog.getByRole('button', { name: 'Read the essay' }),
+  ).toBeVisible();
   await expect
     .poll(() =>
       dialog
@@ -262,4 +262,87 @@ test('opens exhibit details with the essay and resumes in place', async ({
   await resume.click();
   await expect(page.locator('#crosshair')).toBeVisible();
   await expect(label.getByRole('heading')).toHaveText(essayTitle);
+});
+
+test('reads the essay in the lazy-loaded viewer with keyboard scroll and zoom', async ({
+  page,
+}) => {
+  const pdfRequests: string[] = [];
+  page.on('request', (request) => {
+    if (/pdfjs-dist|pdf\.worker/.test(request.url()))
+      pdfRequests.push(request.url());
+  });
+  const label = await walkToExhibitOne(page);
+  const details = page.locator('#exhibit-details');
+  const viewer = page.locator('#essay-viewer');
+  const pages = viewer.locator('.viewer-pages');
+  const readEssay = details.getByRole('button', { name: 'Read the essay' });
+
+  await page.keyboard.press('e');
+  await expect(details).toBeVisible();
+  // PDF.js and its worker stay unloaded until a visitor opens an essay.
+  expect(pdfRequests).toEqual([]);
+
+  await readEssay.click();
+  await expect(viewer).toBeVisible();
+  await expect(pages).toBeFocused();
+  await expect(pages).toHaveAttribute('data-rendered-zoom', '1', {
+    timeout: 15000,
+  });
+  expect(pdfRequests.length).toBeGreaterThan(0);
+  await expect(viewer.getByRole('img', { name: /^Page \d of 5$/ })).toHaveCount(
+    5,
+  );
+  await expect(
+    viewer.getByRole('link', { name: 'Open PDF file' }),
+  ).toHaveAttribute('href', '/essays/doraemon-filipino.pdf');
+
+  await page.keyboard.press('PageDown');
+  await expect
+    .poll(() => pages.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+
+  const firstPage = viewer.getByRole('img', { name: 'Page 1 of 5' });
+  const width = await firstPage.evaluate(
+    (canvas) => canvas.getBoundingClientRect().width,
+  );
+  await page.keyboard.press('+');
+  await expect(viewer.locator('output')).toHaveText('125%');
+  await expect(pages).toHaveAttribute('data-rendered-zoom', '1.25');
+  expect(
+    await firstPage.evaluate((canvas) => canvas.getBoundingClientRect().width),
+  ).toBeGreaterThan(width);
+  await page.keyboard.press('-');
+  await expect(pages).toHaveAttribute('data-rendered-zoom', '1');
+
+  // Escape closes the viewer, then the details, restoring focus each time.
+  await page.keyboard.press('Escape');
+  await expect(viewer).toBeHidden();
+  await expect(readEssay).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(details).toBeHidden();
+  const resume = page.getByRole('button', { name: 'Resume walk' });
+  await expect(resume).toBeFocused();
+  await resume.click();
+  await expect(label.getByRole('heading')).toHaveText(essayTitle);
+});
+
+test('offers the PDF file when the essay fails to load', async ({ page }) => {
+  await page.route('**/essays/doraemon-filipino.pdf', (route) =>
+    route.fulfill({ status: 404 }),
+  );
+  await walkToExhibitOne(page);
+  await page.keyboard.press('e');
+  await page
+    .locator('#exhibit-details')
+    .getByRole('button', { name: 'Read the essay' })
+    .click();
+  const viewer = page.locator('#essay-viewer');
+  await expect(viewer.locator('.viewer-status')).toHaveText(
+    'The essay could not be loaded. Use Open PDF file instead.',
+    { timeout: 15000 },
+  );
+  await expect(
+    viewer.getByRole('link', { name: 'Open PDF file' }),
+  ).toBeVisible();
 });
