@@ -6,7 +6,7 @@ Use a compact rectangular footprint, recessed perimeter walls, two freestanding 
 
 The approved blockout is 20 × 10 m with a 3.6 m ceiling. Piers recess three display bays along each long wall. Two 3 m islands sit on the center line 4 m either side of a 2 m central partition. The visitor spawns 1.5 m from the left wall facing down the room. The basement opening is a 1.6 × 2.4 m doorway in the right end wall. Each display has a test frame with a red top-left mark and its own ceiling spot light. `assets-source/blender/gallery_blockout.py` generates the scene.
 
-Reserve exactly twelve anchors, `Exhibit_01` through `Exhibit_12`. Slot 01 is the Doraemon academic essay. Slots 02–12 are initially placeholders. Anchors 01–06 sit in the wall bays, 07–10 on the island faces, and 11–12 on the partition faces. Validate that every display can be approached and read. Materials, lighting style, and palette require approval before final modeling. The preview uses temporary colors.
+Reserve exactly twelve anchors, `Exhibit_01` through `Exhibit_12`. Slot 01 is the Doraemon academic essay, published with its rights record in `public/essays/CREDITS.md`. Slots 02–12 are initially placeholders. Anchors 01–06 sit in the wall bays, 07–10 on the island faces, and 11–12 on the partition faces. Validate that every display can be approached and read. Materials, lighting style, and palette require approval before final modeling. The preview uses temporary colors.
 
 ## Visitor experience
 

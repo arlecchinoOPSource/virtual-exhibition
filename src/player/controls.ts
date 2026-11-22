@@ -132,6 +132,7 @@ export function bindControls(
     get active() {
       return active;
     },
+    pause,
     movement(distance: number) {
       const forward = Number(held.has('KeyW')) - Number(held.has('KeyS'));
       const right = Number(held.has('KeyD')) - Number(held.has('KeyA'));

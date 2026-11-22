@@ -3,6 +3,7 @@ import { startRenderer } from './core/renderer';
 import { loadGallery } from './environments/gallery';
 import { createGreybox } from './environments/greybox';
 import { loadExhibits } from './exhibition/manifest';
+import { createDetails } from './ui/details';
 
 async function start() {
   const canvas = document.querySelector<HTMLCanvasElement>('#scene');
@@ -14,6 +15,7 @@ async function start() {
   const crosshair = document.querySelector<HTMLElement>('#crosshair');
   const prompt = document.querySelector<HTMLElement>('#interaction');
   const label = document.querySelector<HTMLElement>('#exhibit-label');
+  const dialog = document.querySelector<HTMLDialogElement>('#exhibit-details');
 
   if (
     !canvas ||
@@ -23,7 +25,8 @@ async function start() {
     !instructions ||
     !crosshair ||
     !prompt ||
-    !label
+    !label ||
+    !dialog
   )
     throw new Error('The preview markup is missing.');
 
@@ -43,6 +46,8 @@ async function start() {
       crosshair,
       prompt,
       label,
+      // Closing the details leaves the visitor paused on Resume walk.
+      createDetails(dialog, () => startButton.focus()).open,
     );
     if (import.meta.hot) import.meta.hot.dispose(dispose);
     canvas.dataset.exhibitCount = String(exhibits.length);

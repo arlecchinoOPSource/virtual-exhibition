@@ -17,3 +17,6 @@ test-results/
 !/assets-source/references/.gitkeep
 /public/essays/*
 !/public/essays/.gitkeep
+# Approved essays and their rights record are published explicitly.
+!/public/essays/CREDITS.md
+!/public/essays/doraemon-filipino.pdf

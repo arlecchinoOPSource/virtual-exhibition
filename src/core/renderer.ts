@@ -29,6 +29,7 @@ export function startRenderer(
   crosshair: HTMLElement,
   prompt: HTMLElement,
   label: HTMLElement,
+  openExhibit: (exhibit: Exhibit) => void,
 ) {
   const renderer = new WebGLRenderer({ canvas, antialias: true });
   const camera = new PerspectiveCamera(60, 1, 0.05, 40);
@@ -37,7 +38,6 @@ export function startRenderer(
   camera.position.y += EYE_HEIGHT;
   camera.rotation.set(0, world.spawn.yaw, 0, 'YXZ');
   const pick = createSurfacePicker(camera, world.surfaces, 3);
-  const hasTarget = () => Boolean(world.target) && pick() === world.target;
   const [labelTitle, labelDescription] = label.children;
   let shownExhibit: Exhibit | undefined;
   let lightOn = false;
@@ -46,13 +46,17 @@ export function startRenderer(
 
   function updatePrompt() {
     const hit = controls.active ? pick() : undefined;
+    const exhibit = world.exhibitAt?.(hit);
     const action = lightOn ? 'Turn display light off' : 'Turn display light on';
     const text =
-      world.target && hit === world.target ? `E / Click · ${action}` : '';
+      world.target && hit === world.target
+        ? `E / Click · ${action}`
+        : exhibit
+          ? 'E / Click · View details'
+          : '';
     if (prompt.textContent !== text) prompt.textContent = text;
 
     // Manifest text goes into the DOM as plain text, never as markup.
-    const exhibit = world.exhibitAt?.(hit);
     if (exhibit === shownExhibit) return;
     shownExhibit = exhibit;
     if (labelTitle) labelTitle.textContent = exhibit?.title ?? '';
@@ -74,10 +78,18 @@ export function startRenderer(
       updatePrompt();
     },
     () => {
-      if (!hasTarget()) return;
-      lightOn = !lightOn;
-      world.setDisplayLight?.(lightOn);
-      updatePrompt();
+      const hit = pick();
+      if (world.target && hit === world.target) {
+        lightOn = !lightOn;
+        world.setDisplayLight?.(lightOn);
+        updatePrompt();
+        return;
+      }
+      const exhibit = world.exhibitAt?.(hit);
+      if (!exhibit) return;
+      // Pausing releases pointer lock and clears held keys; the pose stays.
+      controls.pause();
+      openExhibit(exhibit);
     },
   );
 

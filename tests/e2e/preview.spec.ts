@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 test('draws the preview in WebGL and resizes the canvas', async ({ page }) => {
   const pageErrors: Error[] = [];
@@ -180,41 +181,85 @@ test('captures the pointer, walks to the switch, interacts, and pauses', async (
   await expect(prompt).toContainText('Turn display light on');
 });
 
-test('labels a gallery display with its manifest title and description', async ({
-  page,
-}) => {
+const essayTitle = 'Bakit Hindi Puwedeng Maging Filipino Rin si Doraemon';
+
+// Starts the walk, faces Exhibit_01 on the north wall, and walks until its
+// label shows. Walking waits on the label, not a timer, because slow frames
+// shorten each step.
+async function walkToExhibitOne(page: Page) {
   await page.goto('/');
   const label = page.locator('#exhibit-label');
-  const pointerIsCaptured = () =>
-    page.evaluate(() => document.pointerLockElement?.id === 'scene');
-  // One radian is 500 px of mouse movement at the current look speed.
-  const turn = (radians: number) =>
-    page.evaluate(
-      (dx) =>
-        document.dispatchEvent(new MouseEvent('mousemove', { movementX: dx })),
-      -radians * 500,
-    );
-
   await page.bringToFront();
   await page.getByRole('button', { name: 'Start walk' }).click();
-  await expect.poll(pointerIsCaptured).toBe(true);
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.pointerLockElement?.id === 'scene'),
+    )
+    .toBe(true);
   // The crosshair appears once the game handles capture and accepts mouse look.
   await expect(page.locator('#crosshair')).toBeVisible();
   await expect(label).toBeHidden();
-
-  // Face Exhibit_01 on the north wall and walk until it is in range. Walking
-  // waits on the label, not a timer, because slow frames shorten each step.
-  await turn(Math.atan2(4.98, 4.5));
+  // One radian is 500 px of mouse movement at the current look speed.
+  await page.evaluate(
+    (dx) =>
+      document.dispatchEvent(new MouseEvent('mousemove', { movementX: dx })),
+    -Math.atan2(4.98, 4.5) * 500,
+  );
   await page.keyboard.down('w');
   await expect(label).toBeVisible({ timeout: 15000 });
   await page.keyboard.up('w');
-  await expect(label.getByRole('heading')).toHaveText(
-    'Doraemon academic essay',
-  );
-  await expect(label).toContainText(
-    'Awaiting an approved display image and essay PDF.',
+  return label;
+}
+
+test('labels a gallery display with its manifest title and description', async ({
+  page,
+}) => {
+  const label = await walkToExhibitOne(page);
+  await expect(label.getByRole('heading')).toHaveText(essayTitle);
+  await expect(label).toContainText('An essay in Filipino');
+  await expect(page.locator('#interaction')).toHaveText(
+    'E / Click · View details',
   );
 
   await page.keyboard.press('Escape');
   await expect(label).toBeHidden();
+});
+
+test('opens exhibit details with the essay and resumes in place', async ({
+  page,
+}) => {
+  const label = await walkToExhibitOne(page);
+  const dialog = page.getByRole('dialog', { name: essayTitle });
+  const resume = page.getByRole('button', { name: 'Resume walk' });
+
+  await page.keyboard.press('e');
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('An essay in Filipino');
+  await expect(
+    dialog.getByRole('link', { name: 'Read the essay (PDF)' }),
+  ).toHaveAttribute('href', '/essays/doraemon-filipino.pdf');
+  await expect
+    .poll(() =>
+      dialog
+        .getByRole('img', { name: essayTitle })
+        .evaluate((image) => (image as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => document.pointerLockElement === null)).toBe(
+    true,
+  );
+  await expect(page.locator('#crosshair')).toBeHidden();
+
+  // Movement keys do nothing while the details are open.
+  await page.keyboard.down('s');
+  await page.waitForTimeout(500);
+  await page.keyboard.up('s');
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(resume).toBeFocused();
+
+  await resume.click();
+  await expect(page.locator('#crosshair')).toBeVisible();
+  await expect(label.getByRole('heading')).toHaveText(essayTitle);
 });
