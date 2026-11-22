@@ -11,17 +11,21 @@ test('draws the preview in WebGL and resizes the canvas', async ({ page }) => {
   await expect(canvas).toHaveAttribute('data-exhibit-count', '12');
   await expect(page.getByRole('status')).toBeHidden();
 
-  const width = await canvas.evaluate((element) => {
-    if (!(element instanceof HTMLCanvasElement))
-      throw new Error('Expected a canvas');
-    const gl = element.getContext('webgl2');
-    if (!gl || gl.isContextLost())
-      throw new Error('Expected a live WebGL 2 context');
-    const program = gl.getParameter(gl.CURRENT_PROGRAM);
-    if (!program)
-      throw new Error('Expected the renderer to have used a shader program');
-    return element.width;
-  });
+  await expect
+    .poll(() =>
+      canvas.evaluate((element) => {
+        if (!(element instanceof HTMLCanvasElement)) return false;
+        const gl = element.getContext('webgl2');
+        return Boolean(
+          gl && !gl.isContextLost() && gl.getParameter(gl.CURRENT_PROGRAM),
+        );
+      }),
+    )
+    .toBe(true);
+
+  const width = await canvas.evaluate(
+    (element) => (element as HTMLCanvasElement).width,
+  );
   await page.setViewportSize({ width: 450, height: 720 });
   await expect
     .poll(() =>

@@ -10,7 +10,9 @@ export default defineConfig({
       name: 'chromium',
       use: {
         browserName: 'chromium',
-        launchOptions: { args: ['--enable-unsafe-swiftshader'] },
+        launchOptions: {
+          args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+        },
       },
     },
     { name: 'firefox', use: { browserName: 'firefox' } },
