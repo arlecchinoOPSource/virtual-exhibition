@@ -46,9 +46,30 @@
         <img alt="" hidden />
         <p></p>
         <div class="details-actions">
-          <a target="_blank" rel="noopener" hidden>Read the essay (PDF)</a>
-          <button type="button">Close</button>
+          <button type="button" data-essay hidden>Read the essay</button>
+          <button type="button" data-close>Close</button>
         </div>
+      </dialog>
+      <dialog id="essay-viewer" aria-labelledby="viewer-title">
+        <div class="viewer-bar">
+          <h2 id="viewer-title"></h2>
+          <div class="viewer-tools">
+            <button type="button" data-zoom="-1" aria-label="Zoom out">
+              −
+            </button>
+            <output aria-live="polite">100%</output>
+            <button type="button" data-zoom="1" aria-label="Zoom in">+</button>
+            <a target="_blank" rel="noopener">Open PDF file</a>
+            <button type="button" data-close>Close</button>
+          </div>
+        </div>
+        <p class="viewer-status" role="status"></p>
+        <div
+          class="viewer-pages"
+          tabindex="0"
+          role="region"
+          aria-label="Essay pages. Use the arrow keys to scroll and plus or minus to zoom."
+        ></div>
       </dialog>
       <noscript>Enable JavaScript to load the 3D preview.</noscript>
     </main>

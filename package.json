@@ -18,6 +18,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "pdfjs-dist": "^5.7.284",
     "three": "^0.187.0"
   },
   "devDependencies": {
