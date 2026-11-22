@@ -46,17 +46,19 @@ test('shows an accessible error when the manifest fails', async ({ page }) => {
   );
 });
 
-test('shows an accessible error when the gallery model fails', async ({
-  page,
-}) => {
-  await page.route('**/models/gallery.glb', (route) =>
-    route.fulfill({ status: 404 }),
-  );
-  await page.goto('/');
-  await expect(page.getByRole('status')).toContainText(
-    'Could not load the preview.',
-  );
-});
+for (const model of ['gallery', 'frame']) {
+  test(`shows an accessible error when the ${model} model fails`, async ({
+    page,
+  }) => {
+    await page.route(`**/models/${model}.glb`, (route) =>
+      route.fulfill({ status: 404 }),
+    );
+    await page.goto('/');
+    await expect(page.getByRole('status')).toContainText(
+      'Could not load the preview.',
+    );
+  });
+}
 
 test('pauses frame rendering while hidden and preserves the view on resume', async ({
   page,

@@ -256,6 +256,30 @@ box(
 )
 
 
+def join(name, prefixes, collection):
+    """Merge same-material render boxes into one mesh to cut draw calls."""
+    objs = [o for o in collections[collection].objects if o.name.startswith(prefixes)]
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in objs:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.object.join()
+    joined = bpy.context.view_layer.objects.active
+    joined.name = name
+    joined.data.name = name
+
+
+# COL_ proxies stay separate: the engine needs one box per collider.
+join("Gallery_Walls", ("Wall_", "Pier_"), "Gallery_Render")
+join("Gallery_Displays", ("Island_", "Partition_"), "Gallery_Render")
+join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
+join(
+    "Frame_Moulding",
+    ("Frame_Top", "Frame_Bottom", "Frame_Left", "Frame_Right"),
+    "Frame_Display",
+)
+
+
 def export(path, collection_names):
     bpy.ops.object.select_all(action="DESELECT")
     for name in collection_names:
