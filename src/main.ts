@@ -1,5 +1,7 @@
 import './style.css';
 import { startRenderer } from './core/renderer';
+import { loadGallery } from './environments/gallery';
+import { createGreybox } from './environments/greybox';
 import { loadExhibits } from './exhibition/manifest';
 
 async function start() {
@@ -25,7 +27,13 @@ async function start() {
 
   try {
     const exhibits = await loadExhibits();
+    // The greybox stays available as a traversal and interaction test room.
+    const useGreybox =
+      new URLSearchParams(location.search).get('env') === 'greybox';
+    const world = useGreybox ? createGreybox() : await loadGallery();
+    canvas.dataset.environment = useGreybox ? 'greybox' : 'gallery';
     const dispose = startRenderer(
+      world,
       canvas,
       overlay,
       startButton,

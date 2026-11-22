@@ -18,7 +18,8 @@ export function bindControls(
   let active = false;
   let requested = false;
   let pitch = 0;
-  let yaw = 0;
+  // Start from the spawn heading the renderer set on the camera.
+  let yaw = camera.rotation.y;
 
   function pause() {
     const wasActive = active;
