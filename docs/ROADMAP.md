@@ -1,6 +1,6 @@
 # Roadmap
 
-Project Foundation is the current implementation scope. Milestone 2 starts after explicit approval.
+Project Foundation and the First-Person Engine are complete. Main Gallery is the next implementation scope and starts after the blockout layout is approved.
 
 The performance targets are 60 FPS on desktop, 30 FPS on mobile, and approximately 10–20 MB for the initial gallery download. Load additional environments and PDFs on demand. Validate these targets on representative hardware and keep individual production assets within the hosting limit.
 

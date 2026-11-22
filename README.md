@@ -37,7 +37,7 @@ Open the URL Vite prints. Run `npm run test:e2e -- --headed` for the native poin
 - Strict TypeScript, Three.js, and Vite with vanilla HTML and CSS.
 - Blender source files live in `assets-source/`. Optimized GLB assets and approved public content live in `public/`.
 - `public/data/exhibits.json` is the source of truth for exhibit content and anchor assignments.
-- `src/` contains the render preview, app bootstrap, manifest validation, types, and styles. Player, environment, audio, and UI modules will get their own directories as their features land.
+- `src/` contains the app bootstrap and styles plus the `core` renderer, `player` controls and collision, `environments` greybox, `exhibition` manifest validation, and `types` modules. Audio and UI modules will get their own directories as their features land.
 - `tests/` contains Vitest and Playwright suites. GitHub Actions runs the lightweight Linux checks.
 - PDF.js is planned for the in-app viewer and Web Audio API for gesture-initiated environmental audio.
 
