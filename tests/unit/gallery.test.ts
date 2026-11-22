@@ -116,10 +116,24 @@ describe('display frames and gallery lights', () => {
     expect(bounds.min.z).toBeCloseTo(0);
     expect(bounds.max.z).toBeCloseTo(0.05);
     // A visitor faces the frame looking down -Z, so their top-left is -X, +Y.
-    const mark = frame.getObjectByName('Frame_TestMark');
-    const markCenter = new Box3().setFromObject(mark!).getCenter(new Vector3());
-    expect(markCenter.x).toBeLessThan(-0.4);
-    expect(markCenter.y).toBeGreaterThan(0.25);
+    // glTF UVs put (0, 0) at the image's top-left and (1, 1) at bottom-right.
+    const canvas = frame.getObjectByName('Frame_Canvas');
+    if (!(canvas instanceof Mesh)) throw new Error('Missing Frame_Canvas.');
+    const { position, uv } = canvas.geometry.attributes;
+    const corners = Array.from({ length: position.count }, (_, index) => ({
+      x: position.getX(index),
+      y: position.getY(index),
+      u: uv.getX(index),
+      v: uv.getY(index),
+    }));
+    const topLeft = corners.reduce((best, c) =>
+      c.y - c.x > best.y - best.x ? c : best,
+    );
+    const bottomRight = corners.reduce((best, c) =>
+      c.x - c.y > best.x - best.y ? c : best,
+    );
+    expect([topLeft.u, topLeft.v]).toEqual([0, 0]);
+    expect([bottomRight.u, bottomRight.v]).toEqual([1, 1]);
   });
 
   it('hangs one frame on each anchor', async () => {
@@ -127,7 +141,7 @@ describe('display frames and gallery lights', () => {
     for (const anchor of world.anchors) {
       const canvases: string[] = [];
       anchor.traverse((node) => {
-        if (node.name === 'Frame_TestCanvas') canvases.push(node.name);
+        if (node.name === 'Frame_Canvas') canvases.push(node.name);
       });
       expect(canvases, anchor.name).toHaveLength(1);
     }

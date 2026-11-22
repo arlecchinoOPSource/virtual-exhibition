@@ -16,7 +16,7 @@ A center-camera ray checks the first surface within three meters. Left click and
 
 ## Exhibit data and PDF state
 
-The manifest pairs each exhibit with a named scene anchor and supplies its title, description, publication status, optional image, and optional PDF. The runtime validates all 12 anchors, statuses, and local asset paths. Load display content independently of the Blender geometry. Render manifest text as text in DOM elements.
+The manifest pairs each exhibit with a named scene anchor and supplies its title, description, publication status, optional image, and optional PDF. The runtime validates all 12 anchors, statuses, and local asset paths. Load display content independently of the Blender geometry: each entry paints the `Frame_Canvas` of the frame at its anchor, and every anchor must receive exactly one entry. Ready entries load their image. Placeholder and awaiting entries show a blank grey canvas until placeholder art is approved. Canvas textures use glTF UV orientation, so they are not flipped. Render manifest text as text in DOM elements: the center ray shows the targeted display title and description in a polite live region.
 
 The future PDF viewer will be a modal overlay loaded on demand with a PDF.js worker. Opening it disables movement, clears held input, and releases pointer lock. Leave the player transform and camera orientation intact. Trap and restore focus, offer keyboard-accessible scroll and zoom, and require a visitor gesture to resume pointer lock. Handle failed document requests and cancel active rendering when the viewer closes. Keep the 2D directory usable without WebGL.
 

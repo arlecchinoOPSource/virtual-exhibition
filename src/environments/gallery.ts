@@ -11,6 +11,9 @@ import {
 } from 'three';
 import type { BufferGeometry, Material, Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { hangExhibits } from '../exhibition/displays';
+import { paintExhibit } from '../exhibition/placeholder';
+import type { Exhibit } from '../types/exhibit';
 
 const anchorNames = Array.from(
   { length: 12 },
@@ -83,12 +86,21 @@ export function createGallery(root: Object3D, frame: Object3D) {
   };
 }
 
-export async function loadGallery() {
+export async function loadGallery(exhibits: readonly Exhibit[]) {
   const loader = new GLTFLoader();
   const models = `${import.meta.env.BASE_URL}models`;
   const [gallery, frame] = await Promise.all([
     loader.loadAsync(`${models}/gallery.glb`),
     loader.loadAsync(`${models}/frame.glb`),
   ]);
-  return createGallery(gallery.scene, frame.scene);
+  const world = createGallery(gallery.scene, frame.scene);
+  const displays = hangExhibits(world.anchors, exhibits, paintExhibit);
+  return {
+    ...world,
+    exhibitAt: displays.exhibitAt,
+    dispose() {
+      displays.dispose();
+      world.dispose();
+    },
+  };
 }
