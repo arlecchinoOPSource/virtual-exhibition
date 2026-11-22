@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Virtual Exhibition</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Virtual Exhibition</h1>
+        <p>3D rendering preview</p>
+      </header>
+      <section id="viewport" aria-label="3D preview">
+        <canvas
+          id="scene"
+          role="img"
+          aria-label="Illuminated geometric shapes on a floor"
+        >
+          This preview requires a browser with canvas and WebGL 2 support.
+        </canvas>
+        <p id="status" role="status">Loading the 3D preview…</p>
+      </section>
+      <noscript>Enable JavaScript to load the 3D preview.</noscript>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
