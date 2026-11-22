@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exhibition directory · Virtual Exhibition</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Exhibition directory</h1>
+        <p>
+          Every display and essay without the 3D walk.
+          <a href="./">Return to the 3D gallery</a>
+        </p>
+      </header>
+      <p id="status" role="status">Loading the exhibits…</p>
+      <ol id="exhibits" class="directory" aria-label="Exhibits"></ol>
+      <dialog id="essay-viewer" aria-labelledby="viewer-title">
+        <div class="viewer-bar">
+          <h2 id="viewer-title"></h2>
+          <div class="viewer-tools">
+            <button type="button" data-zoom="-1" aria-label="Zoom out">
+              −
+            </button>
+            <output aria-live="polite">100%</output>
+            <button type="button" data-zoom="1" aria-label="Zoom in">+</button>
+            <a target="_blank" rel="noopener">Open PDF file</a>
+            <button type="button" data-close>Close</button>
+          </div>
+        </div>
+        <p class="viewer-status" role="status"></p>
+        <div
+          class="viewer-pages"
+          tabindex="0"
+          role="region"
+          aria-label="Essay pages. Use the arrow keys to scroll and plus or minus to zoom."
+        ></div>
+      </dialog>
+    </main>
+    <noscript>Enable JavaScript to load the exhibition directory.</noscript>
+    <script type="module" src="/src/directory.ts"></script>
+  </body>
+</html>
