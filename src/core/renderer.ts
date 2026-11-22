@@ -35,6 +35,7 @@ export function startRenderer(
   prompt: HTMLElement,
   label: HTMLElement,
   openExhibit: (exhibit: Exhibit) => void,
+  onFrame?: (feet: Vector3) => void,
 ) {
   const renderer = new WebGLRenderer({ canvas, antialias: true });
   const camera = new PerspectiveCamera(60, 1, 0.05, 40);
@@ -137,6 +138,7 @@ export function startRenderer(
       camera.position.y += EYE_HEIGHT;
       updatePrompt();
     }
+    onFrame?.(body.feet);
     renderer.render(world.scene, camera);
   }
 
