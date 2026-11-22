@@ -1,5 +1,14 @@
-import { readFile } from 'node:fs/promises';
-import { Box3, Euler, Group, Quaternion, SpotLight, Vector3 } from 'three';
+import { readFile, stat } from 'node:fs/promises';
+import {
+  Box3,
+  Euler,
+  Group,
+  Mesh,
+  Quaternion,
+  SpotLight,
+  Texture,
+  Vector3,
+} from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { createGallery } from '../../src/environments/gallery';
@@ -152,5 +161,48 @@ describe('display frames and gallery lights', () => {
       expect(aimed, anchor.name).toHaveLength(1);
     }
     world.dispose();
+  });
+});
+
+describe('gallery export budget', () => {
+  it('keeps both models within the gallery transfer budget', async () => {
+    const sizes = await Promise.all(
+      ['gallery', 'frame'].map(
+        async (name) => (await stat(`public/models/${name}.glb`)).size,
+      ),
+    );
+    // Budget: 5 MB of the 10–20 MB initial target, leaving room for artwork.
+    expect(sizes.reduce((sum, size) => sum + size, 0)).toBeLessThan(5e6);
+  });
+
+  it('keeps draw calls low and textures within 2048 px', async () => {
+    const world = await loadWorld();
+    let drawCalls = 0;
+    world.scene.traverseVisible((node) => {
+      if (!(node instanceof Mesh)) return;
+      drawCalls++;
+      for (const value of Object.values(node.material)) {
+        if (!(value instanceof Texture)) continue;
+        const { width = 0, height = 0 } = value.image ?? {};
+        expect(Math.max(width, height)).toBeLessThanOrEqual(2048);
+      }
+    });
+    expect(drawCalls).toBeLessThanOrEqual(50);
+    world.dispose();
+  });
+
+  it('exports axis-aligned COL_ proxies so their bounds stay tight', async () => {
+    const root = await parseModel('gallery');
+    root.updateMatrixWorld(true);
+    const proxies: Mesh[] = [];
+    root.traverse((node) => {
+      if (node instanceof Mesh && node.name.startsWith('COL_'))
+        proxies.push(node);
+    });
+    expect(proxies.length).toBeGreaterThan(0);
+    for (const proxy of proxies) {
+      const rotation = proxy.getWorldQuaternion(new Quaternion());
+      expect(rotation.angleTo(new Quaternion()), proxy.name).toBeLessThan(1e-6);
+    }
   });
 });
