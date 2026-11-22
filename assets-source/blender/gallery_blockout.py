@@ -356,8 +356,147 @@ for step in range(STEPS):
 box("Landing_Lower", LOWER_X, END_X, -0.8, 0.8, BOTTOM - 0.2, BOTTOM, CONCRETE, **BASEMENT)
 for side, y0, y1 in (("North", 0.8, 1.0), ("South", -1.0, -0.8)):
     box(f"Stairwell_Wall_{side}", 10 + WALL, END_X, y0, y1, BOTTOM, HEIGHT, PLASTER, **BASEMENT)
-box("Stairwell_Wall_End", END_X, END_X + WALL, -1.0, 1.0, BOTTOM, HEIGHT, PLASTER, **BASEMENT)
-box("Stairwell_Ceiling", 10 + WALL, END_X + WALL, -1.0, 1.0, HEIGHT, HEIGHT + WALL, PLASTER, collide=False, collection="Basement_Render")
+box("Stairwell_Ceiling", 10 + WALL, END_X, -1.0, 1.0, HEIGHT, HEIGHT + WALL, PLASTER, collide=False, collection="Basement_Render")
+
+
+# The basement room: weathered concrete, damaged plaster, BLACK METAL graffiti,
+# a wooden throne, an iron candle stand, and a bare bulb. Every mesh, letter,
+# and texture colour here is original.
+ROOM_X0, ROOM_X1, ROOM_Y, ROOM_H = END_X, END_X + 8, 4.0, 2.8
+TOP = BOTTOM + ROOM_H
+BRICK = material("Basement_Brick", (0.2, 0.07, 0.04), 0.95)
+STAIN = material("Basement_Stain", (0.05, 0.045, 0.04), 1.0)
+PAINT = material("Graffiti_Paint", (0.8, 0.79, 0.76), 0.85)
+OAK = material("Throne_Wood", (0.13, 0.06, 0.025), 0.75)
+WAX = material("Candle_Wax", (0.85, 0.8, 0.65), 0.6)
+
+
+def glow(name, rgb, strength):
+    mat = material(name, rgb, 0.4)
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Emission Color"].default_value = (*rgb, 1.0)
+    bsdf.inputs["Emission Strength"].default_value = strength
+    return mat
+
+
+FLAME = glow("Candle_Flame", (1.0, 0.55, 0.15), 6)
+FILAMENT = glow("Bulb_Glass", (1.0, 0.85, 0.6), 8)
+
+
+def point_light(name, x, y, z, energy, rgb):
+    data = bpy.data.lights.new(name, "POINT")
+    data.energy = energy
+    data.color = rgb
+    data.shadow_soft_size = 0.05
+    light = bpy.data.objects.new(name, data)
+    light.location = (x, y, z)
+    collections["Basement_Render"].objects.link(light)
+
+
+def prop(name, x0, x1, y0, y1, z0, z1, mat):
+    box(name, x0, x1, y0, y1, z0, z1, mat, collide=False, collection="Basement_Render")
+
+
+def solid(name, x0, x1, y0, y1, z0, z1):
+    proxy = bpy.data.objects.new(name, box_mesh(name, (x1 - x0, y1 - y0, z1 - z0)))
+    proxy.location = ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
+    proxy.display_type = "WIRE"
+    collections["Basement_Collision"].objects.link(proxy)
+
+
+# Shell: floor, ceiling, and four walls, with a doorway from the stairwell.
+box("Room_Floor", ROOM_X0, ROOM_X1, -ROOM_Y, ROOM_Y, BOTTOM - 0.2, BOTTOM, CONCRETE, **BASEMENT)
+box("Room_Ceiling", ROOM_X0, ROOM_X1, -ROOM_Y, ROOM_Y, TOP, TOP + WALL, CONCRETE, collide=False, collection="Basement_Render")
+box("Room_Wall_North", ROOM_X0, ROOM_X1, ROOM_Y, ROOM_Y + WALL, BOTTOM, TOP, PLASTER, **BASEMENT)
+box("Room_Wall_South", ROOM_X0, ROOM_X1, -ROOM_Y - WALL, -ROOM_Y, BOTTOM, TOP, PLASTER, **BASEMENT)
+box("Room_Wall_East", ROOM_X1, ROOM_X1 + WALL, -ROOM_Y, ROOM_Y, BOTTOM, TOP, PLASTER, **BASEMENT)
+box("Room_Wall_West_North", ROOM_X0, ROOM_X0 + WALL, 0.8, ROOM_Y, BOTTOM, TOP, PLASTER, **BASEMENT)
+box("Room_Wall_West_South", ROOM_X0, ROOM_X0 + WALL, -ROOM_Y, -0.8, BOTTOM, TOP, PLASTER, **BASEMENT)
+box("Room_Wall_West_Lintel", ROOM_X0, ROOM_X0 + WALL, -1.0, 1.0, BOTTOM + 2.2, HEIGHT, PLASTER, collide=False, collection="Basement_Render")
+
+# Weathering: brick showing through broken plaster, and floor stains.
+for index, (x0, x1, z0, z1, side) in enumerate((
+    (20.0, 21.1, -2.2, -1.5, 1), (23.4, 24.2, -1.4, -0.7, 1), (21.6, 22.8, -2.7, -2.1, -1),
+    (25.0, 26.2, -1.9, -1.1, -1),
+)):
+    y = (ROOM_Y - 0.01) * side
+    prop(f"Plaster_Damage_{index:02}", x0, x1, min(y, y - 0.02 * side), max(y, y - 0.02 * side), z0, z1, BRICK)
+for index, (x, y, size) in enumerate(((21.2, 1.6, 1.3), (24.6, -1.8, 1.8), (22.4, -0.4, 0.8))):
+    prop(f"Floor_Stain_{index:02}", x - size / 2, x + size / 2, y - size / 3, y + size / 3, BOTTOM, BOTTOM + 0.004, STAIN)
+
+# Handwritten-style graffiti: sheared Blender-font lettering on the east wall.
+graffiti_curve = bpy.data.curves.new("Graffiti_Black_Metal", "FONT")
+graffiti_curve.body = "BLACK METAL"
+graffiti_curve.size = 0.34
+graffiti_curve.shear = 0.3
+graffiti_curve.extrude = 0.004
+graffiti_curve.align_x = "CENTER"
+graffiti_curve.align_y = "CENTER"
+graffiti_obj = bpy.data.objects.new("Graffiti_Black_Metal_Text", graffiti_curve)
+scene.collection.objects.link(graffiti_obj)
+graffiti_obj.location = (ROOM_X1 - 0.008, 0.2, BOTTOM + 2.5)
+graffiti_obj.rotation_euler = (math.pi / 2, -0.06, -math.pi / 2)
+bpy.context.view_layer.update()
+graffiti_mesh = bpy.data.meshes.new_from_object(
+    graffiti_obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
+)
+graffiti_mesh.materials.clear()
+graffiti_mesh.materials.append(PAINT)
+graffiti = bpy.data.objects.new("Graffiti_Black_Metal", graffiti_mesh)
+graffiti.matrix_world = graffiti_obj.matrix_world
+graffiti["text"] = graffiti_curve.body
+collections["Basement_Render"].objects.link(graffiti)
+bpy.data.objects.remove(graffiti_obj)
+
+# Wooden throne against the east wall, facing the doorway.
+tx, ty = ROOM_X1 - 0.75, 0.0
+prop("Throne_Seat", tx - 0.35, tx + 0.35, ty - 0.4, ty + 0.4, BOTTOM + 0.45, BOTTOM + 0.55, OAK)
+prop("Throne_Back", tx + 0.25, tx + 0.35, ty - 0.4, ty + 0.4, BOTTOM + 0.55, BOTTOM + 2.0, OAK)
+for side in (-1, 1):
+    prop(f"Throne_Arm_{'N' if side > 0 else 'S'}", tx - 0.35, tx + 0.25, ty + side * 0.4 - 0.05, ty + side * 0.4 + 0.05, BOTTOM + 0.75, BOTTOM + 0.85, OAK)
+    for ex in (-0.3, 0.3):
+        prop(f"Throne_Leg_{side}_{ex}", tx + ex - 0.05, tx + ex + 0.05, ty + side * 0.35 - 0.05, ty + side * 0.35 + 0.05, BOTTOM, BOTTOM + 0.85, OAK)
+for index, offset in enumerate((-0.3, 0, 0.3)):
+    prop(f"Throne_Spire_{index}", tx + 0.26, tx + 0.34, ty + offset - 0.04, ty + offset + 0.04, BOTTOM + 2.0, BOTTOM + 2.25 + 0.1 * (offset == 0), OAK)
+solid("COL_Throne", tx - 0.4, tx + 0.4, ty - 0.5, ty + 0.5, BOTTOM, BOTTOM + 2.3)
+
+# Iron candle stand with five candles and a warm point light.
+cx, cy = ROOM_X1 - 2.2, 2.6
+bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.22, depth=0.04, location=(cx, cy, BOTTOM + 0.02))
+stand_parts = [bpy.context.active_object]
+bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.025, depth=1.3, location=(cx, cy, BOTTOM + 0.67))
+stand_parts.append(bpy.context.active_object)
+bpy.ops.mesh.primitive_torus_add(major_radius=0.2, minor_radius=0.015, location=(cx, cy, BOTTOM + 1.32))
+stand_parts.append(bpy.context.active_object)
+for index, obj in enumerate(stand_parts):
+    obj.name = f"Candle_Stand_{index}"
+    obj.data.materials.append(IRON)
+    for owner in obj.users_collection:
+        owner.objects.unlink(obj)
+    collections["Basement_Render"].objects.link(obj)
+for index in range(5):
+    angle = index * 2 * math.pi / 5
+    x, y = cx + 0.2 * math.cos(angle), cy + 0.2 * math.sin(angle)
+    prop(f"Candle_Wax_{index}", x - 0.02, x + 0.02, y - 0.02, y + 0.02, BOTTOM + 1.33, BOTTOM + 1.45 + 0.03 * (index % 2), WAX)
+    prop(f"Candle_Flame_{index}", x - 0.008, x + 0.008, y - 0.008, y + 0.008, BOTTOM + 1.46 + 0.03 * (index % 2), BOTTOM + 1.5 + 0.03 * (index % 2), FLAME)
+point_light("Light_Basement_Candles", cx, cy, BOTTOM + 1.6, 1.6, (1.0, 0.6, 0.3))
+solid("COL_Candle_Stand", cx - 0.25, cx + 0.25, cy - 0.25, cy + 0.25, BOTTOM, BOTTOM + 1.5)
+
+# Bare bulbs on cords: one over the room and one over the stairs.
+for name, x, y, ceiling, drop, energy in (
+    ("Room", 22.6, 0.0, TOP, 0.7, 5.0),
+    ("Stairs", STAIR_X + 2.4, 0.0, HEIGHT, 1.2, 4.0),
+):
+    bulb_z = ceiling - drop
+    prop(f"Bulb_Cord_{name}", x - 0.005, x + 0.005, y - 0.005, y + 0.005, bulb_z + 0.06, ceiling, IRON)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.05, location=(x, y, bulb_z))
+    bulb = bpy.context.active_object
+    bulb.name = f"Bulb_{name}"
+    bulb.data.materials.append(FILAMENT)
+    for owner in bulb.users_collection:
+        owner.objects.unlink(bulb)
+    collections["Basement_Render"].objects.link(bulb)
+    point_light(f"Light_Basement_Bulb_{name}", x, y, bulb_z - 0.08, energy, (1.0, 0.82, 0.55))
 
 
 def join(name, prefixes, collection):
@@ -380,7 +519,14 @@ join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Sign_Board", "Sign_Spike_", "Statue_Plinth"), "Gallery_Render")
 join("Statue_Cloak", ("Statue_Robe", "Statue_Hood"), "Gallery_Render")
 join("Basement_Steps", ("Landing_", "Stair_"), "Basement_Render")
-join("Basement_Walls", ("Stairwell_",), "Basement_Render")
+join("Basement_Walls", ("Stairwell_", "Room_Wall_"), "Basement_Render")
+join("Basement_Shell", ("Room_Floor", "Room_Ceiling"), "Basement_Render")
+join("Basement_Weathering", ("Plaster_Damage_",), "Basement_Render")
+join("Basement_Stains", ("Floor_Stain_",), "Basement_Render")
+join("Basement_Throne", ("Throne_",), "Basement_Render")
+join("Basement_Candle_Stand", ("Candle_Stand_", "Bulb_Cord_"), "Basement_Render")
+join("Basement_Candles", ("Candle_Wax_",), "Basement_Render")
+join("Basement_Flames", ("Candle_Flame_",), "Basement_Render")
 join(
     "Frame_Moulding",
     ("Frame_Top", "Frame_Bottom", "Frame_Left", "Frame_Right"),

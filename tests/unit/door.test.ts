@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { Box3, Vector3 } from 'three';
+import { Box3, HemisphereLight, PointLight, Vector3 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it, vi } from 'vitest';
 import { createGallery } from '../../src/environments/gallery';
@@ -115,4 +115,71 @@ describe('basement stairs', () => {
       world.dispose();
     },
   );
+});
+
+describe('basement room', () => {
+  async function openBasement() {
+    const world = await loadWorld();
+    await world.door.toggle(outside);
+    world.scene.updateMatrixWorld(true);
+    return world;
+  }
+
+  it('furnishes the room with the specified original props and lights', async () => {
+    const world = await openBasement();
+    const find = (name: string) => world.scene.getObjectByName(name);
+    for (const name of [
+      'Basement_Throne',
+      'Basement_Candle_Stand',
+      'Basement_Candles',
+      'Bulb_Room',
+      'Bulb_Stairs',
+      'Basement_Weathering',
+    ])
+      expect(find(name), name).toBeDefined();
+    const graffiti = find('Graffiti_Black_Metal');
+    expect(graffiti?.userData.text).toBe('BLACK METAL');
+    // Painted on the east wall, facing back toward the doorway.
+    const bounds = new Box3().setFromObject(graffiti!);
+    expect(bounds.max.x).toBeLessThanOrEqual(27);
+    expect(bounds.min.x).toBeGreaterThan(26.9);
+    const lights: string[] = [];
+    world.scene.traverse((node) => {
+      if (node instanceof PointLight) lights.push(node.name);
+    });
+    expect(lights.sort()).toEqual([
+      'Light_Basement_Bulb_Room',
+      'Light_Basement_Bulb_Stairs',
+      'Light_Basement_Candles',
+    ]);
+    world.dispose();
+  });
+
+  it('lets a visitor cross the room until the throne stops them', async () => {
+    const world = await openBasement();
+    const body = {
+      feet: new Vector3(17.5, -3.06, 0),
+      grounded: true,
+      fallSpeed: 0,
+    };
+    for (let frame = 0; frame < 600; frame++)
+      stepBody(body, 3.2 / 120, 0, 1 / 120, world.solids);
+    expect(body.feet.x).toBeCloseTo(25.61, 1);
+    expect(body.feet.y).toBeCloseTo(-3.06, 1);
+    world.dispose();
+  });
+
+  it('fades daylight below ground and restores it upstairs', async () => {
+    const world = await openBasement();
+    let sky: HemisphereLight | undefined;
+    world.scene.traverse((node) => {
+      if (node instanceof HemisphereLight) sky = node;
+    });
+    for (let t = 0; t < 4; t += 1 / 60)
+      world.update(1 / 60, new Vector3(22, -3.06, 0));
+    expect(sky?.intensity).toBeLessThan(0.3);
+    for (let t = 0; t < 4; t += 1 / 60) world.update(1 / 60, outside);
+    expect(sky?.intensity).toBeGreaterThan(1.3);
+    world.dispose();
+  });
 });
