@@ -90,9 +90,10 @@ describe('gallery blockout', () => {
     body.feet.z = 2.5;
     walk(0.025, 0);
     expect(body.feet.x).toBeCloseTo(9.76, 1);
+    // The closed basement door stops the visitor in the doorway.
     body.feet.z = 0;
     walk(0.025, 0);
-    expect(body.feet.x).toBeCloseTo(9.96, 1);
+    expect(body.feet.x).toBeCloseTo(9.83, 1);
     expect(body.feet.y).toBeCloseTo(0);
     world.dispose();
   });
@@ -218,5 +219,51 @@ describe('gallery export budget', () => {
       const rotation = proxy.getWorldQuaternion(new Quaternion());
       expect(rotation.angleTo(new Quaternion()), proxy.name).toBeLessThan(1e-6);
     }
+  });
+});
+
+describe('basement entrance', () => {
+  it('hangs the door on its hinge with a separate collider over the opening', async () => {
+    const root = await parseModel('gallery');
+    root.updateMatrixWorld(true);
+    const hinge = root.getObjectByName('Door_Basement_Hinge');
+    const door = hinge?.getObjectByName('Door_Basement');
+    expect(door?.parent).toBe(hinge);
+    const collider = root.getObjectByName('COL_Door_Basement');
+    if (!collider) throw new Error('Missing COL_Door_Basement.');
+    const bounds = new Box3().setFromObject(collider);
+    expect(bounds.min.z).toBeCloseTo(-0.8);
+    expect(bounds.max.z).toBeCloseTo(0.8);
+    expect(bounds.max.y).toBeCloseTo(2.4);
+    // The hinge sits on the opening's north jamb (Three.js -Z).
+    expect(hinge?.getWorldPosition(new Vector3()).z).toBeCloseTo(-0.8);
+  });
+
+  it('labels the sign BASEMENT OF DOOM facing the gallery', async () => {
+    const root = await parseModel('gallery');
+    root.updateMatrixWorld(true);
+    const sign = root.getObjectByName('Sign_Basement');
+    if (!sign) throw new Error('Missing Sign_Basement.');
+    expect(sign.userData.text).toBe('BASEMENT OF DOOM');
+    const bounds = new Box3().setFromObject(sign);
+    expect(bounds.max.x).toBeLessThanOrEqual(10);
+    expect(bounds.min.y).toBeGreaterThan(2.4);
+    expect(bounds.getCenter(new Vector3()).z).toBeCloseTo(0, 1);
+  });
+
+  it('keeps the statue clear of the walkway and the route to the door', async () => {
+    const world = await loadWorld();
+    const statue = world.scene.getObjectByName('COL_Statue');
+    if (!statue) throw new Error('Missing COL_Statue.');
+    expect(new Box3().setFromObject(statue).min.z).toBeGreaterThan(3);
+    const body = {
+      feet: new Vector3(9, 0, 2.5),
+      grounded: true,
+      fallSpeed: 0,
+    };
+    for (let count = 0; count < 100; count++)
+      stepBody(body, 0, -0.025, 1 / 120, world.solids);
+    expect(body.feet.z).toBeCloseTo(0, 1);
+    world.dispose();
   });
 });
