@@ -296,3 +296,83 @@ header p {
   margin: 1rem auto;
   box-shadow: 0 2px 12px rgb(0 0 0 / 40%);
 }
+
+header a {
+  color: #e7edf1;
+}
+
+main > #status {
+  position: static;
+  display: block;
+  padding: 0;
+  text-align: left;
+}
+
+main > #status[hidden] {
+  display: none;
+}
+
+.directory {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.directory article {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 1rem;
+  border: 1px solid #52616c;
+  border-radius: 0.5rem;
+  background: #202831;
+}
+
+.directory h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.directory-slot {
+  margin: 0 0 0.25rem;
+  color: #bdc8cf;
+  font-size: 0.85rem;
+}
+
+.directory img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.25rem;
+}
+
+.directory p {
+  color: #bdc8cf;
+}
+
+.directory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.directory-actions button,
+.directory-actions a {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #e7edf1;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: #e7edf1;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.directory-actions button {
+  background: #e7edf1;
+  color: #15191c;
+  font-weight: 600;
+}
