@@ -435,3 +435,31 @@ main > #status[hidden] {
 .menu-links a {
   color: #e7edf1;
 }
+
+#settings fieldset {
+  margin: 1rem 0 0;
+  padding: 0.5rem 0.75rem 0.75rem;
+  border: 1px solid #52616c;
+  border-radius: 0.25rem;
+}
+
+#settings legend {
+  padding: 0 0.25rem;
+}
+
+#settings output {
+  float: right;
+  color: #bdc8cf;
+}
+
+.setting-hint {
+  margin: 0.25rem 0 0.5rem;
+  color: #bdc8cf;
+  font-size: 0.85rem;
+}
+
+#settings .toggle {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}

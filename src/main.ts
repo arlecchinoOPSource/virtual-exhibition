@@ -60,16 +60,40 @@ async function start() {
     if (import.meta.hot) import.meta.hot.dispose(view.dispose);
 
     const settings = loadSettings();
-    const lookSpeed = document.querySelector<HTMLInputElement>('#look-speed');
-    view.setLookScale(settings.lookScale);
-    if (lookSpeed) {
-      lookSpeed.value = String(settings.lookScale);
-      lookSpeed.addEventListener('input', () => {
-        settings.lookScale = Number(lookSpeed.value);
-        view.setLookScale(settings.lookScale);
-        saveSettings(settings);
-      });
+    const input = (id: string) => document.querySelector<HTMLInputElement>(id);
+    const lookSpeed = input('#look-speed');
+    const resolution = input('#resolution');
+    const resolutionValue = document.querySelector('#resolution-value');
+    const spotlights = input('#spotlights');
+    // Every change applies immediately and is saved for the next visit.
+    function apply() {
+      view.setLookScale(settings.lookScale);
+      view.setResolution(settings.resolution);
+      view.setSpotlights(settings.spotlights);
+      const percent = `${Math.round(settings.resolution * 100)}%`;
+      if (resolutionValue) resolutionValue.textContent = percent;
+      resolution?.setAttribute('aria-valuetext', percent);
     }
+    function save() {
+      apply();
+      saveSettings(settings);
+    }
+    if (lookSpeed) lookSpeed.value = String(settings.lookScale);
+    if (resolution) resolution.value = String(settings.resolution);
+    if (spotlights) spotlights.checked = settings.spotlights;
+    apply();
+    lookSpeed?.addEventListener('input', () => {
+      settings.lookScale = Number(lookSpeed.value);
+      save();
+    });
+    resolution?.addEventListener('input', () => {
+      settings.resolution = Number(resolution.value);
+      save();
+    });
+    spotlights?.addEventListener('change', () => {
+      settings.spotlights = spotlights.checked;
+      save();
+    });
     canvas.dataset.exhibitCount = String(exhibits.length);
     status.hidden = true;
   } catch (error) {

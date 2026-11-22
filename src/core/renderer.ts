@@ -1,4 +1,4 @@
-import { PerspectiveCamera, WebGLRenderer } from 'three';
+import { PerspectiveCamera, SpotLight, WebGLRenderer } from 'three';
 import type { Box3, Object3D, Scene, Vector3 } from 'three';
 import { stepBody } from '../player/collision';
 import { bindControls } from '../player/controls';
@@ -109,11 +109,14 @@ export function startRenderer(
     },
   );
 
+  // Graphics settings: a fraction of the capped device pixel ratio.
+  let resolution = 1;
+
   function resize() {
     const { width, height } = canvas.getBoundingClientRect();
     if (width === 0 || height === 0) return;
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2) * resolution);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
@@ -158,6 +161,16 @@ export function startRenderer(
 
   return {
     setLookScale: controls.setLookScale,
+    setResolution(scale: number) {
+      resolution = scale;
+      resize();
+    },
+    // Spotlights are the main per-pixel lighting cost in the gallery.
+    setSpotlights(on: boolean) {
+      world.scene.traverse((node) => {
+        if (node instanceof SpotLight) node.visible = on;
+      });
+    },
     dispose() {
       controls.dispose();
       renderer.setAnimationLoop(null);
