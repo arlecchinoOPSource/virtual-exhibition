@@ -5,6 +5,7 @@ import { createGreybox } from './environments/greybox';
 import { loadExhibits } from './exhibition/manifest';
 import { createDetails } from './ui/details';
 import { createViewer } from './ui/viewer';
+import { loadSettings, saveSettings } from './ui/settings';
 
 async function start() {
   const canvas = document.querySelector<HTMLCanvasElement>('#scene');
@@ -40,7 +41,7 @@ async function start() {
       new URLSearchParams(location.search).get('env') === 'greybox';
     const world = useGreybox ? createGreybox() : await loadGallery(exhibits);
     canvas.dataset.environment = useGreybox ? 'greybox' : 'gallery';
-    const dispose = startRenderer(
+    const view = startRenderer(
       world,
       canvas,
       overlay,
@@ -56,7 +57,19 @@ async function start() {
         createViewer(viewer).open,
       ).open,
     );
-    if (import.meta.hot) import.meta.hot.dispose(dispose);
+    if (import.meta.hot) import.meta.hot.dispose(view.dispose);
+
+    const settings = loadSettings();
+    const lookSpeed = document.querySelector<HTMLInputElement>('#look-speed');
+    view.setLookScale(settings.lookScale);
+    if (lookSpeed) {
+      lookSpeed.value = String(settings.lookScale);
+      lookSpeed.addEventListener('input', () => {
+        settings.lookScale = Number(lookSpeed.value);
+        view.setLookScale(settings.lookScale);
+        saveSettings(settings);
+      });
+    }
     canvas.dataset.exhibitCount = String(exhibits.length);
     status.hidden = true;
   } catch (error) {

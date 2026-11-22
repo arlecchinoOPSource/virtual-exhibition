@@ -23,7 +23,21 @@
           This preview requires a browser with canvas and WebGL 2 support.
         </canvas>
         <div id="controls" hidden>
-          <div class="control-panel">
+          <div class="control-panel" role="group" aria-labelledby="menu-title">
+            <h2 id="menu-title">
+              <span data-when="intro">Explore the exhibition</span>
+              <span data-when="paused">Paused</span>
+            </h2>
+            <dl class="control-list" aria-label="Controls">
+              <dt>W A S D</dt>
+              <dd>Move</dd>
+              <dt>Mouse or arrow keys</dt>
+              <dd>Look around</dd>
+              <dt>E or left click</dt>
+              <dd>View a display or open the basement door</dd>
+              <dt>Esc</dt>
+              <dd>Pause and show this menu</dd>
+            </dl>
             <button
               id="start-walk"
               type="button"
@@ -32,7 +46,23 @@
               Start walk
             </button>
             <p id="instructions" aria-live="polite">
-              WASD to move · Mouse to look · Esc to pause
+              WASD to move · Mouse or arrow keys to look · Esc to pause
+            </p>
+            <details id="settings">
+              <summary>Settings</summary>
+              <label for="look-speed">Look sensitivity</label>
+              <input
+                id="look-speed"
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.1"
+                value="1"
+              />
+            </details>
+            <p class="menu-links">
+              <a href="./directory.html">Exhibition directory</a>: every display
+              and essay without 3D
             </p>
           </div>
         </div>

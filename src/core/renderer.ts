@@ -80,6 +80,8 @@ export function startRenderer(
     instructions,
     (active) => {
       overlay.hidden = active;
+      // After the first walk, the overlay becomes the pause menu.
+      if (active) overlay.dataset.state = 'paused';
       crosshair.hidden = !active;
       previousTime = undefined;
       accumulator = 0;
@@ -123,6 +125,7 @@ export function startRenderer(
       previousTime = time;
       while (accumulator >= STEP) {
         const { x, z } = controls.movement(SPEED * STEP);
+        controls.look(STEP);
         world.update?.(STEP, body.feet);
         stepBody(body, x, z, STEP, world.solids);
         accumulator -= STEP;
@@ -153,15 +156,18 @@ export function startRenderer(
   canvas.addEventListener('webglcontextlost', syncLoop);
   canvas.addEventListener('webglcontextrestored', syncLoop);
 
-  return () => {
-    controls.dispose();
-    renderer.setAnimationLoop(null);
-    observer.disconnect();
-    window.removeEventListener('resize', resize);
-    document.removeEventListener('visibilitychange', syncLoop);
-    canvas.removeEventListener('webglcontextlost', syncLoop);
-    canvas.removeEventListener('webglcontextrestored', syncLoop);
-    world.dispose();
-    renderer.dispose();
+  return {
+    setLookScale: controls.setLookScale,
+    dispose() {
+      controls.dispose();
+      renderer.setAnimationLoop(null);
+      observer.disconnect();
+      window.removeEventListener('resize', resize);
+      document.removeEventListener('visibilitychange', syncLoop);
+      canvas.removeEventListener('webglcontextlost', syncLoop);
+      canvas.removeEventListener('webglcontextrestored', syncLoop);
+      world.dispose();
+      renderer.dispose();
+    },
   };
 }
