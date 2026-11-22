@@ -2,7 +2,8 @@ import { PerspectiveCamera, WebGLRenderer } from 'three';
 import type { Box3, Object3D, Scene, Vector3 } from 'three';
 import { stepBody } from '../player/collision';
 import { bindControls } from '../player/controls';
-import { createTargetPicker } from '../player/interaction';
+import { createSurfacePicker } from '../player/interaction';
+import type { Exhibit } from '../types/exhibit';
 
 const STEP = 1 / 120;
 const SPEED = 3.2;
@@ -15,6 +16,7 @@ export interface World {
   spawn: { feet: Vector3; yaw: number };
   target?: Object3D;
   setDisplayLight?: (on: boolean) => void;
+  exhibitAt?: (object: Object3D | undefined) => Exhibit | undefined;
   dispose(): void;
 }
 
@@ -26,6 +28,7 @@ export function startRenderer(
   instructions: HTMLElement,
   crosshair: HTMLElement,
   prompt: HTMLElement,
+  label: HTMLElement,
 ) {
   const renderer = new WebGLRenderer({ canvas, antialias: true });
   const camera = new PerspectiveCamera(60, 1, 0.05, 40);
@@ -33,17 +36,29 @@ export function startRenderer(
   camera.position.copy(body.feet);
   camera.position.y += EYE_HEIGHT;
   camera.rotation.set(0, world.spawn.yaw, 0, 'YXZ');
-  const hasTarget = world.target
-    ? createTargetPicker(camera, world.surfaces, world.target, 3)
-    : () => false;
+  const pick = createSurfacePicker(camera, world.surfaces, 3);
+  const hasTarget = () => Boolean(world.target) && pick() === world.target;
+  const [labelTitle, labelDescription] = label.children;
+  let shownExhibit: Exhibit | undefined;
   let lightOn = false;
   let previousTime: number | undefined;
   let accumulator = 0;
 
   function updatePrompt() {
+    const hit = controls.active ? pick() : undefined;
     const action = lightOn ? 'Turn display light off' : 'Turn display light on';
-    const text = controls.active && hasTarget() ? `E / Click · ${action}` : '';
+    const text =
+      world.target && hit === world.target ? `E / Click · ${action}` : '';
     if (prompt.textContent !== text) prompt.textContent = text;
+
+    // Manifest text goes into the DOM as plain text, never as markup.
+    const exhibit = world.exhibitAt?.(hit);
+    if (exhibit === shownExhibit) return;
+    shownExhibit = exhibit;
+    if (labelTitle) labelTitle.textContent = exhibit?.title ?? '';
+    if (labelDescription)
+      labelDescription.textContent = exhibit?.description ?? '';
+    label.hidden = !exhibit;
   }
 
   const controls = bindControls(

@@ -179,3 +179,42 @@ test('captures the pointer, walks to the switch, interacts, and pauses', async (
   await page.keyboard.up('w');
   await expect(prompt).toContainText('Turn display light on');
 });
+
+test('labels a gallery display with its manifest title and description', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const label = page.locator('#exhibit-label');
+  const pointerIsCaptured = () =>
+    page.evaluate(() => document.pointerLockElement?.id === 'scene');
+  // One radian is 500 px of mouse movement at the current look speed.
+  const turn = (radians: number) =>
+    page.evaluate(
+      (dx) =>
+        document.dispatchEvent(new MouseEvent('mousemove', { movementX: dx })),
+      -radians * 500,
+    );
+
+  await page.bringToFront();
+  await page.getByRole('button', { name: 'Start walk' }).click();
+  await expect.poll(pointerIsCaptured).toBe(true);
+  // The crosshair appears once the game handles capture and accepts mouse look.
+  await expect(page.locator('#crosshair')).toBeVisible();
+  await expect(label).toBeHidden();
+
+  // Face Exhibit_01 on the north wall and walk until it is in range. Walking
+  // waits on the label, not a timer, because slow frames shorten each step.
+  await turn(Math.atan2(4.98, 4.5));
+  await page.keyboard.down('w');
+  await expect(label).toBeVisible({ timeout: 15000 });
+  await page.keyboard.up('w');
+  await expect(label.getByRole('heading')).toHaveText(
+    'Doraemon academic essay',
+  );
+  await expect(label).toContainText(
+    'Awaiting an approved display image and essay PDF.',
+  );
+
+  await page.keyboard.press('Escape');
+  await expect(label).toBeHidden();
+});

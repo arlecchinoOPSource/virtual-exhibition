@@ -75,8 +75,7 @@ CEILING = material("Blockout_Ceiling", (0.25, 0.25, 0.26))
 DOORWAY = material("Blockout_Doorway", (0.02, 0.02, 0.02))
 FIXTURE = material("Fixture_Housing", (0.03, 0.03, 0.035), 0.5)
 FRAME = material("Frame_Moulding", (0.04, 0.035, 0.03), 0.6)
-CANVAS = material("Frame_TestCanvas", (0.75, 0.73, 0.68))
-MARK = material("Frame_TestMark", (0.6, 0.08, 0.05))
+CANVAS = material("Frame_Canvas", (0.75, 0.73, 0.68))
 
 
 def box_mesh(name, size):
@@ -229,31 +228,21 @@ for name, x0, x1, z0, z1 in (
     ("Frame_Right", w - b, w, -h + b, h - b),
 ):
     box(name, x0, x1, -d, 0, z0, z1, FRAME, collide=False, collection="Frame_Display")
-box(
-    "Frame_TestCanvas",
-    -w + b,
-    w - b,
-    -0.02,
-    0,
-    -h + b,
-    h - b,
-    CANVAS,
-    collide=False,
-    collection="Frame_Display",
+# The canvas is one textured quad recessed 2 cm behind the moulding's front.
+# Counter-clockwise as seen from the front (-Y), so its normal faces the visitor;
+# UV (0, 0) is the visitor's bottom-left corner.
+cx0, cx1, cz0, cz1 = -w + b, w - b, -h + b, h - b
+canvas = bpy.data.meshes.new("Frame_Canvas")
+canvas.from_pydata(
+    [(cx0, -0.02, cz0), (cx1, -0.02, cz0), (cx1, -0.02, cz1), (cx0, -0.02, cz1)],
+    [],
+    [(0, 1, 2, 3)],
 )
-# Marks the canvas's top-left corner as seen by a visitor to catch mirrored axes.
-box(
-    "Frame_TestMark",
-    -w + b + 0.04,
-    -w + b + 0.16,
-    -0.025,
-    -0.02,
-    h - b - 0.16,
-    h - b - 0.04,
-    MARK,
-    collide=False,
-    collection="Frame_Display",
-)
+uv_layer = canvas.uv_layers.new(name="UVMap")
+for loop, uv in zip(canvas.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
+    uv_layer.data[loop.index].uv = uv
+canvas.materials.append(CANVAS)
+collections["Frame_Display"].objects.link(bpy.data.objects.new("Frame_Canvas", canvas))
 
 
 def join(name, prefixes, collection):

@@ -10,7 +10,7 @@ Reserve exactly twelve anchors, `Exhibit_01` through `Exhibit_12`. Slot 01 is th
 
 ## Visitor experience
 
-Use a restrained crosshair and a contextual prompt in first-person mode. Provide an opening screen that explains WASD, mouse look, click and E, and Escape. Opening a display reveals its title, description, and an essay action when a PDF is available. Exiting the viewer restores focus and leaves the player in place. The pause menu will expose controls and graphics and audio settings. A conventional keyboard-accessible 2D directory will provide direct access to content without first-person navigation.
+Use a restrained crosshair and a contextual prompt in first-person mode. Provide an opening screen that explains WASD, mouse look, click and E, and Escape. Looking at a display within three meters shows its title and description. Opening a display reveals its title, description, and an essay action when a PDF is available. Exiting the viewer restores focus and leaves the player in place. The pause menu will expose controls and graphics and audio settings. A conventional keyboard-accessible 2D directory will provide direct access to content without first-person navigation.
 
 ## Basement of Doom
 

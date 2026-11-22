@@ -13,6 +13,7 @@ async function start() {
   const instructions = document.querySelector<HTMLElement>('#instructions');
   const crosshair = document.querySelector<HTMLElement>('#crosshair');
   const prompt = document.querySelector<HTMLElement>('#interaction');
+  const label = document.querySelector<HTMLElement>('#exhibit-label');
 
   if (
     !canvas ||
@@ -21,7 +22,8 @@ async function start() {
     !startButton ||
     !instructions ||
     !crosshair ||
-    !prompt
+    !prompt ||
+    !label
   )
     throw new Error('The preview markup is missing.');
 
@@ -30,7 +32,7 @@ async function start() {
     // The greybox stays available as a traversal and interaction test room.
     const useGreybox =
       new URLSearchParams(location.search).get('env') === 'greybox';
-    const world = useGreybox ? createGreybox() : await loadGallery();
+    const world = useGreybox ? createGreybox() : await loadGallery(exhibits);
     canvas.dataset.environment = useGreybox ? 'greybox' : 'gallery';
     const dispose = startRenderer(
       world,
@@ -40,6 +42,7 @@ async function start() {
       instructions,
       crosshair,
       prompt,
+      label,
     );
     if (import.meta.hot) import.meta.hot.dispose(dispose);
     canvas.dataset.exhibitCount = String(exhibits.length);
