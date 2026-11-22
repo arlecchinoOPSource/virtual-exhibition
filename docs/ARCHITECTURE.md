@@ -24,6 +24,6 @@ Read the essay opens a second modal `<dialog>` over the details. It dynamically 
 
 ## Environment loading and ownership
 
-The initial visit will load the gallery and its essential assets. Load basement geometry, textures, and audio on demand when the visitor chooses to enter. Keep the entrance usable if that request fails. Enable audio through a deliberate visitor gesture.
+The initial visit will load the gallery and its essential assets. Load basement geometry, textures, and audio on demand when the visitor chooses to enter. The door in the right end wall is the choice: E or click on it loads `basement.glb`, adds its meshes and `COL_` proxies to the world, then swings the door 90 degrees into the stairwell over 0.8 s. `src/environments/door.ts` keeps `COL_Door_Basement` solid while the door is closed, loading, or closing, ignores input mid-swing, and refuses to close on a visitor in the doorway. The stairwell drops 17 steps of 0.18 m to the lower landing, within the 0.22 m step limit. Keep the entrance usable if that request fails. Enable audio through a deliberate visitor gesture.
 
 Blender defines static meshes, visual materials, collision proxies, named transforms, and door pivots. TypeScript interprets markers, instantiates frames, manages player and UI state, controls animation, and owns asset loading. Planned modules have reserved paths in the design. Source folders without code are deferred until their feature lands.

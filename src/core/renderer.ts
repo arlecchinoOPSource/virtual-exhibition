@@ -17,6 +17,11 @@ export interface World {
   target?: Object3D;
   setDisplayLight?: (on: boolean) => void;
   exhibitAt?: (object: Object3D | undefined) => Exhibit | undefined;
+  actionAt?: (
+    object: Object3D | undefined,
+    feet: Vector3,
+  ) => { label: string; run(): void } | undefined;
+  update?: (seconds: number) => void;
   dispose(): void;
 }
 
@@ -47,13 +52,16 @@ export function startRenderer(
   function updatePrompt() {
     const hit = controls.active ? pick() : undefined;
     const exhibit = world.exhibitAt?.(hit);
+    const sceneAction = world.actionAt?.(hit, body.feet);
     const action = lightOn ? 'Turn display light off' : 'Turn display light on';
     const text =
       world.target && hit === world.target
         ? `E / Click · ${action}`
-        : exhibit
-          ? 'E / Click · View details'
-          : '';
+        : sceneAction
+          ? sceneAction.label
+          : exhibit
+            ? 'E / Click · View details'
+            : '';
     if (prompt.textContent !== text) prompt.textContent = text;
 
     // Manifest text goes into the DOM as plain text, never as markup.
@@ -85,6 +93,12 @@ export function startRenderer(
         updatePrompt();
         return;
       }
+      const sceneAction = world.actionAt?.(hit, body.feet);
+      if (sceneAction) {
+        sceneAction.run();
+        updatePrompt();
+        return;
+      }
       const exhibit = world.exhibitAt?.(hit);
       if (!exhibit) return;
       // Pausing releases pointer lock and clears held keys; the pose stays.
@@ -109,6 +123,7 @@ export function startRenderer(
       previousTime = time;
       while (accumulator >= STEP) {
         const { x, z } = controls.movement(SPEED * STEP);
+        world.update?.(STEP);
         stepBody(body, x, z, STEP, world.solids);
         accumulator -= STEP;
       }

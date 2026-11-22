@@ -346,3 +346,47 @@ test('offers the PDF file when the essay fails to load', async ({ page }) => {
     viewer.getByRole('link', { name: 'Open PDF file' }),
   ).toBeVisible();
 });
+
+// Starts the walk, follows the south walkway to the right end, and strafes
+// left until the crosshair finds the basement door.
+async function walkToBasementDoor(page: Page) {
+  await page.goto('/');
+  await page.bringToFront();
+  await page.getByRole('button', { name: 'Start walk' }).click();
+  await expect(page.locator('#crosshair')).toBeVisible();
+  const prompt = page.locator('#interaction');
+  await page.keyboard.down('d');
+  await page.waitForTimeout(800);
+  await page.keyboard.up('d');
+  await page.keyboard.down('w');
+  await page.waitForTimeout(6000);
+  await page.keyboard.up('w');
+  await page.keyboard.down('a');
+  await expect(prompt).toHaveText('E / Click · Open the door', {
+    timeout: 10000,
+  });
+  await page.keyboard.up('a');
+  return prompt;
+}
+
+test('opens the basement door with E and closes it again', async ({ page }) => {
+  const basementRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('basement.glb'))
+      basementRequests.push(request.url());
+  });
+  const prompt = await walkToBasementDoor(page);
+  await page.keyboard.press('e');
+  // The open door swings out of view; look left along the stairwell to it.
+  await expect(prompt).toBeEmpty({ timeout: 10000 });
+  expect(basementRequests).toHaveLength(1);
+  await page.evaluate(() =>
+    document.dispatchEvent(new MouseEvent('mousemove', { movementX: -300 })),
+  );
+  await expect(prompt).toHaveText('E / Click · Close the door');
+  await page.keyboard.press('e');
+  await page.evaluate(() =>
+    document.dispatchEvent(new MouseEvent('mousemove', { movementX: 300 })),
+  );
+  await expect(prompt).toHaveText('E / Click · Open the door');
+});

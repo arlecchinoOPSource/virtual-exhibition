@@ -5,8 +5,8 @@ Run from the repository root:
     blender --background --factory-startup \
         --python assets-source/blender/gallery_blockout.py -- public/models
 
-This writes gallery.glb (room, collision proxies, markers, and lights) and
-frame.glb (the reusable display frame). Artwork stays out of both exports.
+This writes gallery.glb (room, collision proxies, markers, and lights),
+frame.glb (the reusable display frame), and basement.glb (loaded on demand). Artwork stays out of every export.
 
 Units are meters with Z up. The room spans x -10..10 and y -5..5 with a
 3.6 m ceiling. The visitor spawns at the left end (-X) and the basement
@@ -53,6 +53,8 @@ for name in (
     "Gallery_Markers",
     "Gallery_Lights",
     "Frame_Display",
+    "Basement_Render",
+    "Basement_Collision",
 ):
     collection = bpy.data.collections.new(name)
     scene.collection.children.link(collection)
@@ -94,7 +96,10 @@ def box_mesh(name, size):
     return mesh
 
 
-def box(name, x0, x1, y0, y1, z0, z1, mat, collide=True, collection="Gallery_Render"):
+def box(
+    name, x0, x1, y0, y1, z0, z1, mat, collide=True,
+    collection="Gallery_Render", proxies="Gallery_Collision",
+):
     """Add a visible box and, unless disabled, a matching COL_ proxy."""
     size = (x1 - x0, y1 - y0, z1 - z0)
     center = ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
@@ -106,7 +111,7 @@ def box(name, x0, x1, y0, y1, z0, z1, mat, collide=True, collection="Gallery_Ren
         proxy = bpy.data.objects.new(f"COL_{name}", box_mesh(f"COL_{name}", size))
         proxy.location = center
         proxy.display_type = "WIRE"
-        collections["Gallery_Collision"].objects.link(proxy)
+        collections[proxies].objects.link(proxy)
 
 
 GAZE = {"N": (0, 1), "S": (0, -1), "E": (1, 0), "W": (-1, 0)}
@@ -332,6 +337,29 @@ canvas.materials.append(CANVAS)
 collections["Frame_Display"].objects.link(bpy.data.objects.new("Frame_Canvas", canvas))
 
 
+# Basement stairwell behind the door: an upper landing that clears the door's
+# swing, 17 steps down, and a lower landing. It exports to basement.glb so the
+# gallery loads without it.
+CONCRETE = material("Basement_Concrete", (0.16, 0.155, 0.15), 0.95)
+PLASTER = material("Basement_Plaster", (0.24, 0.22, 0.2), 0.95)
+RISE, RUN, STEPS = 0.18, 0.3, 17
+BOTTOM = -RISE * STEPS
+STAIR_X = 12.0
+LOWER_X = STAIR_X + RUN * STEPS
+END_X = 19.0
+BASEMENT = dict(collection="Basement_Render", proxies="Basement_Collision")
+
+box("Landing_Upper", 10 + WALL, STAIR_X, -0.8, 0.8, BOTTOM - 0.2, 0, CONCRETE, **BASEMENT)
+for step in range(STEPS):
+    x0 = STAIR_X + RUN * step
+    box(f"Stair_{step + 1:02}", x0, x0 + RUN, -0.8, 0.8, BOTTOM - 0.2, -RISE * (step + 1), CONCRETE, **BASEMENT)
+box("Landing_Lower", LOWER_X, END_X, -0.8, 0.8, BOTTOM - 0.2, BOTTOM, CONCRETE, **BASEMENT)
+for side, y0, y1 in (("North", 0.8, 1.0), ("South", -1.0, -0.8)):
+    box(f"Stairwell_Wall_{side}", 10 + WALL, END_X, y0, y1, BOTTOM, HEIGHT, PLASTER, **BASEMENT)
+box("Stairwell_Wall_End", END_X, END_X + WALL, -1.0, 1.0, BOTTOM, HEIGHT, PLASTER, **BASEMENT)
+box("Stairwell_Ceiling", 10 + WALL, END_X + WALL, -1.0, 1.0, HEIGHT, HEIGHT + WALL, PLASTER, collide=False, collection="Basement_Render")
+
+
 def join(name, prefixes, collection):
     """Merge same-material render boxes into one mesh to cut draw calls."""
     objs = [o for o in collections[collection].objects if o.name.startswith(prefixes)]
@@ -351,6 +379,8 @@ join("Gallery_Displays", ("Island_", "Partition_"), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Sign_Board", "Sign_Spike_", "Statue_Plinth"), "Gallery_Render")
 join("Statue_Cloak", ("Statue_Robe", "Statue_Hood"), "Gallery_Render")
+join("Basement_Steps", ("Landing_", "Stair_"), "Basement_Render")
+join("Basement_Walls", ("Stairwell_",), "Basement_Render")
 join(
     "Frame_Moulding",
     ("Frame_Top", "Frame_Bottom", "Frame_Left", "Frame_Right"),
@@ -382,3 +412,6 @@ export(
     ("Gallery_Render", "Gallery_Collision", "Gallery_Markers", "Gallery_Lights"),
 )
 export(os.path.join(output, "frame.glb"), ("Frame_Display",))
+export(
+    os.path.join(output, "basement.glb"), ("Basement_Render", "Basement_Collision")
+)
