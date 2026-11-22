@@ -91,7 +91,10 @@ export function createGallery(
 
   const keyLight = new DirectionalLight(0xf6f3ee, 2.1);
   keyLight.position.set(-4, 8, 3);
-  scene.add(keyLight, new HemisphereLight(0xe7edf6, 0x43464d, 1.4));
+  const skyLight = new HemisphereLight(0xe7edf6, 0x43464d, 1.4);
+  scene.add(keyLight, skyLight);
+  // Daylight fades below ground so the basement's bulbs and candles carry it.
+  let daylight = 1;
 
   return {
     scene,
@@ -113,7 +116,14 @@ export function createGallery(
           return { label: door.label(feet), run: () => void door.toggle(feet) };
       return undefined;
     },
-    update: door.update,
+    update(seconds: number, feet?: Vector3) {
+      door.update(seconds);
+      if (!feet) return;
+      const target = feet.y < -1.2 ? 0.12 : 1;
+      daylight += (target - daylight) * Math.min(1, seconds * 2);
+      keyLight.intensity = 2.1 * daylight;
+      skyLight.intensity = 1.4 * daylight;
+    },
     dispose() {
       const resources = new Set<BufferGeometry | Material>();
       scene.traverse((node) => {

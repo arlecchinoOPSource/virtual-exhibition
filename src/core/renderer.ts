@@ -21,7 +21,7 @@ export interface World {
     object: Object3D | undefined,
     feet: Vector3,
   ) => { label: string; run(): void } | undefined;
-  update?: (seconds: number) => void;
+  update?: (seconds: number, feet: Vector3) => void;
   dispose(): void;
 }
 
@@ -123,7 +123,7 @@ export function startRenderer(
       previousTime = time;
       while (accumulator >= STEP) {
         const { x, z } = controls.movement(SPEED * STEP);
-        world.update?.(STEP);
+        world.update?.(STEP, body.feet);
         stepBody(body, x, z, STEP, world.solids);
         accumulator -= STEP;
       }
