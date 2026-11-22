@@ -390,3 +390,48 @@ test('opens the basement door with E and closes it again', async ({ page }) => {
   );
   await expect(prompt).toHaveText('E / Click · Open the door');
 });
+
+test('makes no basement requests until the visitor opens the door', async ({
+  page,
+}) => {
+  const basementRequests: string[] = [];
+  page.on('request', (request) => {
+    if (/basement/.test(request.url())) basementRequests.push(request.url());
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start walk' }).click();
+  await page.keyboard.down('w');
+  await page.waitForTimeout(1500);
+  await page.keyboard.up('w');
+  await page.waitForLoadState('networkidle');
+  expect(basementRequests).toEqual([]);
+});
+
+test('keeps the gallery usable when the basement fails, then retries', async ({
+  page,
+}) => {
+  await page.route('**/models/basement.glb', (route) =>
+    route.fulfill({ status: 503 }),
+  );
+  const prompt = await walkToBasementDoor(page);
+  await page.keyboard.press('e');
+  await expect(prompt).toHaveText(
+    'The basement could not be loaded · E / Click to try again',
+  );
+  // The door stayed shut and the walk continues.
+  await expect(page.locator('#crosshair')).toBeVisible();
+  await page.keyboard.down('s');
+  await page.waitForTimeout(300);
+  await page.keyboard.up('s');
+  await page.keyboard.down('w');
+  await page.waitForTimeout(600);
+  await page.keyboard.up('w');
+  await expect(prompt).toHaveText(
+    'The basement could not be loaded · E / Click to try again',
+  );
+
+  await page.unroute('**/models/basement.glb');
+  await page.keyboard.press('e');
+  // A successful retry swings the door out of the crosshair.
+  await expect(prompt).toBeEmpty({ timeout: 10000 });
+});
