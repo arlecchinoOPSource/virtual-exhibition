@@ -57,7 +57,7 @@ test('opens and closes an essay with the keyboard', async ({ page }) => {
 test('links the gallery and directory both ways', async ({ page }) => {
   await page.goto('/');
   await page
-    .getByRole('banner')
+    .locator('header')
     .getByRole('link', { name: 'Exhibition directory' })
     .click();
   await expect(
