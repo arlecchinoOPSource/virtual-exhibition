@@ -1,11 +1,11 @@
 [
   {
     "anchor": "Exhibit_01",
-    "title": "Doraemon academic essay",
-    "description": "Awaiting an approved display image and essay PDF.",
-    "status": "awaiting-assets",
-    "image": null,
-    "pdf": null
+    "title": "Bakit Hindi Puwedeng Maging Filipino Rin si Doraemon",
+    "description": "An essay in Filipino on how the Filipino dub of a Doraemon episode carries a Japanese story into everyday Filipino speech and culture.",
+    "status": "ready",
+    "image": "artworks/doraemon-filipino.webp",
+    "pdf": "essays/doraemon-filipino.pdf"
   },
   {
     "anchor": "Exhibit_02",
