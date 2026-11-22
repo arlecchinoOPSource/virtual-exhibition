@@ -110,6 +110,8 @@ test('captures the pointer, walks to the switch, interacts, and pauses', async (
   const pointerIsCaptured = () =>
     page.evaluate(() => document.pointerLockElement?.id === 'scene');
 
+  // Pointer lock needs a focused window; headed Chromium on macOS can open unfocused.
+  await page.bringToFront();
   await start.click();
   await expect.poll(pointerIsCaptured).toBe(true);
   await expect(crosshair).toBeVisible();
