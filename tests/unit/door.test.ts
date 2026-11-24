@@ -1,5 +1,12 @@
 import { readFile } from 'node:fs/promises';
-import { Box3, HemisphereLight, PointLight, Vector3 } from 'three';
+import {
+  Box3,
+  HemisphereLight,
+  Mesh,
+  MeshStandardMaterial,
+  PointLight,
+  Vector3,
+} from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it, vi } from 'vitest';
 import { createGallery } from '../../src/environments/gallery';
@@ -166,6 +173,49 @@ describe('basement room', () => {
     world.dispose();
   });
 
+  it('pastes the two historical prints on the side walls, each in its own slot', async () => {
+    const world = await openBasement();
+    const find = (name: string) =>
+      world.passes[0]!.getObjectByName(name) as Mesh | undefined;
+    const throne = new Box3().setFromObject(find('Basement_Throne')!);
+    const materials = new Set<MeshStandardMaterial>();
+    for (const [name, artwork, wallZ, aspect] of [
+      // Sheet aspect = artwork pixels plus the paper margin on every side.
+      [
+        'Poster_Kittelsen_Lur',
+        'kittelsen-op-under-fjeldet-toner-en-lur.webp',
+        -4,
+        804 / 600,
+      ],
+      [
+        'Poster_Dore_Pale_Horse',
+        'dore-death-on-the-pale-horse.jpg',
+        4,
+        822 / 1019,
+      ],
+    ] as const) {
+      const poster = find(name);
+      expect(poster?.userData.artwork, name).toBe(artwork);
+      const bounds = new Box3().setFromObject(poster!);
+      // Off the wall but close to it: no z-fighting, no floating sheet.
+      const gap = Math.min(
+        ...[bounds.min.z, bounds.max.z].map((z) => Math.abs(z - wallZ)),
+      );
+      expect(gap, name).toBeGreaterThan(0.003);
+      expect(Math.abs(bounds.max.z - bounds.min.z), name).toBeLessThan(0.05);
+      const size = bounds.getSize(new Vector3());
+      expect(size.x / size.y, name).toBeCloseTo(aspect, 2);
+      // Clear of the throne's end of the room.
+      expect(bounds.max.x, name).toBeLessThan(throne.min.x - 1);
+      // Each print has its own material, so one can be replaced alone.
+      const material = poster!.material as MeshStandardMaterial;
+      expect(material.name, name).toBe(`${name}_Print`);
+      materials.add(material);
+    }
+    expect(materials.size).toBe(2);
+    world.dispose();
+  });
+
   it('bakes weathered PBR atlases into the on-demand basement export', async () => {
     const file = await readFile('public/models/basement.glb');
     // Budget for the deferred basement, separate from the initial gallery load.
@@ -174,6 +224,7 @@ describe('basement room', () => {
       file.subarray(20, 20 + file.readUInt32LE(12)).toString('utf8'),
     ) as {
       images: { name: string; mimeType: string; bufferView: number }[];
+      textures: { source: number }[];
       bufferViews: { byteOffset?: number; byteLength: number }[];
       materials: {
         name: string;
@@ -195,6 +246,16 @@ describe('basement room', () => {
         name,
       ).toBeDefined();
       expect(material?.normalTexture, name).toBeDefined();
+    }
+    // Each print material samples its own image, named after its poster.
+    for (const name of ['Poster_Kittelsen_Lur', 'Poster_Dore_Pale_Horse']) {
+      const material = json.materials.find(
+        (entry) => entry.name === `${name}_Print`,
+      );
+      const texture = material?.pbrMetallicRoughness?.baseColorTexture as
+        { index: number } | undefined;
+      const image = json.images[json.textures[texture!.index]!.source]!;
+      expect(image.name, name).toBe(`${name} - print`);
     }
     const binary = 20 + file.readUInt32LE(12) + 8;
     for (const image of json.images) {
