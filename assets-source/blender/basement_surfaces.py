@@ -231,13 +231,10 @@ class Cellar:
         line = np.abs(fbm(q, 2.4, 2, seed + 3) - 0.5)
         return (1 - smooth(0, width, line)) * smooth(0.45, 0.8, zone)
 
-    def wall(self, p, n):
-        along = p[:, 0] * abs(n[1]) + p[:, 1] * abs(n[0])
-        z = p[:, 2]
+    def plaster_loss(self, p):
+        """Where the plaster has fallen away, plus the fields the wall shading reuses."""
         base = np.where(p[:, 0] < self.room[0][0], self.floor_at(p[:, 0]), self.floor_z)
-        above = z - base
-        grain = fbm(p, 14, 3, 1)
-        mottle = fbm(p, 1.1, 3, 2)
+        above = p[:, 2] - base
         # Two scales of ragged edge: broad lobes and small bites.
         edge_noise = (0.75 * (fbm(warp(p, 1.0, 0.5, 3), 1.4, 3, 4) - 0.5)
                       + 0.45 * (fbm(p, 5.0, 3, 12) - 0.5))
@@ -253,7 +250,16 @@ class Cellar:
         damage = np.maximum.reduce([blob(flat, lift(self.loss)), blob(flat, lift(self.brick)),
                                     0.8 * skirting])
         damage = damage + 0.7 * edge_noise
-        lost = damage > 0.5
+        return damage > 0.5, damage, edge_noise, stretch, flat, lift
+
+    def wall(self, p, n):
+        along = p[:, 0] * abs(n[1]) + p[:, 1] * abs(n[0])
+        z = p[:, 2]
+        base = np.where(p[:, 0] < self.room[0][0], self.floor_at(p[:, 0]), self.floor_z)
+        above = z - base
+        grain = fbm(p, 14, 3, 1)
+        mottle = fbm(p, 1.1, 3, 2)
+        lost, damage, edge_noise, stretch, flat, lift = self.plaster_loss(p)
         brick_zone = blob(flat, lift(self.brick)) + 0.5 * edge_noise > 0.6
         rim = (damage > 0.44) & ~lost
 
@@ -407,5 +413,137 @@ def stair_surface(name, mat, collection, x_start, stair_x, run, rise, steps, low
     mesh.update()
     mesh.materials.append(mat)
     obj = bpy.data.objects.new(name, mesh)
+    collection.objects.link(obj)
+    return obj
+
+
+# --- Graffiti --------------------------------------------------------------
+
+# Single-stroke capitals in a 0.75 x 1 cell, drawn the way a hand would move.
+HAND = {
+    "B": [[(0, 0), (0.02, 1)], [(0.02, 1), (0.45, 0.97), (0.6, 0.82), (0.5, 0.58), (0.03, 0.53)],
+          [(0.05, 0.53), (0.6, 0.45), (0.7, 0.22), (0.55, 0.03), (0, 0)]],
+    "L": [[(0.02, 1), (0, 0), (0.62, 0.03)]],
+    "A": [[(0, 0), (0.36, 1), (0.72, 0)], [(0.14, 0.38), (0.6, 0.42)]],
+    "C": [[(0.68, 0.84), (0.45, 1), (0.15, 0.92), (0, 0.55), (0.08, 0.15), (0.35, 0), (0.72, 0.12)]],
+    "K": [[(0, 1), (0.02, 0)], [(0.66, 1), (0.04, 0.44)], [(0.26, 0.62), (0.72, 0)]],
+    "M": [[(0, 0), (0.05, 1), (0.38, 0.34), (0.7, 1), (0.76, 0)]],
+    "E": [[(0.66, 1), (0, 0.98), (0.02, 0), (0.7, 0.02)], [(0.02, 0.52), (0.5, 0.54)]],
+    "T": [[(0, 1), (0.76, 0.97)], [(0.38, 0.98), (0.36, 0)]],
+}
+
+
+def paint_graffiti(cellar, name, collection, wall_x, y_centre, z_centre, width, height, text):
+    """BLACK METAL in black spray with an inverted cross, as a thin decal.
+
+    The decal sits 3 mm off the east wall with its own alpha texture, so it
+    keeps crisp, ragged edges close up without flickering against the plaster.
+    Paint is withheld where the plaster has fallen away and thins over the
+    plaster grain, so the wall shows through the mark.
+    """
+    rng = np.random.default_rng(55)
+    ppm = 420
+    w, h = int(width * ppm), int(height * ppm)
+    # Image u runs along -Y (left to right from the doorway), v runs up.
+    jj, ii = np.mgrid[:h, :w]
+    s = (ii + 0.5) / ppm - width / 2
+    t = (jj + 0.5) / ppm - height / 2
+    world = np.stack([np.full(s.size, wall_x), y_centre - s.ravel(), z_centre + t.ravel()], axis=1)
+    cover = np.zeros((h, w))
+
+    def stroke(points, radius):
+        """Rasterise one pressure-varying stroke given in metres (s, t)."""
+        pts = np.array(points, float)
+        seg = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+        dist = np.concatenate([[0], np.cumsum(seg)])
+        n = max(2, int(dist[-1] / 0.006))
+        along = np.linspace(0, dist[-1], n)
+        path = np.stack([np.interp(along, dist, pts[:, k]) for k in (0, 1)], axis=1)
+        # Pressure swells mid-stroke and tails off; the hand also wavers.
+        u = along / dist[-1]
+        pressure = radius * (0.55 + 0.6 * np.sin(np.pi * np.clip(u * 1.1, 0, 1)) ** 0.6)
+        pressure *= 1 + 0.18 * np.sin(u * rng.uniform(8, 15) + rng.uniform(0, 6))
+        path += np.stack([np.sin(u * 7 + rng.uniform(0, 6)), np.cos(u * 5 + rng.uniform(0, 6))], 1) * 0.004
+        for (a, ra), (b, rb) in zip(zip(path, pressure), zip(path[1:], pressure[1:])):
+            r = max(ra, rb) + 0.01
+            x0 = max(0, int((min(a[0], b[0]) - r + width / 2) * ppm))
+            x1 = min(w, int((max(a[0], b[0]) + r + width / 2) * ppm) + 1)
+            y0 = max(0, int((min(a[1], b[1]) - r + height / 2) * ppm))
+            y1 = min(h, int((max(a[1], b[1]) + r + height / 2) * ppm) + 1)
+            if x0 >= x1 or y0 >= y1:
+                continue
+            ps, pt = s[y0:y1, x0:x1], t[y0:y1, x0:x1]
+            d = b - a
+            k = np.clip(((ps - a[0]) * d[0] + (pt - a[1]) * d[1]) / max(d @ d, 1e-12), 0, 1)
+            dd = np.hypot(ps - a[0] - k * d[0], pt - a[1] - k * d[1])
+            rad = ra + (rb - ra) * k
+            cover[y0:y1, x0:x1] = np.maximum(cover[y0:y1, x0:x1], np.clip((rad - dd) / 0.003 + 0.5, 0, 1))
+        return path, pressure
+
+    def drip(at, length):
+        stroke([at, (at[0] + rng.normal(0, 0.004), at[1] - length)], 0.006)
+
+    def word(letters, left, base, size, slope):
+        x = left
+        for char in letters:
+            scale = size * rng.uniform(0.9, 1.12)
+            lift = base + rng.normal(0, 0.02) + slope * (x - left)
+            lean = rng.uniform(0.05, 0.16)
+            for strokes in HAND[char]:
+                pts = [(x + (u + lean * v) * scale * 0.78 + rng.normal(0, 0.006),
+                        lift + v * scale + rng.normal(0, 0.006)) for u, v in strokes]
+                path, pressure = stroke(pts, 0.019)
+                low = path[np.argmin(path[:, 1])]
+                if rng.random() < 0.35:
+                    drip(low, rng.uniform(0.06, 0.28))
+            x += scale * rng.uniform(0.8, 0.88)
+        return x
+
+    # Two stacked words, the second set in and climbing slightly.
+    end = word("BLACK", -width / 2 + 0.08, 0.1, 0.33, 0.03)
+    end = max(end, word("METAL", -width / 2 + 0.16, -0.38, 0.33, 0.05))
+    # The inverted cross stands apart from the words, crossbar low on the shaft.
+    cx = min(end + 0.3, width / 2 - 0.22)
+    stroke([(cx, 0.58), (cx + 0.012, -0.6)], 0.027)
+    stroke([(cx - 0.19, -0.26), (cx + 0.2, -0.23)], 0.025)
+    drip((cx + 0.14, -0.24), 0.14)
+    drip((cx + 0.012, -0.6), 0.18)
+
+    # The wall shows through: no paint over lost plaster, thin over its grain.
+    lost = cellar.plaster_loss(world)[0].reshape(h, w)
+    grain = fbm(world, 60, 3, 56).reshape(h, w)
+    chips = noise(world, 25, 57).reshape(h, w) > 0.9
+    ragged = fbm(world, 180, 2, 58).reshape(h, w)
+    alpha = np.clip(cover * 1.3 - 0.45 * (ragged - 0.5) - 0.3, 0, 1)
+    alpha *= (0.72 + 0.28 * grain) * ~lost * np.where(chips, 0.25, 1)
+
+    rgba = np.zeros((h, w, 4), np.float32)
+    # Flat colour outside the strokes keeps the PNG small.
+    rgba[..., :3] = np.where(alpha > 0, 0.03 + 0.03 * grain, 0.03)[..., None]
+    rgba[..., 3] = alpha
+    img = bpy.data.images.new(f"{name} - paint", w, h, alpha=True)
+    img.pixels.foreach_set(rgba.ravel())
+    img.pack()
+
+    mat = bpy.data.materials.new("Graffiti_Paint")
+    shader = mat.node_tree.nodes["Principled BSDF"]
+    tex = mat.node_tree.nodes.new("ShaderNodeTexImage")
+    tex.image = img
+    mat.node_tree.links.new(tex.outputs["Color"], shader.inputs["Base Color"])
+    mat.node_tree.links.new(tex.outputs["Alpha"], shader.inputs["Alpha"])
+    shader.inputs["Roughness"].default_value = 0.62
+    mat.surface_render_method = "BLENDED"
+
+    x = wall_x - 0.003
+    y0, y1 = y_centre + width / 2, y_centre - width / 2
+    z0, z1 = z_centre - height / 2, z_centre + height / 2
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata([(x, y0, z0), (x, y1, z0), (x, y1, z1), (x, y0, z1)], [], [(0, 1, 2, 3)])
+    uv = mesh.uv_layers.new(name="Paint")
+    for loop, coord in zip(mesh.loops, [(0, 0), (1, 0), (1, 1), (0, 1)]):
+        uv.data[loop.index].uv = coord
+    mesh.materials.append(mat)
+    obj = bpy.data.objects.new(name, mesh)
+    obj["text"] = text
     collection.objects.link(obj)
     return obj

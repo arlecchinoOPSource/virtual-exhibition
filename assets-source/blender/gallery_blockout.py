@@ -32,7 +32,7 @@ from mathutils import Vector
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from grim_reaper import sculpt_reaper
 from sign_lettering import build_sign
-from basement_surfaces import Cellar, bake_atlas, stair_surface
+from basement_surfaces import Cellar, bake_atlas, paint_graffiti, stair_surface
 from gallery_finishes import frame_profile, oak_floor, paint_finish, paint_uv, soften, turned
 
 HEIGHT = 3.6
@@ -347,7 +347,6 @@ box("Stairwell_Ceiling", 10 + WALL, END_X, -1.0, 1.0, HEIGHT, HEIGHT + WALL, PLA
 # and texture colour here is original.
 ROOM_X0, ROOM_X1, ROOM_Y, ROOM_H = END_X, END_X + 8, 4.0, 2.8
 TOP = BOTTOM + ROOM_H
-PAINT = material("Graffiti_Paint", (0.8, 0.79, 0.76), 0.85)
 OAK = material("Throne_Wood", (0.13, 0.06, 0.025), 0.75)
 WAX = material("Candle_Wax", (0.85, 0.8, 0.65), 0.6)
 
@@ -397,29 +396,7 @@ box("Room_Wall_West_Lintel", ROOM_X0, ROOM_X0 + WALL, -1.0, 1.0, BOTTOM + 2.2, H
 
 # Weathering is baked into the shell textures; see basement_surfaces.py.
 
-# Handwritten-style graffiti: sheared Blender-font lettering on the east wall.
-graffiti_curve = bpy.data.curves.new("Graffiti_Black_Metal", "FONT")
-graffiti_curve.body = "BLACK METAL"
-graffiti_curve.size = 0.34
-graffiti_curve.shear = 0.3
-graffiti_curve.extrude = 0.004
-graffiti_curve.align_x = "CENTER"
-graffiti_curve.align_y = "CENTER"
-graffiti_obj = bpy.data.objects.new("Graffiti_Black_Metal_Text", graffiti_curve)
-scene.collection.objects.link(graffiti_obj)
-graffiti_obj.location = (ROOM_X1 - 0.008, 0.2, BOTTOM + 2.5)
-graffiti_obj.rotation_euler = (math.pi / 2, -0.06, -math.pi / 2)
-bpy.context.view_layer.update()
-graffiti_mesh = bpy.data.meshes.new_from_object(
-    graffiti_obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
-)
-graffiti_mesh.materials.clear()
-graffiti_mesh.materials.append(PAINT)
-graffiti = bpy.data.objects.new("Graffiti_Black_Metal", graffiti_mesh)
-graffiti.matrix_world = graffiti_obj.matrix_world
-graffiti["text"] = graffiti_curve.body
-collections["Basement_Render"].objects.link(graffiti)
-bpy.data.objects.remove(graffiti_obj)
+# BLACK METAL graffiti is painted after the cellar surfaces; see below.
 
 # Wooden throne against the east wall, facing the doorway.
 tx, ty = ROOM_X1 - 0.75, 0.0
@@ -506,6 +483,10 @@ cellar = Cellar(
 )
 bake_atlas(bpy.data.objects["Basement_Walls"], PLASTER, "Basement plaster", 2048, cellar.inside, cellar.plaster)
 bake_atlas(bpy.data.objects["Basement_Shell"], CONCRETE, "Basement concrete", 2048, cellar.inside, cellar.concrete)
+# Hand-sprayed on the south half of the east wall, facing the doorway and clear
+# of the throne, the damp trail on the north half and the candle stand.
+paint_graffiti(cellar, "Graffiti_Black_Metal", collections["Basement_Render"],
+               ROOM_X1, -2.15, BOTTOM + 1.75, 2.3, 1.5, "BLACK METAL")
 
 def export(path, collection_names, image_format="AUTO"):
     bpy.ops.object.select_all(action="DESELECT")
