@@ -5,6 +5,8 @@ import {
   Mesh,
   MeshStandardMaterial,
   PointLight,
+  Quaternion,
+  Raycaster,
   Vector3,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -213,6 +215,74 @@ describe('basement room', () => {
       materials.add(material);
     }
     expect(materials.size).toBe(2);
+    world.dispose();
+  });
+
+  it('models the radio with the named parts that playback (#61) binds to', async () => {
+    const world = await openBasement();
+    const find = (name: string) =>
+      world.passes[0]!.getObjectByName(name) as Mesh | undefined;
+    const root = find('Radio_Basement')!;
+    const parts = [
+      'Power',
+      'Emitter',
+      'Status',
+      'Dial',
+      'Knob_Volume',
+      'Knob_Tuning',
+    ].map((part) => {
+      const node = find(`Radio_Basement_${part}`);
+      expect(node, part).toBeDefined();
+      expect(node!.parent, part).toBe(root);
+      return node!;
+    });
+    // Status lamp and dial own their materials, so lighting one changes nothing else.
+    for (const [name, material] of [
+      ['Radio_Basement_Status', 'Radio_Status_Lamp'],
+      ['Radio_Basement_Dial', 'Radio_Dial_Face'],
+    ]) {
+      const users: string[] = [];
+      world.passes[0]!.traverse((node) => {
+        if (
+          node instanceof Mesh &&
+          (node.material as MeshStandardMaterial).name === material
+        )
+          users.push(node.name);
+      });
+      expect(users).toEqual([name]);
+    }
+    // Knobs and the switch turn in place: their shafts run along local Z.
+    for (const name of [
+      'Radio_Basement_Knob_Volume',
+      'Radio_Basement_Knob_Tuning',
+      'Radio_Basement_Power',
+    ]) {
+      const box = find(name)!.geometry.boundingBox!;
+      expect(Math.abs(box.min.x + box.max.x) / 2, name).toBeLessThan(0.01);
+      expect(Math.abs(box.min.y + box.max.y) / 2, name).toBeLessThan(0.01);
+    }
+    // In the south-east corner, clear of the throne and walking route.
+    const [power, emitter] = parts;
+    const at = emitter!.getWorldPosition(new Vector3());
+    expect(at.x).toBeGreaterThan(26);
+    expect(at.z).toBeGreaterThan(3);
+    expect(
+      world.solids.some((box) =>
+        box.containsPoint(new Vector3(26.6, -2.7, 3.68)),
+      ),
+    ).toBe(true);
+    // The switch is the first surface a visitor's ray meets from the front.
+    const front = new Vector3(0, 0, 1).applyQuaternion(
+      root.getWorldQuaternion(new Quaternion()),
+    );
+    const target = power!.getWorldPosition(new Vector3());
+    const ray = new Raycaster(
+      target.clone().addScaledVector(front, 1.5),
+      front.clone().negate(),
+      0,
+      3,
+    );
+    expect(ray.intersectObjects(world.surfaces, false)[0]?.object).toBe(power);
     world.dispose();
   });
 

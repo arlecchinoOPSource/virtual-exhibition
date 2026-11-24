@@ -38,6 +38,7 @@ from basement_surfaces import Cellar, bake_atlas, paint_graffiti, stair_surface
 from throne import build_throne, wood_shader
 from candle_stand import build_candle_stand
 from posters import hang_poster
+from radio import build_radio
 from gallery_finishes import frame_profile, oak_floor, paint_finish, paint_uv, soften, turned
 
 HEIGHT = 3.6
@@ -434,6 +435,13 @@ flame_centre, stand_box = build_candle_stand(collections["Basement_Render"], CAN
 point_light("Light_Basement_Candles", *flame_centre, 0.6, (1.0, 0.55, 0.25))
 solid("COL_Candle_Stand", *stand_box)
 
+# A vintage valve radio on a side table in the south-east corner: clear of
+# the walking route, the throne, the graffiti above and the Doré print, and
+# turned toward the middle of the room. See radio.py for the node contract.
+radio_table, radio_box = build_radio(collections["Basement_Render"], ROOM_X1 - 0.4, -ROOM_Y + 0.32,
+                                     BOTTOM, 205)
+solid("COL_Radio_Table", *radio_box)
+
 # Bare incandescent bulbs on cloth cords: one over the room, nudged toward
 # the throne for a little fill there, and one high over the stairs so the
 # steps read in both directions. Both are weak and warm.
@@ -528,7 +536,7 @@ cellar = Cellar(
 )
 # Baked contact shadow where the throne base and the stand's feet meet the floor.
 cellar.contacts = [("rect", throne_box[0], throne_box[1], throne_box[2], throne_box[3]),
-                   ("circle", cx, cy, 0.22)]
+                   ("circle", cx, cy, 0.22), ("rect", *radio_table)]
 bake_atlas(bpy.data.objects["Basement_Walls"], PLASTER, "Basement plaster", 2048, cellar.inside, cellar.plaster)
 bake_atlas(bpy.data.objects["Basement_Shell"], CONCRETE, "Basement concrete", 2048, cellar.inside, cellar.concrete)
 bake_atlas(bpy.data.objects["Basement_Throne"], OAK, "Throne oak", 1024,
