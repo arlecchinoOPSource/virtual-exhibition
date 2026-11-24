@@ -82,6 +82,29 @@
                   Display spotlights
                 </label>
               </fieldset>
+              <fieldset>
+                <legend>Audio</legend>
+                <label class="toggle">
+                  <input id="sound" type="checkbox" />
+                  Play environmental sound
+                </label>
+                <label for="volume">
+                  Volume
+                  <output id="volume-value" for="volume">60%</output>
+                </label>
+                <input
+                  id="volume"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value="0.6"
+                />
+                <label class="toggle">
+                  <input id="mute" type="checkbox" />
+                  Mute
+                </label>
+              </fieldset>
             </details>
             <p class="menu-links">
               <a href="./directory.html">Exhibition directory</a>: every display
