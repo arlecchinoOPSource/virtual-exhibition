@@ -361,11 +361,22 @@ async function walkToBasementDoor(page: Page) {
   await page.keyboard.down('w');
   await page.waitForTimeout(6000);
   await page.keyboard.up('w');
+  // Back off the end wall, then strafe back onto the door axis in front of
+  // the statue plinth (symmetric with the first strafe).
+  await page.keyboard.down('s');
+  await page.waitForTimeout(700);
+  await page.keyboard.up('s');
   await page.keyboard.down('a');
+  await page.waitForTimeout(800);
+  await page.keyboard.up('a');
+  // Walk in until the door is in reach; the closed leaf stops the visitor.
+  await page.keyboard.down('w');
   await expect(prompt).toHaveText('E / Click · Open the door', {
     timeout: 10000,
   });
-  await page.keyboard.up('a');
+  await page.waitForTimeout(600);
+  await page.keyboard.up('w');
+  await expect(prompt).toHaveText('E / Click · Open the door');
   return prompt;
 }
 

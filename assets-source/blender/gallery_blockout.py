@@ -283,14 +283,16 @@ sign["text"] = text_curve.body
 collections["Gallery_Render"].objects.link(sign)
 bpy.data.objects.remove(text_obj)
 
-# An original Grim Reaper statue on a plinth in the south-east corner, clear
-# of the walkway and the doorway.
-sx, sy = 9.3, -3.6
+# An original Grim Reaper statue on a plinth beside the south door jamb. The
+# door swings outwards into the stairwell, so the statue never blocks it.
+sx, sy = 9.5, -1.5
 box("Statue_Plinth", sx - 0.35, sx + 0.35, sy - 0.35, sy + 0.35, 0, 0.4, IRON, collide=False)
 STATUE_BONE = material("Aged ivory bone", (0.46, 0.37, 0.24), 0.83)
 BLADE.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.66
 CLOTH.node_tree.nodes["Principled BSDF"].inputs["Sheen Weight"].default_value = 0.23
-sculpt_reaper(collections["Gallery_Render"], sx, sy, CLOTH, STATUE_BONE, WOOD, BLADE)
+HOOD_SHADOW = material("Statue_Hood_Shadow", (0, 0, 0), 1.0)
+HOOD_SHADOW.node_tree.nodes["Principled BSDF"].inputs["Specular IOR Level"].default_value = 0
+sculpt_reaper(collections["Gallery_Render"], sx, sy, CLOTH, STATUE_BONE, WOOD, BLADE, HOOD_SHADOW)
 proxy = bpy.data.objects.new("COL_Statue", box_mesh("COL_Statue", (0.7, 0.7, 2.4)))
 proxy.location = (sx, sy, 1.2)
 proxy.display_type = "WIRE"
