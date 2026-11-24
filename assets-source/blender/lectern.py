@@ -39,7 +39,7 @@ def build_lectern(box, material, collection):
         return obj
 
     def height(x, y):
-        return 1.139 + x * .29 + .016 * math.sin(math.pi * abs(y) / .24)
+        return 1.150 + x * .29 + .016 * math.sin(math.pi * abs(y) / .24)
 
     hardcover = member("Catalogue_Cover", -.19, .19, -.25, .25, 1.116, 1.139, cover, .008)
     hardcover.rotation_euler.y = -math.atan(.29)
@@ -57,9 +57,12 @@ def build_lectern(box, material, collection):
             x = .112 - row * .033
             y = side * .115
             width = .066 if row < 6 else .038
-            quads.append(tuple(range(len(marks), len(marks) + 4)))
-            marks.extend((u, v, height(u, v) + .0012) for u, v in
-                         [(x, y-width), (x+.004, y-width), (x+.004, y+width), (x, y+width)])
+            for segment in range(8):
+                left = y - width + segment * width / 4
+                right = left + width / 4
+                quads.append(tuple(range(len(marks), len(marks) + 4)))
+                marks.extend((u, v, height(u, v) + .002) for u, v in
+                             [(x, left), (x+.004, left), (x+.004, right), (x, right)])
     mesh("Catalogue_Print", marks, quads, ink)
     proxy = box("Lectern_Clearance", -.35, .35, -.40, .40, 0, 1.2, oak)
     bpy.data.objects.remove(proxy, do_unlink=True)

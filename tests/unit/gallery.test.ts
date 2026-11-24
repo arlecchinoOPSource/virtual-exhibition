@@ -5,6 +5,7 @@ import {
   Group,
   Mesh,
   Quaternion,
+  PerspectiveCamera,
   SpotLight,
   Texture,
   Vector3,
@@ -12,6 +13,7 @@ import {
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { createGallery } from '../../src/environments/gallery';
+import { createSurfacePicker } from '../../src/player/interaction';
 import { stepBody } from '../../src/player/collision';
 
 async function parseModel(name: 'gallery' | 'frame') {
@@ -86,6 +88,14 @@ describe('gallery blockout', () => {
     expect(
       world.isCatalogue(world.scene.getObjectByName('Catalogue_Pages')),
     ).toBe(true);
+    const camera = new PerspectiveCamera();
+    camera.position.set(-1.65, 1.65, 0);
+    camera.lookAt(0, 1.15, 0.07);
+    const pick = createSurfacePicker(camera, world.surfaces, 3);
+    expect(world.isCatalogue(pick())).toBe(true);
+    camera.position.x = -4.5;
+    camera.lookAt(0, 1.15, 0.07);
+    expect(world.isCatalogue(pick())).toBe(false);
     expect(world.isCatalogue(undefined)).toBe(false);
     expect(world.anchors.every((anchor) => anchor.children.length === 1)).toBe(
       true,
