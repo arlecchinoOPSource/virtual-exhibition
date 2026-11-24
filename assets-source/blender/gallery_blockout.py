@@ -31,6 +31,7 @@ from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from grim_reaper import sculpt_reaper
+from sign_lettering import build_sign
 from gallery_finishes import frame_profile, oak_floor, paint_finish, paint_uv, soften, turned
 
 HEIGHT = 3.6
@@ -245,43 +246,11 @@ for name, y0, y1, z0, z1 in (
 ):
     box(name, 9.94, 10, y0, y1, z0, z1, IRON, collide=False)
 
-# Sign: a spiked iron board with raised lettering facing the gallery (-X).
-box("Sign_Board", 9.95, 10, -1.75, 1.75, 2.72, 3.2, IRON, collide=False)
-for index in range(9):
-    y = -1.6 + index * 0.4
-    spike = bpy.data.meshes.new(f"Sign_Spike_{index:02}")
-    spike.from_pydata(
-        [(9.95, y - 0.08, 3.2), (9.95, y + 0.08, 3.2), (9.95, y, 3.38 + 0.06 * (index % 2)),
-         (10, y - 0.08, 3.2), (10, y + 0.08, 3.2), (10, y, 3.38 + 0.06 * (index % 2))],
-        [],
-        [(0, 1, 2), (3, 5, 4), (0, 3, 4, 1), (1, 4, 5, 2), (2, 5, 3, 0)],
-    )
-    spike.materials.append(IRON)
-    obj = bpy.data.objects.new(f"Sign_Spike_{index:02}", spike)
-    collections["Gallery_Render"].objects.link(obj)
-
-text_curve = bpy.data.curves.new("Sign_Basement", "FONT")
-text_curve.body = "BASEMENT OF DOOM"
-text_curve.size = 0.3
-text_curve.extrude = 0.012
-text_curve.align_x = "CENTER"
-text_curve.align_y = "CENTER"
-text_obj = bpy.data.objects.new("Sign_Basement_Text", text_curve)
-scene.collection.objects.link(text_obj)
-text_obj.location = (9.935, 0, 2.96)
-# Stand the text up and turn it to face -X so it reads left to right.
-text_obj.rotation_euler = (math.pi / 2, 0, -math.pi / 2)
-bpy.context.view_layer.update()
-lettering = bpy.data.meshes.new_from_object(
-    text_obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
-)
-lettering.materials.clear()
-lettering.materials.append(BONE)
-sign = bpy.data.objects.new("Sign_Basement", lettering)
-sign.matrix_world = text_obj.matrix_world
-sign["text"] = text_curve.body
-collections["Gallery_Render"].objects.link(sign)
-bpy.data.objects.remove(text_obj)
+# Sign: original raised lettering on a spiked iron board that stands off the
+# wall on four bolts, centred over the opening and facing the gallery (-X).
+SIGN_IRON = material("Sign_Iron", (0.05, 0.048, 0.046), 0.55)
+SIGN_IRON.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.6
+build_sign(collections["Gallery_Render"], SIGN_IRON, BONE, 10, 2.96, 1.75, "BASEMENT OF DOOM")
 
 # An original Grim Reaper statue on a plinth beside the south door jamb. The
 # door swings outwards into the stairwell, so the statue never blocks it.
@@ -523,7 +492,7 @@ def join(name, prefixes, collection):
 join("Gallery_Walls", ("Wall_", "Pier_"), "Gallery_Render")
 join("Gallery_Displays", ("Island_", "Partition_"), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
-join("Door_Frame", ("Door_Frame_", "Sign_Board", "Sign_Spike_", "Statue_Plinth"), "Gallery_Render")
+join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
 join("Basement_Steps", ("Landing_", "Stair_"), "Basement_Render")
 join("Basement_Walls", ("Stairwell_", "Room_Wall_"), "Basement_Render")
 join("Basement_Shell", ("Room_Floor", "Room_Ceiling"), "Basement_Render")
