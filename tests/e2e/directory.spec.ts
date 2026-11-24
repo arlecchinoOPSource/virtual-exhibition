@@ -69,7 +69,8 @@ test('keeps the keyboard fallback and fills the gallery viewport', async ({
     name: 'Browse exhibits without 3D',
   });
   await expect(fallback).toBeFocused();
-  await page.keyboard.press('Enter');
+  await fallback.press('Enter');
+  await expect(page).toHaveURL(/directory\.html$/);
   await expect(
     page.getByRole('heading', { name: 'Exhibition directory' }),
   ).toBeVisible();
@@ -128,10 +129,8 @@ test('opens the catalogue with E and click and restores the view', async ({
   await expect(resume).toBeFocused();
   await resume.press('Enter');
   await expect(prompt).toHaveText('E / Click · Open Exhibition Directory');
-  await page.evaluate(() => {
-    const scene = document.querySelector('#scene');
-    scene?.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
-  });
+  await page.mouse.down();
+  await page.mouse.up();
   await expect(catalogue).toBeVisible();
   await catalogue.getByRole('button', { name: 'Close' }).click();
   await expect(resume).toBeFocused();
