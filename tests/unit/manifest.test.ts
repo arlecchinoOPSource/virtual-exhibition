@@ -4,9 +4,9 @@ import manifest from '../../public/data/exhibits.json';
 import { parseExhibits } from '../../src/exhibition/manifest';
 
 describe('exhibit manifest', () => {
-  it('reserves 12 ordered locations and publishes the Doraemon essay', () => {
+  it('reserves 15 ordered locations and publishes the Doraemon essay', () => {
     const entries = parseExhibits(manifest);
-    expect(entries).toHaveLength(12);
+    expect(entries).toHaveLength(15);
     expect(entries[0]).toMatchObject({
       anchor: 'Exhibit_01',
       status: 'ready',
@@ -21,9 +21,9 @@ describe('exhibit manifest', () => {
   });
 
   it('rejects missing or duplicate anchors', () => {
-    expect(() => parseExhibits(manifest.slice(1))).toThrow(/12 entries/);
+    expect(() => parseExhibits(manifest.slice(1))).toThrow(/15 entries/);
     expect(() =>
-      parseExhibits([manifest[0], ...manifest.slice(0, 11)]),
+      parseExhibits([manifest[0], ...manifest.slice(0, 14)]),
     ).toThrow(/Exhibit_02/);
   });
 

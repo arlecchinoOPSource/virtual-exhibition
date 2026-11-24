@@ -20,7 +20,7 @@ export interface World {
   actionAt?: (
     object: Object3D | undefined,
     feet: Vector3,
-  ) => { label: string; run(): void } | undefined;
+  ) => { label: string; pause?: boolean; run(): void } | undefined;
   update?: (seconds: number, feet: Vector3) => void;
   dispose(): void;
 }
@@ -97,6 +97,7 @@ export function startRenderer(
       }
       const sceneAction = world.actionAt?.(hit, body.feet);
       if (sceneAction) {
+        if (sceneAction.pause) controls.pause();
         sceneAction.run();
         updatePrompt();
         return;

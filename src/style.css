@@ -1,7 +1,14 @@
 :root {
+  --sand: #fae0a9;
+  --ivory: #fff7e7;
+  --ink: #34271e;
+  --muted: #604737;
+  --rule: #a48564;
+  --wood: #493126;
+  --heading: Georgia, 'Times New Roman', serif;
   font-family: system-ui, sans-serif;
-  color: #e7edf1;
-  background: #15191c;
+  color: var(--ink);
+  background: var(--sand);
 }
 
 body {
@@ -20,16 +27,16 @@ h1 {
 
 header p {
   margin: 0.4rem 0 1rem;
-  color: #bdc8cf;
+  color: var(--muted);
 }
 
 #viewport {
   position: relative;
   height: clamp(18rem, 70vh, 50rem);
   overflow: hidden;
-  border: 1px solid #52616c;
+  border: 1px solid var(--rule);
   border-radius: 0.5rem;
-  background: #202831;
+  background: var(--wood);
 }
 
 #scene {
@@ -58,7 +65,7 @@ header p {
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgb(21 25 28 / 50%);
+  background: rgb(42 27 19 / 50%);
 }
 
 #controls[hidden] {
@@ -67,9 +74,9 @@ header p {
 
 .control-panel {
   padding: 1rem 1.25rem;
-  border: 1px solid #52616c;
+  border: 1px solid var(--rule);
   border-radius: 0.5rem;
-  background: #15191c;
+  background: var(--sand);
   text-align: center;
 }
 
@@ -77,8 +84,8 @@ header p {
   padding: 0.6rem 1rem;
   border: 0;
   border-radius: 0.25rem;
-  background: #e7edf1;
-  color: #15191c;
+  background: var(--wood);
+  color: white;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -86,7 +93,7 @@ header p {
 
 #instructions {
   margin: 0.7rem 0 0;
-  color: #bdc8cf;
+  color: var(--muted);
 }
 
 #crosshair {
@@ -97,7 +104,7 @@ header p {
   height: 5px;
   border-radius: 50%;
   background: white;
-  box-shadow: 0 0 0 1px #15191c;
+  box-shadow: 0 0 0 1px var(--sand);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -109,7 +116,7 @@ header p {
   margin: 0;
   padding: 0.4rem 0.7rem;
   border-radius: 0.25rem;
-  background: #15191c;
+  background: var(--sand);
   text-align: center;
   transform: translateX(-50%);
   pointer-events: none;
@@ -125,9 +132,9 @@ header p {
   left: 1rem;
   max-width: min(24rem, calc(100% - 2rem));
   padding: 0.6rem 0.8rem;
-  border: 1px solid #52616c;
+  border: 1px solid var(--rule);
   border-radius: 0.25rem;
-  background: #15191c;
+  background: var(--sand);
   pointer-events: none;
 }
 
@@ -142,21 +149,21 @@ header p {
 
 #exhibit-label p {
   margin: 0.3rem 0 0;
-  color: #bdc8cf;
+  color: var(--muted);
   font-size: 0.9rem;
 }
 
 #exhibit-details {
   width: min(36rem, calc(100% - 2rem));
   padding: 1.25rem;
-  border: 1px solid #52616c;
+  border: 1px solid var(--rule);
   border-radius: 0.5rem;
-  background: #15191c;
-  color: #e7edf1;
+  background: var(--sand);
+  color: var(--ink);
 }
 
 #exhibit-details::backdrop {
-  background: rgb(21 25 28 / 70%);
+  background: rgb(42 27 19 / 70%);
 }
 
 #exhibit-details h2 {
@@ -176,7 +183,7 @@ header p {
 }
 
 #exhibit-details p {
-  color: #bdc8cf;
+  color: var(--muted);
 }
 
 .details-actions {
@@ -188,18 +195,18 @@ header p {
 
 .details-actions button {
   padding: 0.5rem 0.9rem;
-  border: 1px solid #e7edf1;
+  border: 1px solid var(--ink);
   border-radius: 0.25rem;
   background: transparent;
-  color: #e7edf1;
+  color: var(--ink);
   font: inherit;
   text-decoration: none;
   cursor: pointer;
 }
 
 .details-actions [data-essay] {
-  background: #e7edf1;
-  color: #15191c;
+  background: var(--wood);
+  color: white;
   font-weight: 600;
 }
 
@@ -209,13 +216,13 @@ header p {
 
 #essay-viewer {
   width: min(60rem, calc(100% - 2rem));
-  height: calc(100vh - 2rem);
+  height: calc(100dvh - 2rem);
   max-height: none;
   padding: 0;
-  border: 1px solid #52616c;
+  border: 1px solid var(--rule);
   border-radius: 0.5rem;
-  background: #15191c;
-  color: #e7edf1;
+  background: var(--sand);
+  color: var(--ink);
 }
 
 #essay-viewer[open] {
@@ -224,7 +231,7 @@ header p {
 }
 
 #essay-viewer::backdrop {
-  background: rgb(21 25 28 / 80%);
+  background: rgb(42 27 19 / 80%);
 }
 
 .viewer-bar {
@@ -234,7 +241,7 @@ header p {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #52616c;
+  border-bottom: 1px solid var(--rule);
 }
 
 .viewer-bar h2 {
@@ -252,10 +259,10 @@ header p {
 .viewer-tools a {
   min-width: 2.25rem;
   padding: 0.35rem 0.7rem;
-  border: 1px solid #e7edf1;
+  border: 1px solid var(--ink);
   border-radius: 0.25rem;
   background: transparent;
-  color: #e7edf1;
+  color: var(--ink);
   font: inherit;
   text-decoration: none;
   cursor: pointer;
@@ -283,11 +290,11 @@ header p {
 .viewer-pages {
   flex: 1;
   overflow: auto;
-  background: #2a3036;
+  background: #d5b88e;
 }
 
 .viewer-pages:focus-visible {
-  outline: 2px solid #e7edf1;
+  outline: 2px solid var(--ink);
   outline-offset: -2px;
 }
 
@@ -298,7 +305,7 @@ header p {
 }
 
 header a {
-  color: #e7edf1;
+  color: var(--ink);
 }
 
 main > #status {
@@ -325,9 +332,9 @@ main > #status[hidden] {
   box-sizing: border-box;
   height: 100%;
   padding: 1rem;
-  border: 1px solid #52616c;
+  border: 1px solid var(--rule);
   border-radius: 0.5rem;
-  background: #202831;
+  background: var(--wood);
 }
 
 .directory h2 {
@@ -337,7 +344,7 @@ main > #status[hidden] {
 
 .directory-slot {
   margin: 0 0 0.25rem;
-  color: #bdc8cf;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
@@ -349,7 +356,7 @@ main > #status[hidden] {
 }
 
 .directory p {
-  color: #bdc8cf;
+  color: var(--muted);
 }
 
 .directory-actions {
@@ -362,18 +369,18 @@ main > #status[hidden] {
 .directory-actions button,
 .directory-actions a {
   padding: 0.4rem 0.8rem;
-  border: 1px solid #e7edf1;
+  border: 1px solid var(--ink);
   border-radius: 0.25rem;
   background: transparent;
-  color: #e7edf1;
+  color: var(--ink);
   font: inherit;
   text-decoration: none;
   cursor: pointer;
 }
 
 .directory-actions button {
-  background: #e7edf1;
-  color: #15191c;
+  background: var(--wood);
+  color: white;
   font-weight: 600;
 }
 
@@ -407,7 +414,7 @@ main > #status[hidden] {
 
 .control-list dd {
   margin: 0;
-  color: #bdc8cf;
+  color: var(--muted);
 }
 
 #settings {
@@ -427,19 +434,10 @@ main > #status[hidden] {
   width: 100%;
 }
 
-.menu-links {
-  margin: 1rem 0 0;
-  color: #bdc8cf;
-}
-
-.menu-links a {
-  color: #e7edf1;
-}
-
 #settings fieldset {
   margin: 1rem 0 0;
   padding: 0.5rem 0.75rem 0.75rem;
-  border: 1px solid #52616c;
+  border: 1px solid var(--rule);
   border-radius: 0.25rem;
 }
 
@@ -449,12 +447,12 @@ main > #status[hidden] {
 
 #settings output {
   float: right;
-  color: #bdc8cf;
+  color: var(--muted);
 }
 
 .setting-hint {
   margin: 0.25rem 0 0.5rem;
-  color: #bdc8cf;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
@@ -462,4 +460,124 @@ main > #status[hidden] {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+}
+
+h1,
+h2,
+legend {
+  font-family: var(--heading);
+  font-weight: 500;
+}
+a {
+  color: var(--wood);
+}
+:focus-visible {
+  outline: 3px solid #794019;
+  outline-offset: 3px;
+}
+button,
+input[type='range'],
+input[type='checkbox'] {
+  accent-color: var(--wood);
+}
+.gallery-app {
+  width: 100%;
+  height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+}
+.gallery-app #viewport {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+.gallery-title {
+  position: absolute;
+  z-index: 1;
+  top: 1rem;
+  right: 1rem;
+  pointer-events: none;
+}
+.gallery-title h1,
+.catalogue-bar h2 {
+  margin: 0;
+  padding: 0.45rem 0.85rem;
+  color: white;
+  background: var(--wood);
+  font-size: clamp(1rem, 3vw, 1.25rem);
+}
+.control-panel {
+  box-sizing: border-box;
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  background: var(--sand);
+  box-shadow: 0 0.75rem 2.5rem rgb(42 27 19 / 24%);
+}
+.control-panel h2 {
+  padding: 0.5rem 0.75rem;
+  background: var(--wood);
+  color: white;
+}
+#interaction,
+#exhibit-label {
+  background: var(--ivory);
+}
+#viewport #status:not([hidden]) {
+  align-content: center;
+  gap: 0.65rem;
+  background: var(--sand);
+}
+.directory-fallback {
+  position: fixed;
+  z-index: 3;
+  left: 1rem;
+  top: 1rem;
+  padding: 0.6rem;
+  background: var(--ivory);
+  transform: translateY(-200%);
+}
+.directory-fallback:focus {
+  transform: none;
+}
+#catalogue {
+  box-sizing: border-box;
+  width: min(64rem, calc(100% - 1rem));
+  max-height: calc(100dvh - 1rem);
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  background: var(--sand);
+  color: var(--ink);
+}
+#catalogue::backdrop {
+  background: rgb(42 27 19 / 72%);
+}
+.catalogue-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--wood);
+  color: white;
+}
+.catalogue-bar button {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background: var(--ivory);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+#catalogue .directory {
+  padding: 1rem;
+}
+.directory article {
+  background: var(--ivory);
+}
+.viewer-tools {
+  flex-wrap: wrap;
 }

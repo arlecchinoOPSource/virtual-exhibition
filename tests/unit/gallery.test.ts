@@ -40,11 +40,11 @@ describe('gallery blockout', () => {
     world.dispose();
   });
 
-  it('places twelve anchors on display surfaces facing open floor', async () => {
+  it('places fifteen anchors on display surfaces facing open floor', async () => {
     const world = await loadWorld();
     expect(world.anchors.map((anchor) => anchor.name)).toEqual(
       Array.from(
-        { length: 12 },
+        { length: 15 },
         (_, index) => `Exhibit_${String(index + 1).padStart(2, '0')}`,
       ),
     );
@@ -65,6 +65,31 @@ describe('gallery blockout', () => {
       expect(Math.abs(viewpoint.x), anchor.name).toBeLessThan(10);
       expect(Math.abs(viewpoint.z), anchor.name).toBeLessThan(5);
     }
+    world.dispose();
+  });
+
+  it('replaces the partition with a compact collision proxy and actionable catalogue', async () => {
+    const world = await loadWorld();
+    expect(world.scene.getObjectByName('COL_Partition_Center')).toBeUndefined();
+    const proxy = world.scene.getObjectByName('COL_Lectern_Clearance');
+    expect(proxy).toBeDefined();
+    expect(
+      world.solids.some((box) => box.containsPoint(new Vector3(0, 0.5, 0))),
+    ).toBe(true);
+    for (const side of [-1, 1]) {
+      expect(
+        world.solids.some((box) =>
+          box.containsPoint(new Vector3(0, 0.5, side * 1.5)),
+        ),
+      ).toBe(false);
+    }
+    expect(
+      world.isCatalogue(world.scene.getObjectByName('Catalogue_Pages')),
+    ).toBe(true);
+    expect(world.isCatalogue(undefined)).toBe(false);
+    expect(world.anchors.every((anchor) => anchor.children.length === 1)).toBe(
+      true,
+    );
     world.dispose();
   });
 
@@ -102,7 +127,7 @@ describe('gallery blockout', () => {
     const root = await parseModel('gallery');
     root.getObjectByName('Exhibit_05')?.removeFromParent();
     expect(() => createGallery(root, new Group())).toThrow(
-      'exactly one Exhibit_05',
+      'anchor count differs',
     );
   });
 });
@@ -155,7 +180,7 @@ describe('display frames and gallery lights', () => {
     world.scene.traverse((node) => {
       if (node instanceof SpotLight) spots.push(node);
     });
-    expect(spots).toHaveLength(12);
+    expect(spots).toHaveLength(15);
 
     for (const anchor of world.anchors) {
       const target = anchor.getWorldPosition(new Vector3());
@@ -202,7 +227,7 @@ describe('gallery export budget', () => {
         expect(Math.max(width, height)).toBeLessThanOrEqual(2048);
       }
     });
-    expect(drawCalls).toBeLessThanOrEqual(50);
+    expect(drawCalls).toBeLessThanOrEqual(52);
     world.dispose();
   });
 

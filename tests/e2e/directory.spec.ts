@@ -20,7 +20,7 @@ test('lists every exhibit without WebGL', async ({ page }) => {
   await page.goto('/directory.html');
 
   const exhibits = page.getByRole('list', { name: 'Exhibits' });
-  await expect(exhibits.getByRole('listitem')).toHaveCount(12);
+  await expect(exhibits.getByRole('listitem')).toHaveCount(15);
   const first = exhibits.getByRole('article', { name: essayTitle });
   await expect(first).toContainText('Display 01');
   await expect(first.getByRole('img', { name: essayTitle })).toBeVisible();
@@ -54,17 +54,25 @@ test('opens and closes an essay with the keyboard', async ({ page }) => {
   await expect(read).toBeFocused();
 });
 
-test('links the gallery and directory both ways', async ({ page }) => {
+test('keeps the keyboard fallback and fills the gallery viewport', async ({
+  page,
+}) => {
   await page.goto('/');
-  await page
-    .locator('header')
-    .getByRole('link', { name: 'Exhibition directory' })
-    .click();
+  const canvas = page.locator('#scene');
+  const size = await canvas.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return (box.width * box.height) / (innerWidth * innerHeight);
+  });
+  expect(size).toBeGreaterThanOrEqual(0.9);
+  await page.keyboard.press('Tab');
+  const fallback = page.getByRole('link', {
+    name: 'Browse exhibits without 3D',
+  });
+  await expect(fallback).toBeFocused();
+  await page.keyboard.press('Enter');
   await expect(
     page.getByRole('heading', { name: 'Exhibition directory' }),
   ).toBeVisible();
   await page.getByRole('link', { name: 'Return to the 3D gallery' }).click();
-  await expect(
-    page.getByRole('img', { name: 'Eye-level view inside the exhibition' }),
-  ).toHaveAttribute('data-environment', 'gallery');
+  await expect(canvas).toHaveAttribute('data-environment', 'gallery');
 });

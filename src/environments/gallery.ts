@@ -16,10 +16,7 @@ import { createDoor } from './door';
 import { paintExhibit } from '../exhibition/placeholder';
 import type { Exhibit } from '../types/exhibit';
 
-const anchorNames = Array.from(
-  { length: 12 },
-  (_, index) => `Exhibit_${String(index + 1).padStart(2, '0')}`,
-);
+import { anchorOrder } from '../exhibition/manifest';
 
 // Hides COL_ proxies as solids and collects visible meshes as ray surfaces.
 function collect(
@@ -55,14 +52,18 @@ export function createGallery(
 
   const spawnNode = root.getObjectByName('Spawn_Gallery');
   if (!spawnNode) throw new Error('The gallery has no Spawn_Gallery marker.');
-  const anchors = anchorNames.map((name) => {
-    const matches: Object3D[] = [];
-    root.traverse((node) => {
-      if (node.name === name) matches.push(node);
-    });
-    const [match] = matches;
-    if (!match || matches.length !== 1)
-      throw new Error(`The gallery must contain exactly one ${name}.`);
+  const exportedAnchors = new Map<string, Object3D>();
+  root.traverse((node) => {
+    if (!node.name.startsWith('Exhibit_')) return;
+    if (exportedAnchors.has(node.name))
+      throw new Error(`Duplicate gallery anchor: ${node.name}.`);
+    exportedAnchors.set(node.name, node);
+  });
+  if (exportedAnchors.size !== anchorOrder.length)
+    throw new Error('The gallery anchor count differs from the manifest.');
+  const anchors = anchorOrder.map((name) => {
+    const match = exportedAnchors.get(name);
+    if (!match) throw new Error(`The gallery is missing ${name}.`);
     return match;
   });
   // Clones share the frame's geometry and materials.
@@ -89,6 +90,10 @@ export function createGallery(
     collect(basement, solids, surfaces, colliders);
   });
 
+  const catalogue = root.getObjectByName('Catalogue_Pages');
+  const cataloguePrint = root.getObjectByName('Catalogue_Print');
+  if (!catalogue) throw new Error('The gallery is missing its catalogue.');
+
   const keyLight = new DirectionalLight(0xf6f3ee, 2.1);
   keyLight.position.set(-4, 8, 3);
   const skyLight = new HemisphereLight(0xe7edf6, 0x43464d, 1.4);
@@ -110,6 +115,12 @@ export function createGallery(
       ).y,
     },
     door,
+    isCatalogue(object: Object3D | undefined) {
+      return (
+        object === catalogue ||
+        (cataloguePrint !== undefined && object === cataloguePrint)
+      );
+    },
     actionAt(object: Object3D | undefined, feet: Vector3) {
       for (let node = object; node; node = node.parent ?? undefined)
         if (node === doorMesh)

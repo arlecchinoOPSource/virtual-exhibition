@@ -10,7 +10,7 @@ test('draws the preview in WebGL and resizes the canvas', async ({ page }) => {
     name: 'Eye-level view inside the exhibition',
   });
   await expect(canvas).toHaveAttribute('data-environment', 'gallery');
-  await expect(canvas).toHaveAttribute('data-exhibit-count', '12');
+  await expect(canvas).toHaveAttribute('data-exhibit-count', '15');
   await expect(page.getByRole('status')).toBeHidden();
 
   await expect
@@ -83,7 +83,7 @@ test('pauses frame rendering while hidden and preserves the view on resume', asy
   const canvas = page.getByRole('img', {
     name: 'Eye-level view inside the exhibition',
   });
-  await expect(canvas).toHaveAttribute('data-exhibit-count', '12');
+  await expect(canvas).toHaveAttribute('data-exhibit-count', '15');
   const readDrawCount = async () =>
     Number(await canvas.getAttribute('data-draw-count'));
   const initialDrawCount = await readDrawCount();

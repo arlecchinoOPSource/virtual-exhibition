@@ -14,7 +14,7 @@ test('explains the controls on the opening screen', async ({ page }) => {
   await expect(menu.getByRole('button', { name: 'Start walk' })).toBeVisible();
   await expect(
     menu.getByRole('link', { name: 'Exhibition directory' }),
-  ).toHaveAttribute('href', './directory.html');
+  ).toHaveCount(0);
 });
 
 test('enters, pauses, and resumes with the keyboard without trapping focus', async ({
@@ -49,11 +49,9 @@ test('enters, pauses, and resumes with the keyboard without trapping focus', asy
 
   await page.keyboard.press('Tab');
   await expect(paused.getByText('Settings')).toBeFocused();
-  await page.keyboard.press('Tab');
   await expect(
     paused.getByRole('link', { name: 'Exhibition directory' }),
-  ).toBeFocused();
-  await page.keyboard.press('Shift+Tab');
+  ).toHaveCount(0);
   await page.keyboard.press('Shift+Tab');
   await expect(resume).toBeFocused();
   await page.keyboard.press('Enter');

@@ -270,14 +270,15 @@ proxy.location = (sx, sy, 1.2)
 proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
 
-# Two freestanding islands and a smaller central partition.
+# Two freestanding islands flank the catalogue stand.
 box("Island_Left", -5.5, -2.5, -0.3, 0.3, 0, 2.4, DISPLAY)
 box("Island_Right", 2.5, 5.5, -0.3, 0.3, 0, 2.4, DISPLAY)
-box("Partition_Center", -0.15, 0.15, -1, 1, 0, 2.4, DISPLAY)
+from lectern import build_lectern
+build_lectern(box, material, collections["Gallery_Render"])
 
 marker("Spawn_Gallery", -8.5, 0, 0, "E")
 
-# 01-06 perimeter bays, 07-10 island faces, 11-12 partition faces.
+# 01–06 perimeter bays, 07–10 islands, 11–15 entrance walls.
 anchors = [
     (-4, 5 - ANCHOR_OFFSET, "N"),
     (0, 5 - ANCHOR_OFFSET, "N"),
@@ -289,8 +290,11 @@ anchors = [
     (-4, -0.3 - ANCHOR_OFFSET, "N"),
     (4, 0.3 + ANCHOR_OFFSET, "S"),
     (4, -0.3 - ANCHOR_OFFSET, "N"),
-    (-0.15 - ANCHOR_OFFSET, 0, "E"),
-    (0.15 + ANCHOR_OFFSET, 0, "W"),
+    (-8, 5 - ANCHOR_OFFSET, "N"),
+    (-8, -5 + ANCHOR_OFFSET, "S"),
+    (-10 + ANCHOR_OFFSET, -2.5, "W"),
+    (-10 + ANCHOR_OFFSET, 0, "W"),
+    (-10 + ANCHOR_OFFSET, 2.5, "W"),
 ]
 for index, (x, y, gaze) in enumerate(anchors, start=1):
     marker(f"Exhibit_{index:02}", x, y, ANCHOR_HEIGHT, gaze)
@@ -453,33 +457,10 @@ def join(name, prefixes, collection):
 
 # COL_ proxies stay separate: the engine needs one box per collider.
 join("Gallery_Walls", ("Wall_", "Pier_"), "Gallery_Render")
-join("Gallery_Displays", ("Island_", "Partition_"), "Gallery_Render")
+join("Gallery_Displays", ("Island_",), "Gallery_Render")
+join("Lectern_Woodwork", ("Lectern_",), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
-join("Basement_Walls", ("Stairwell_", "Room_Wall_"), "Basement_Render")
-join("Basement_Shell", ("Room_Floor", "Room_Ceiling", "Basement_Steps"), "Basement_Render")
-join("Basement_Throne", ("Throne_",), "Basement_Render")
-join("Basement_Candle_Stand", ("Candle_Stand_",), "Basement_Render")
-join("Basement_Bulb_Cords", ("Bulb_Cord_",), "Basement_Render")
-join("Basement_Candles", ("Candle_Wax_",), "Basement_Render")
-join("Basement_Flames", ("Candle_Flame_",), "Basement_Render")
-
-# Unique weathered atlases for the cellar plaster and concrete.
-cellar = Cellar(
-    room=((ROOM_X0 + WALL, -ROOM_Y, BOTTOM), (ROOM_X1, ROOM_Y, TOP)),
-    stairwell=((10 + WALL, -0.8, BOTTOM - 0.01), (ROOM_X0 + WALL, 0.8, HEIGHT)),
-    stair_x=STAIR_X, lower_x=LOWER_X, stair_top=0.0, floor_z=BOTTOM, ceiling_z=TOP,
-    throne=(tx, ty), candles=(cx, cy),
-)
-bake_atlas(bpy.data.objects["Basement_Walls"], PLASTER, "Basement plaster", 2048, cellar.inside, cellar.plaster)
-bake_atlas(bpy.data.objects["Basement_Shell"], CONCRETE, "Basement concrete", 2048, cellar.inside, cellar.concrete)
-bake_atlas(bpy.data.objects["Basement_Throne"], OAK, "Throne oak", 1024,
-           lambda q: q[2] > BOTTOM, wood_shader(throne_members), ppm=300)
-# Hand-sprayed on the south half of the east wall, facing the doorway and clear
-# of the throne, the damp trail on the north half and the candle stand.
-paint_graffiti(cellar, "Graffiti_Black_Metal", collections["Basement_Render"],
-               ROOM_X1, -2.15, BOTTOM + 1.75, 2.3, 1.5, "BLACK METAL")
-
 def export(path, collection_names, image_format="AUTO"):
     bpy.ops.object.select_all(action="DESELECT")
     for name in collection_names:
@@ -506,6 +487,33 @@ export(
     ("Gallery_Render", "Gallery_Collision", "Gallery_Markers", "Gallery_Lights"),
     "JPEG",
 )
+if "--gallery-only" in sys.argv:
+    sys.exit(0)
+
+join("Basement_Walls", ("Stairwell_", "Room_Wall_"), "Basement_Render")
+join("Basement_Shell", ("Room_Floor", "Room_Ceiling", "Basement_Steps"), "Basement_Render")
+join("Basement_Throne", ("Throne_",), "Basement_Render")
+join("Basement_Candle_Stand", ("Candle_Stand_",), "Basement_Render")
+join("Basement_Bulb_Cords", ("Bulb_Cord_",), "Basement_Render")
+join("Basement_Candles", ("Candle_Wax_",), "Basement_Render")
+join("Basement_Flames", ("Candle_Flame_",), "Basement_Render")
+
+# Unique weathered atlases for the cellar plaster and concrete.
+cellar = Cellar(
+    room=((ROOM_X0 + WALL, -ROOM_Y, BOTTOM), (ROOM_X1, ROOM_Y, TOP)),
+    stairwell=((10 + WALL, -0.8, BOTTOM - 0.01), (ROOM_X0 + WALL, 0.8, HEIGHT)),
+    stair_x=STAIR_X, lower_x=LOWER_X, stair_top=0.0, floor_z=BOTTOM, ceiling_z=TOP,
+    throne=(tx, ty), candles=(cx, cy),
+)
+bake_atlas(bpy.data.objects["Basement_Walls"], PLASTER, "Basement plaster", 2048, cellar.inside, cellar.plaster)
+bake_atlas(bpy.data.objects["Basement_Shell"], CONCRETE, "Basement concrete", 2048, cellar.inside, cellar.concrete)
+bake_atlas(bpy.data.objects["Basement_Throne"], OAK, "Throne oak", 1024,
+           lambda q: q[2] > BOTTOM, wood_shader(throne_members), ppm=300)
+# Hand-sprayed on the south half of the east wall, facing the doorway and clear
+# of the throne, the damp trail on the north half and the candle stand.
+paint_graffiti(cellar, "Graffiti_Black_Metal", collections["Basement_Render"],
+               ROOM_X1, -2.15, BOTTOM + 1.75, 2.3, 1.5, "BLACK METAL")
+
 export(os.path.join(output, "frame.glb"), ("Frame_Display",))
 export(
     os.path.join(output, "basement.glb"), ("Basement_Render", "Basement_Collision"), "JPEG"
