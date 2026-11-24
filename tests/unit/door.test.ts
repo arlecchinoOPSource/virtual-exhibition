@@ -133,6 +133,7 @@ describe('basement room', () => {
       'Basement_Throne_Cloth',
       'Basement_Candle_Stand',
       'Basement_Candles',
+      'Basement_Bulb_Cords',
       'Bulb_Room',
       'Bulb_Stairs',
       'Basement_Walls',
