@@ -144,6 +144,9 @@ describe('basement room', () => {
     const bounds = new Box3().setFromObject(graffiti!);
     expect(bounds.max.x).toBeLessThanOrEqual(27);
     expect(bounds.min.x).toBeGreaterThan(26.9);
+    // Set beside the throne (z -0.4 to 0.4), not above it.
+    const throne = new Box3().setFromObject(find('Basement_Throne')!);
+    expect(bounds.min.z).toBeGreaterThan(throne.max.z + 0.3);
     const lights: string[] = [];
     world.scene.traverse((node) => {
       if (node instanceof PointLight) lights.push(node.name);
@@ -163,7 +166,7 @@ describe('basement room', () => {
     const json = JSON.parse(
       file.subarray(20, 20 + file.readUInt32LE(12)).toString('utf8'),
     ) as {
-      images: { mimeType: string; bufferView: number }[];
+      images: { name: string; mimeType: string; bufferView: number }[];
       bufferViews: { byteOffset?: number; byteLength: number }[];
       materials: {
         name: string;
@@ -188,6 +191,11 @@ describe('basement room', () => {
     }
     const binary = 20 + file.readUInt32LE(12) + 8;
     for (const image of json.images) {
+      // Only the graffiti decal needs alpha, and it ships as PNG.
+      if (image.name.startsWith('Graffiti_Black_Metal')) {
+        expect(image.mimeType).toBe('image/png');
+        continue;
+      }
       expect(image.mimeType).toBe('image/jpeg');
       const view = json.bufferViews[image.bufferView]!;
       const jpeg = file.subarray(binary + (view.byteOffset ?? 0));
