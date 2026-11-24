@@ -93,7 +93,13 @@ export function createGallery(
   keyLight.position.set(-4, 8, 3);
   const skyLight = new HemisphereLight(0xe7edf6, 0x43464d, 1.4);
   scene.add(keyLight, skyLight);
-  // Daylight fades below ground so the basement's bulbs and candles carry it.
+  // Daylight fades with depth down the stairs, so the basement's bulbs and
+  // candles take over without a switch. What fill remains below ground takes
+  // the warm cast of the bulbs, as light bounced off old plaster would.
+  const daySky = skyLight.color.clone();
+  const dayGround = skyLight.groundColor.clone();
+  const cellarSky = new Color(0x8a6a4c);
+  const cellarGround = new Color(0x2a1e16);
   let daylight = 1;
 
   return {
@@ -119,10 +125,14 @@ export function createGallery(
     update(seconds: number, feet?: Vector3) {
       door.update(seconds);
       if (!feet) return;
-      const target = feet.y < -1.2 ? 0.12 : 1;
+      const depth = Math.min(1, Math.max(0, (-feet.y - 0.3) / 2.1));
+      const target = 1 - 0.9 * depth * depth * (3 - 2 * depth);
       daylight += (target - daylight) * Math.min(1, seconds * 2);
       keyLight.intensity = 2.1 * daylight;
       skyLight.intensity = 1.4 * daylight;
+      const cellar = Math.min(1, (1 - daylight) / 0.9);
+      skyLight.color.lerpColors(daySky, cellarSky, cellar);
+      skyLight.groundColor.lerpColors(dayGround, cellarGround, cellar);
     },
     dispose() {
       const resources = new Set<BufferGeometry | Material>();

@@ -199,6 +199,8 @@ class Cellar:
                        (x0, 0.8, fz + 2.2, 0.6), (x0, -0.8, fz + 2.2, 0.6),
                        (x1, 4.0, ceiling_z, 0.9), (x1, -4.0, ceiling_z, 0.9),
                        (x0 + 0.2, 4.0, ceiling_z, 0.8)]
+        # Footprints of furniture for baked contact shadows (set by the caller).
+        self.contacts = []
         # Floor stains where the old discrete decals sat, now irregular.
         self.stains = [(21.2, 1.6, 0.8), (24.6, -1.8, 1.0), (22.4, -0.4, 0.5)]
 
@@ -380,6 +382,17 @@ class Cellar:
         zone *= (p[:, 0] > self.room[0][0]) & (p[:, 0] < 24.5)
         crack = self.cracks(p, zone, 36, 0.005)
         color *= (1 - 0.6 * crack)[:, None]
+        # Contact shadows: soft darkening hugging each footprint.
+        for kind, *shape in self.contacts:
+            if kind == "rect":
+                x0, x1, y0, y1 = shape
+                gap = np.hypot(np.maximum(0, np.maximum(x0 - p[:, 0], p[:, 0] - x1)),
+                               np.maximum(0, np.maximum(y0 - p[:, 1], p[:, 1] - y1)))
+                color *= (1 - 0.5 * np.exp(-gap / 0.08))[:, None]
+            else:
+                x, y, r = shape
+                gap = np.maximum(0, np.hypot(p[:, 0] - x, p[:, 1] - y) - r)
+                color *= (1 - 0.35 * np.exp(-gap / 0.12))[:, None]
         if n[2] < 0.5:  # stair risers: toe scuffs near the tread below
             scuff = np.exp(-((p[:, 2] - self.floor_at(p[:, 0] + 0.01)) / 0.06) ** 2)
             color *= (1 - 0.3 * scuff * fbm(p, 6, 2, 37))[:, None]
