@@ -34,6 +34,7 @@ from grim_reaper import sculpt_reaper
 from sign_lettering import build_sign
 from basement_surfaces import Cellar, bake_atlas, paint_graffiti, stair_surface
 from throne import build_throne, wood_shader
+from candle_stand import build_candle_stand
 from gallery_finishes import frame_profile, oak_floor, paint_finish, paint_uv, soften, turned
 
 HEIGHT = 3.6
@@ -349,7 +350,7 @@ box("Stairwell_Ceiling", 10 + WALL, END_X, -1.0, 1.0, HEIGHT, HEIGHT + WALL, PLA
 ROOM_X0, ROOM_X1, ROOM_Y, ROOM_H = END_X, END_X + 8, 4.0, 2.8
 TOP = BOTTOM + ROOM_H
 OAK = material("Throne_Wood", (0.13, 0.06, 0.025), 0.75)
-WAX = material("Candle_Wax", (0.85, 0.8, 0.65), 0.6)
+WAX = material("Candle_Wax", (0.5, 0.42, 0.3), 0.7)
 
 
 def glow(name, rgb, strength):
@@ -407,27 +408,18 @@ THRONE_CLOTH = material("Throne_Cloth", (0.1, 0.04, 0.035), 0.95)
 throne_members, throne_box = build_throne(collections["Basement_Render"], OAK, THRONE_CLOTH, tx, ty, BOTTOM)
 solid("COL_Throne", *throne_box)
 
-# Iron candle stand with five candles and a warm point light.
+# Wrought-iron candle stand with five burnt-down candles, lit by one shared
+# point light at the flames (no per-candle lights).
 cx, cy = ROOM_X1 - 2.2, 2.6
-bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.22, depth=0.04, location=(cx, cy, BOTTOM + 0.02))
-stand_parts = [bpy.context.active_object]
-bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.025, depth=1.3, location=(cx, cy, BOTTOM + 0.67))
-stand_parts.append(bpy.context.active_object)
-bpy.ops.mesh.primitive_torus_add(major_radius=0.2, minor_radius=0.015, location=(cx, cy, BOTTOM + 1.32))
-stand_parts.append(bpy.context.active_object)
-for index, obj in enumerate(stand_parts):
-    obj.name = f"Candle_Stand_{index}"
-    obj.data.materials.append(IRON)
-    for owner in obj.users_collection:
-        owner.objects.unlink(obj)
-    collections["Basement_Render"].objects.link(obj)
-for index in range(5):
-    angle = index * 2 * math.pi / 5
-    x, y = cx + 0.2 * math.cos(angle), cy + 0.2 * math.sin(angle)
-    prop(f"Candle_Wax_{index}", x - 0.02, x + 0.02, y - 0.02, y + 0.02, BOTTOM + 1.33, BOTTOM + 1.45 + 0.03 * (index % 2), WAX)
-    prop(f"Candle_Flame_{index}", x - 0.008, x + 0.008, y - 0.008, y + 0.008, BOTTOM + 1.46 + 0.03 * (index % 2), BOTTOM + 1.5 + 0.03 * (index % 2), FLAME)
-point_light("Light_Basement_Candles", cx, cy, BOTTOM + 1.6, 1.6, (1.0, 0.6, 0.3))
-solid("COL_Candle_Stand", cx - 0.25, cx + 0.25, cy - 0.25, cy + 0.25, BOTTOM, BOTTOM + 1.5)
+CANDLE_IRON = material("Candle_Iron", (0.02, 0.02, 0.02), 0.55)
+iron_shader = CANDLE_IRON.node_tree.nodes["Principled BSDF"]
+iron_shader.inputs["Metallic"].default_value = 0.7
+patina = CANDLE_IRON.node_tree.nodes.new("ShaderNodeVertexColor")
+patina.layer_name = "Patina"
+CANDLE_IRON.node_tree.links.new(patina.outputs["Color"], iron_shader.inputs["Base Color"])
+flame_centre, stand_box = build_candle_stand(collections["Basement_Render"], CANDLE_IRON, WAX, FLAME, cx, cy, BOTTOM)
+point_light("Light_Basement_Candles", *flame_centre, 1.6, (1.0, 0.6, 0.3))
+solid("COL_Candle_Stand", *stand_box)
 
 # Bare bulbs on cords: one over the room and one over the stairs.
 for name, x, y, ceiling, drop, energy in (
@@ -467,7 +459,8 @@ join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
 join("Basement_Walls", ("Stairwell_", "Room_Wall_"), "Basement_Render")
 join("Basement_Shell", ("Room_Floor", "Room_Ceiling", "Basement_Steps"), "Basement_Render")
 join("Basement_Throne", ("Throne_",), "Basement_Render")
-join("Basement_Candle_Stand", ("Candle_Stand_", "Bulb_Cord_"), "Basement_Render")
+join("Basement_Candle_Stand", ("Candle_Stand_",), "Basement_Render")
+join("Basement_Bulb_Cords", ("Bulb_Cord_",), "Basement_Render")
 join("Basement_Candles", ("Candle_Wax_",), "Basement_Render")
 join("Basement_Flames", ("Candle_Flame_",), "Basement_Render")
 
