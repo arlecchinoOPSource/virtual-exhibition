@@ -129,9 +129,8 @@ test('opens the catalogue with E and click and restores the view', async ({
   await resume.press('Enter');
   await expect(prompt).toHaveText('E / Click · Open Exhibition Directory');
   await page.evaluate(() => {
-    document.querySelector('#scene')?.dispatchEvent(
-      new MouseEvent('mousedown', { button: 0 }),
-    );
+    const scene = document.querySelector('#scene');
+    scene?.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
   });
   await expect(catalogue).toBeVisible();
   await catalogue.getByRole('button', { name: 'Close' }).click();
