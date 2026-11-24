@@ -3,6 +3,7 @@ import { startRenderer } from './core/renderer';
 import { loadGallery } from './environments/gallery';
 import { createGreybox } from './environments/greybox';
 import { loadExhibits } from './exhibition/manifest';
+import { createAmbience } from './audio/ambience';
 import { renderDirectory } from './ui/directory-list';
 import { createDetails } from './ui/details';
 import { createViewer } from './ui/viewer';
@@ -39,6 +40,13 @@ async function start() {
     !catalogueList
   )
     throw new Error('The preview markup is missing.');
+
+  const viewport = document.querySelector<HTMLElement>('#viewport');
+  const ambience = createAmbience((state, live) => {
+    if (!viewport) return;
+    viewport.dataset.ambience = state;
+    viewport.dataset.ambienceLayers = live.join(' ');
+  });
 
   try {
     const exhibits = await loadExhibits();
@@ -77,8 +85,14 @@ async function start() {
       label,
       // Closing the details leaves the visitor paused on Resume walk.
       createDetails(dialog, () => startButton.focus(), essayViewer.open).open,
+      // Below ground, the basement's ambience takes over from the gallery's.
+      (feet) => ambience.setZone(feet.y < -1.2 ? 'basement' : 'gallery'),
     );
-    if (import.meta.hot) import.meta.hot.dispose(view.dispose);
+    if (import.meta.hot)
+      import.meta.hot.dispose(() => {
+        view.dispose();
+        ambience.dispose();
+      });
 
     const settings = loadSettings();
     const input = (id: string) => document.querySelector<HTMLInputElement>(id);
@@ -86,6 +100,10 @@ async function start() {
     const resolution = input('#resolution');
     const resolutionValue = document.querySelector('#resolution-value');
     const spotlights = input('#spotlights');
+    const sound = input('#sound');
+    const volume = input('#volume');
+    const volumeValue = document.querySelector('#volume-value');
+    const mute = input('#mute');
     // Every change applies immediately and is saved for the next visit.
     function apply() {
       view.setLookScale(settings.lookScale);
@@ -94,6 +112,11 @@ async function start() {
       const percent = `${Math.round(settings.resolution * 100)}%`;
       if (resolutionValue) resolutionValue.textContent = percent;
       resolution?.setAttribute('aria-valuetext', percent);
+      ambience.setVolume(settings.volume);
+      ambience.setMuted(settings.muted);
+      const level = `${Math.round(settings.volume * 100)}%`;
+      if (volumeValue) volumeValue.textContent = level;
+      volume?.setAttribute('aria-valuetext', level);
     }
     function save() {
       apply();
@@ -102,6 +125,9 @@ async function start() {
     if (lookSpeed) lookSpeed.value = String(settings.lookScale);
     if (resolution) resolution.value = String(settings.resolution);
     if (spotlights) spotlights.checked = settings.spotlights;
+    if (sound) sound.checked = settings.sound;
+    if (volume) volume.value = String(settings.volume);
+    if (mute) mute.checked = settings.muted;
     apply();
     lookSpeed?.addEventListener('input', () => {
       settings.lookScale = Number(lookSpeed.value);
@@ -113,6 +139,23 @@ async function start() {
     });
     spotlights?.addEventListener('change', () => {
       settings.spotlights = spotlights.checked;
+      save();
+    });
+    // Each of these is a visitor gesture, which audio playback needs.
+    sound?.addEventListener('change', () => {
+      settings.sound = sound.checked;
+      ambience.setEnabled(settings.sound);
+      save();
+    });
+    startButton.addEventListener('click', () =>
+      ambience.setEnabled(settings.sound),
+    );
+    volume?.addEventListener('input', () => {
+      settings.volume = Number(volume.value);
+      save();
+    });
+    mute?.addEventListener('change', () => {
+      settings.muted = mute.checked;
       save();
     });
     canvas.dataset.exhibitCount = String(exhibits.length);

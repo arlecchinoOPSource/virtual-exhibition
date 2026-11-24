@@ -30,7 +30,7 @@ import bpy
 from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from grim_reaper import sculpt_reaper
+from grim_reaper import Sculpture, sculpt_reaper
 from sign_lettering import build_sign
 from basement_surfaces import Cellar, bake_atlas, paint_graffiti, stair_surface
 from throne import build_throne, wood_shader
@@ -366,7 +366,12 @@ def glow(name, rgb, strength):
 
 
 FLAME = glow("Candle_Flame", (1.0, 0.55, 0.15), 6)
-FILAMENT = glow("Bulb_Glass", (1.0, 0.85, 0.6), 8)
+FILAMENT = glow("Bulb_Filament", (1.0, 0.78, 0.45), 12)
+# Clear, slightly smoky glass that glows faintly; the filament shows through.
+GLASS = glow("Bulb_Glass", (1.0, 0.8, 0.55), 0.9)
+GLASS.node_tree.nodes["Principled BSDF"].inputs["Alpha"].default_value = 0.45
+GLASS.surface_render_method = "BLENDED"
+BAKELITE = material("Bulb_Socket", (0.025, 0.018, 0.014), 0.5)
 
 
 def point_light(name, x, y, z, energy, rgb):
@@ -422,24 +427,35 @@ patina = CANDLE_IRON.node_tree.nodes.new("ShaderNodeVertexColor")
 patina.layer_name = "Patina"
 CANDLE_IRON.node_tree.links.new(patina.outputs["Color"], iron_shader.inputs["Base Color"])
 flame_centre, stand_box = build_candle_stand(collections["Basement_Render"], CANDLE_IRON, WAX, FLAME, cx, cy, BOTTOM)
-point_light("Light_Basement_Candles", *flame_centre, 1.6, (1.0, 0.6, 0.3))
+# Kept low so the candles flicker beside the bulb rather than compete with it.
+point_light("Light_Basement_Candles", *flame_centre, 0.6, (1.0, 0.55, 0.25))
 solid("COL_Candle_Stand", *stand_box)
 
-# Bare bulbs on cords: one over the room and one over the stairs.
+# Bare incandescent bulbs on cloth cords: one over the room, nudged toward
+# the throne for a little fill there, and one high over the stairs so the
+# steps read in both directions. Both are weak and warm.
 for name, x, y, ceiling, drop, energy in (
-    ("Room", 22.6, 0.0, TOP, 0.7, 5.0),
-    ("Stairs", STAIR_X + 2.4, 0.0, HEIGHT, 1.2, 4.0),
+    ("Room", 23.4, 0.0, TOP, 0.75, 3.0),
+    ("Stairs", STAIR_X + 2.4, 0.0, HEIGHT, 1.2, 2.6),
 ):
     bulb_z = ceiling - drop
-    prop(f"Bulb_Cord_{name}", x - 0.005, x + 0.005, y - 0.005, y + 0.005, bulb_z + 0.06, ceiling, IRON)
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.05, location=(x, y, bulb_z))
-    bulb = bpy.context.active_object
-    bulb.name = f"Bulb_{name}"
-    bulb.data.materials.append(FILAMENT)
-    for owner in bulb.users_collection:
-        owner.objects.unlink(bulb)
-    collections["Basement_Render"].objects.link(bulb)
-    point_light(f"Light_Basement_Bulb_{name}", x, y, bulb_z - 0.08, energy, (1.0, 0.82, 0.55))
+    cord, socket, glass, filament = Sculpture(), Sculpture(), Sculpture(), Sculpture()
+    cord.tube([(x, y, ceiling), (x + 0.004, y, bulb_z + 0.12), (x, y, bulb_z + 0.09)], [0.004] * 3, 6)
+    socket.tube([(x, y, bulb_z + 0.095), (x, y, bulb_z + 0.04)], [0.016, 0.018], 10)
+    # Pear-shaped glass: a narrow neck swelling to a round bowl.
+    glass.rings([[(x + r * math.cos(a), y + r * math.sin(a), bulb_z + h)
+                  for a in (k * math.tau / 14 for k in range(14))]
+                 for h, r in ((0.042, 0.013), (0.025, 0.016), (0.008, 0.026), (-0.012, 0.031),
+                              (-0.032, 0.029), (-0.048, 0.019), (-0.056, 0.006))])
+    # A looped filament between two lead wires, the brightest thing in the room.
+    filament.tube([(x - 0.006, y, bulb_z + 0.03), (x - 0.008, y, bulb_z - 0.012),
+                   (x - 0.004, y + 0.006, bulb_z - 0.02), (x + 0.004, y - 0.006, bulb_z - 0.02),
+                   (x + 0.008, y, bulb_z - 0.012), (x + 0.006, y, bulb_z + 0.03)], [0.0015] * 6, 5)
+    cord.object(f"Bulb_Cord_{name}", IRON, collections["Basement_Render"])
+    socket.object(f"Bulb_Socket_{name}", BAKELITE, collections["Basement_Render"])
+    glass.object(f"Bulb_{name}", GLASS, collections["Basement_Render"])
+    filament.object(f"Bulb_Filament_{name}", FILAMENT, collections["Basement_Render"])
+    point_light(f"Light_Basement_Bulb_{name}", x, y, bulb_z - 0.02, energy, (1.0, 0.7, 0.4))
 
 
 def join(name, prefixes, collection):
@@ -461,6 +477,7 @@ join("Gallery_Displays", ("Island_",), "Gallery_Render")
 join("Lectern_Woodwork", ("Lectern_",), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
+
 def export(path, collection_names, image_format="AUTO"):
     bpy.ops.object.select_all(action="DESELECT")
     for name in collection_names:
@@ -494,7 +511,8 @@ join("Basement_Walls", ("Stairwell_", "Room_Wall_"), "Basement_Render")
 join("Basement_Shell", ("Room_Floor", "Room_Ceiling", "Basement_Steps"), "Basement_Render")
 join("Basement_Throne", ("Throne_",), "Basement_Render")
 join("Basement_Candle_Stand", ("Candle_Stand_",), "Basement_Render")
-join("Basement_Bulb_Cords", ("Bulb_Cord_",), "Basement_Render")
+join("Basement_Bulb_Cords", ("Bulb_Cord_", "Bulb_Socket_"), "Basement_Render")
+join("Basement_Filaments", ("Bulb_Filament_",), "Basement_Render")
 join("Basement_Candles", ("Candle_Wax_",), "Basement_Render")
 join("Basement_Flames", ("Candle_Flame_",), "Basement_Render")
 
@@ -505,6 +523,9 @@ cellar = Cellar(
     stair_x=STAIR_X, lower_x=LOWER_X, stair_top=0.0, floor_z=BOTTOM, ceiling_z=TOP,
     throne=(tx, ty), candles=(cx, cy),
 )
+# Baked contact shadow where the throne base and the stand's feet meet the floor.
+cellar.contacts = [("rect", throne_box[0], throne_box[1], throne_box[2], throne_box[3]),
+                   ("circle", cx, cy, 0.22)]
 bake_atlas(bpy.data.objects["Basement_Walls"], PLASTER, "Basement plaster", 2048, cellar.inside, cellar.plaster)
 bake_atlas(bpy.data.objects["Basement_Shell"], CONCRETE, "Basement concrete", 2048, cellar.inside, cellar.concrete)
 bake_atlas(bpy.data.objects["Basement_Throne"], OAK, "Throne oak", 1024,
