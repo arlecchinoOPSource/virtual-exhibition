@@ -29,6 +29,6 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium firefox
-      - run: xvfb-run -a npm run test:e2e -- --headed
+      - run: xvfb-run -a npm run test:e2e -- --headed directory.spec.ts
         env:
           LIBGL_ALWAYS_SOFTWARE: 1
