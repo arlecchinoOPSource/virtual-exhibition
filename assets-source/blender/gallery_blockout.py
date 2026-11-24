@@ -6,7 +6,9 @@ Run from the repository root:
         --python assets-source/blender/gallery_blockout.py -- public/models
 
 This writes gallery.glb (room, collision proxies, markers, and lights),
-frame.glb (the reusable display frame), and basement.glb (loaded on demand). Artwork stays out of every export.
+frame.glb (the reusable display frame), and basement.glb (loaded on demand). Exhibit
+artwork stays out of every export; the basement's two historical prints are
+baked into basement.glb (posters.py, public/models/CREDITS.md).
 
 Units are meters with Z up. The room spans x -10..10 and y -5..5 with a
 3.6 m ceiling. The visitor spawns at the left end (-X) and the basement
@@ -35,6 +37,7 @@ from sign_lettering import build_sign
 from basement_surfaces import Cellar, bake_atlas, paint_graffiti, stair_surface
 from throne import build_throne, wood_shader
 from candle_stand import build_candle_stand
+from posters import hang_poster
 from gallery_finishes import frame_profile, oak_floor, paint_finish, paint_uv, soften, turned
 
 HEIGHT = 3.6
@@ -534,6 +537,15 @@ bake_atlas(bpy.data.objects["Basement_Throne"], OAK, "Throne oak", 1024,
 # of the throne, the damp trail on the north half and the candle stand.
 paint_graffiti(cellar, "Graffiti_Black_Metal", collections["Basement_Render"],
                ROOM_X1, -2.15, BOTTOM + 1.75, 2.3, 1.5, "BLACK METAL")
+# Two historical prints on the long side walls, near the room bulb and clear
+# of the corners (left for the radio, #60): Kittelsen's lur player on the
+# north wall west of the candle stand, Doré's Death on the south wall facing it.
+hang_poster(collections["Basement_Render"], "Poster_Kittelsen_Lur",
+            "kittelsen-op-under-fjeldet-toner-en-lur.webp",
+            (22.55, ROOM_Y, BOTTOM + 1.6), (0, -1), 0.6, seed=1, curl_corner=(-1, 1))
+hang_poster(collections["Basement_Render"], "Poster_Dore_Pale_Horse",
+            "dore-death-on-the-pale-horse.webp",
+            (23.4, -ROOM_Y, BOTTOM + 1.55), (0, 1), 0.82, seed=2, curl_corner=(1, 1))
 
 export(os.path.join(output, "frame.glb"), ("Frame_Display",))
 export(
