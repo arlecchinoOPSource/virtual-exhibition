@@ -83,13 +83,15 @@ def hang_poster(collection, name, source, centre, normal, art_height, margin=0.0
     origin = Vector(centre)
     cols, rows = max(2, round(width / 0.06)), max(2, round(height / 0.06))
     corner = Vector((curl_corner[0] * width / 2, curl_corner[1] * height / 2))
+    # The lifting corner scales with the sheet; its 3 cm lift does not.
+    curl = 0.25 * min(width, height)
     verts, uvs = [], []
     for r in range(rows + 1):
         for c in range(cols + 1):
             u, v = c / cols, r / rows
             x, y = (u - 0.5) * width, (v - 0.5) * height
             bow = 0.004 * math.sin(math.pi * u) * math.sin(math.pi * v)
-            reach = max(0.0, 1 - (Vector((x, y)) - corner).length / 0.16)
+            reach = max(0.0, 1 - (Vector((x, y)) - corner).length / curl)
             off = 0.005 + bow + 0.03 * reach ** 2.5
             verts.append(origin + right * x + up * y + n * off)
             uvs.append((u, v))

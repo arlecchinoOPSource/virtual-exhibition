@@ -542,10 +542,11 @@ paint_graffiti(cellar, "Graffiti_Black_Metal", collections["Basement_Render"],
 # north wall west of the candle stand, Doré's Death on the south wall facing it.
 hang_poster(collections["Basement_Render"], "Poster_Kittelsen_Lur",
             "kittelsen-op-under-fjeldet-toner-en-lur.webp",
-            (22.55, ROOM_Y, BOTTOM + 1.6), (0, -1), 0.6, seed=1, curl_corner=(-1, 1))
+            (22.3, ROOM_Y, BOTTOM + 1.6), (0, -1), 1.2, margin=0.06, seed=1,
+            curl_corner=(-1, 1))
 hang_poster(collections["Basement_Render"], "Poster_Dore_Pale_Horse",
             "dore-death-on-the-pale-horse.jpg",
-            (23.4, -ROOM_Y, BOTTOM + 1.55), (0, 1), 0.82, seed=2, curl_corner=(1, 1),
+            (23.4, -ROOM_Y, BOTTOM + 1.6), (0, 1), 1.64, margin=0.06, seed=2, curl_corner=(1, 1),
             # The engraved plate only: no scanned page edge or printed caption.
             crop=(8, 12, 760, 961))
 
