@@ -7,110 +7,125 @@ from mathutils import Vector
 
 
 def oak_floor(obj, mat):
-    """Cut the visible slab face into boards and map each into a mill-stock atlas."""
+    """Lacquered mosaic parquet: 480 mm squares of five oak fingers, laid in
+    alternating directions. Each finger samples its own pre-seamed block of
+    the atlas, so the joints are in the texture (stable under mipmapping)
+    and no two neighbours repeat."""
     rng = np.random.default_rng(48)
-    width, strips, strip_height = 2048, 16, 64
-    height = strips * strip_height
-    color = np.ones((height, width, 4), dtype=np.float32)
-    rough = np.zeros((height, width), dtype=np.float32)
+    finger_px, width_px, per_row, rows = 320, 64, 6, 32
+    size = 2048
+    color = np.zeros((size, size, 3), dtype=np.float32)
+    rough = np.zeros((size, size), dtype=np.float32)
     relief = np.zeros_like(rough)
-    y, x = np.mgrid[:strip_height, :width]
-    u, v = x / width, y / strip_height
-    for i in range(strips):
-        # Vary the cut through a virtual log, from straight quarter-sawn grain
-        # to arched grain where the board passes closer to the heart.
+    y, x = np.mgrid[:width_px, :finger_px]
+    u, v = x / finger_px, y / width_px
+    for k in range(per_row * rows):
+        # Each finger is cut from a different part of a virtual log: mostly
+        # straight quarter-sawn grain, sometimes the arched figure near the heart.
         phase = rng.uniform(0, math.tau)
-        wander = 0.038 * np.sin(u * 9 + phase) + 0.012 * np.sin(u * 21 - phase)
-        # Most boards intersect one side of the growth rings. Narrow patches
-        # of cross-grain and irregular fibre drift break up the arched cuts.
-        drift = np.interp(u[0], np.linspace(0, 1, 27), rng.normal(0, 0.012, 27))
-        offset = rng.uniform(-1.15, 0.12)
-        across = v - offset + wander + drift
-        lengthwise = (u - rng.uniform(0.15, 0.85)) * rng.uniform(0.7, 2.2)
+        wander = 0.04 * np.sin(u * 5 + phase) + 0.012 * np.sin(u * 13 - phase)
+        offset = rng.uniform(-1.1, 0.15)
+        across = v - offset + wander
+        lengthwise = (u - rng.uniform(0.2, 0.8)) * rng.uniform(0.4, 1.3)
         radius = np.sqrt(across**2 + lengthwise**2 + 0.08)
-        ring = radius * rng.uniform(15, 23) + 0.18 * np.sin(radius * 24 + phase)
-        earlywood = np.exp(-((np.sin(np.pi * ring) / 0.40) ** 2))
-        # Broken longitudinal vessels taper along the grain direction.
-        fibres = np.sin(2 * np.pi * (across * 39 + 0.19 * np.sin(u*32+phase)))
-        pores = np.maximum(fibres, 0)**6 * (0.5 + 0.5*np.sin(u*78 + v*16 + phase))**2
-        knot = np.zeros_like(u)
-        if i % 4 == 0:
-            dist = np.hypot((u-rng.uniform(0.25, 0.75))/0.009, (v-0.47)/0.077)
-            knot = np.exp(-dist**2) + 0.18*np.exp(-dist)*np.cos(8*dist)
-        tone = rng.uniform(0.93, 1.07) + 0.032*np.sin(ring*1.3)
-        patches = np.interp(u[0], np.linspace(0, 1, 19), rng.uniform(0.25, 1.0, 19))
-        streaks = np.interp(across, np.linspace(-2, 3, 340), rng.normal(0, 0.034, 340))
-        tone += streaks - (0.11*patches*earlywood + 0.065*pores + 0.23*knot)
-        tone += rng.normal(0, 0.006, u.shape)
-        seam = (y == 2) | (y == strip_height-3)
-        tone[seam] *= 0.94
-        rows = slice(i*strip_height, (i+1)*strip_height)
-        color[rows, :, :3] = tone[..., None] * (0.705, 0.555, 0.365)
-        rough[rows] = rng.uniform(0.33, 0.39) + 0.1*earlywood + 0.035*pores
-        relief[rows] = 0.08*earlywood + 0.04*pores + 0.18*seam
+        ring = radius * rng.uniform(14, 22) + 0.15 * np.sin(radius * 20 + phase)
+        earlywood = np.exp(-((np.sin(np.pi * ring) / 0.4) ** 2))
+        fibres = np.sin(2 * np.pi * (across * 36 + 0.15 * np.sin(u * 20 + phase)))
+        pores = np.maximum(fibres, 0) ** 6 * (0.5 + 0.5 * np.sin(u * 50 + v * 14 + phase)) ** 2
+        # Fingers differ in tone as real stock does; a few run noticeably darker.
+        tone = rng.choice([rng.uniform(0.9, 0.95), rng.uniform(0.96, 1.04)], p=[0.2, 0.8])
+        tone = tone + 0.025 * np.sin(ring * 1.3) - 0.07 * earlywood - 0.04 * pores
+        tone = tone + rng.normal(0, 0.005, u.shape)
+        # Joints: a dark hairline with a slight bevel on all four edges.
+        edge = np.minimum(np.minimum(x, finger_px - 1 - x), np.minimum(y, width_px - 1 - y))
+        joint = np.clip(1 - edge / 1.2, 0, 1)
+        tone = tone * (1 - 0.28 * joint)
+        row, col = divmod(k, per_row)
+        rows_ = slice(row * width_px, (row + 1) * width_px)
+        cols_ = slice(col * finger_px, (col + 1) * finger_px)
+        color[rows_, cols_] = tone[..., None] * np.array((0.8, 0.62, 0.42))
+        rough[rows_, cols_] = 0.16 + 0.05 * earlywood + 0.03 * pores + 0.25 * joint
+        relief[rows_, cols_] = 0.05 * earlywood + 0.03 * pores - 0.3 * joint
 
     shader = mat.node_tree.nodes["Principled BSDF"]
     def map_image(name, pixels, linear=False):
         h, w = pixels.shape[:2]
+        rgba = np.ones((h, w, 4), dtype=np.float32)
+        rgba[..., :3] = pixels if pixels.ndim == 3 else pixels[..., None]
         img = bpy.data.images.new(name, w, h, alpha=False)
         if linear:
             img.colorspace_settings.name = "Non-Color"
-        img.pixels.foreach_set(np.ascontiguousarray(pixels, dtype=np.float32).ravel())
+        img.pixels.foreach_set(rgba.ravel())
         img.pack()
         node = mat.node_tree.nodes.new("ShaderNodeTexImage")
         node.image = img
         return node.outputs["Color"]
 
     links = mat.node_tree.links
-    links.new(map_image("Honey oak - sawn figure", color), shader.inputs["Base Color"])
-    # Lower-resolution finish maps carry the soft sheen without overspending on transfer.
-    rough = rough.reshape(height//2, 2, width//4, 4).mean(axis=(1, 3))
-    finish = np.ones((*rough.shape, 4), dtype=np.float32)
-    finish[:, :, :3] = rough[:, :, None]
-    links.new(map_image("Satin oil - roughness", finish, True), shader.inputs["Roughness"])
-    down = relief.reshape(height//2, 2, width//4, 4).mean(axis=(1, 3))
-    dy, dx = np.gradient(down)
-    normal = np.ones((*down.shape, 4), dtype=np.float32)
-    normal[:, :, 0] = 0.5 + dx * 0.32
-    normal[:, :, 1] = 0.5 + dy * 0.48
+    links.new(map_image("Honey oak parquet - colour", color), shader.inputs["Base Color"])
+    half = lambda m: m.reshape(size // 2, 2, size // 2, 2).mean(axis=(1, 3))
+    links.new(map_image("Lacquer - roughness", half(rough), True), shader.inputs["Roughness"])
+    dy, dx = np.gradient(half(relief))
+    normal = np.stack([0.5 - dx * 0.4, 0.5 - dy * 0.4, np.ones_like(dx)], axis=-1)
     normal_node = mat.node_tree.nodes.new("ShaderNodeNormalMap")
-    links.new(map_image("Oak pores - tangent normal", normal, True), normal_node.inputs["Color"])
+    links.new(map_image("Parquet joints - tangent normal", normal, True), normal_node.inputs["Color"])
     links.new(normal_node.outputs["Normal"], shader.inputs["Normal"])
-    shader.inputs["Coat Weight"].default_value = 0.19
-    shader.inputs["Coat Roughness"].default_value = 0.32
+    # A hard, glossy lacquer over the oak picks up every spotlight.
+    shader.inputs["Coat Weight"].default_value = 0.65
+    shader.inputs["Coat Roughness"].default_value = 0.06
 
     # Keep the slab sides, bottom, top elevation and independent collider intact.
     slab = obj.data
     verts = [tuple(pt.co) for pt in slab.vertices]
     faces = [tuple(f.vertices) for f in slab.polygons if f.normal.z < 0.9]
-    board_uvs = []
     z = max(pt[2] for pt in verts)
     xmin, xmax = min(pt[0] for pt in verts), max(pt[0] for pt in verts)
     ymin, ymax = min(pt[1] for pt in verts), max(pt[1] for pt in verts)
-    board_width = (ymax-ymin)/54
-    for row in range(54):
-        y0 = ymin + row*board_width
-        x0 = xmin - rng.uniform(0, 1.35)
-        while x0 < xmax:
-            length = rng.uniform(1.45, 2.55)
-            left, right = max(xmin, x0), min(xmax, x0+length)
-            strip = rng.integers(strips)
-            # Clip the sampled board as well as its geometry at the room perimeter.
-            start = rng.uniform(0.01, 0.13)
-            u0, u1 = start+(left-x0)/3.05, start+(right-x0)/3.05
-            if rng.random() < 0.5:
-                u0, u1 = 1-u0, 1-u1
-            v0, v1 = (strip*strip_height + 2.5)/height, ((strip+1)*strip_height - 2.5)/height
-            index = len(verts)
-            verts.extend([(left,y0,z),(right,y0,z),(right,y0+board_width,z),(left,y0+board_width,z)])
-            faces.append(tuple(range(index, index+4)))
-            board_uvs.append(((u0,v0),(u1,v0),(u1,v1),(u0,v1)))
-            x0 += length
-    surface = bpy.data.meshes.new("Oak floorboards")
+    tile, fingers = 0.48, 5
+    finger_w = tile / fingers
+    uvs = []
+    count = per_row * rows
+    tx = math.floor(xmin / tile)
+    while tx * tile < xmax:
+        ty = math.floor(ymin / tile)
+        while ty * tile < ymax:
+            x0, y0 = tx * tile, ty * tile
+            along_x = (tx + ty) % 2 == 0
+            for f in range(fingers):
+                if along_x:
+                    a0, a1, b0, b1 = x0, x0 + tile, y0 + f * finger_w, y0 + (f + 1) * finger_w
+                else:
+                    a0, a1, b0, b1 = x0 + f * finger_w, x0 + (f + 1) * finger_w, y0, y0 + tile
+                c0, c1 = max(a0, xmin), min(a1, xmax)
+                d0, d1 = max(b0, ymin), min(b1, ymax)
+                if c0 >= c1 or d0 >= d1:
+                    continue
+                k = int(rng.integers(count))
+                row, col = divmod(k, per_row)
+                pu0, pu1 = col * finger_px / size, (col + 1) * finger_px / size
+                pv0, pv1 = row * width_px / size, (row + 1) * width_px / size
+                if rng.random() < 0.5:
+                    pu0, pu1 = pu1, pu0
+                # Map each clipped corner back into the finger's own frame:
+                # s runs along the grain, t across it.
+                def coord(px, py):
+                    if along_x:
+                        s, t = (px - a0) / (a1 - a0), (py - b0) / (b1 - b0)
+                    else:
+                        s, t = (py - b0) / (b1 - b0), (px - a0) / (a1 - a0)
+                    return (pu0 + (pu1 - pu0) * s, pv0 + (pv1 - pv0) * t)
+                index = len(verts)
+                corners = [(c0, d0), (c1, d0), (c1, d1), (c0, d1)]
+                verts.extend([(px, py, z) for px, py in corners])
+                faces.append(tuple(range(index, index + 4)))
+                uvs.append([coord(px, py) for px, py in corners])
+            ty += 1
+        tx += 1
+    surface = bpy.data.meshes.new("Oak parquet")
     surface.from_pydata(verts, [], faces)
     surface.materials.append(mat)
-    uv = surface.uv_layers.new(name="Board grain")
-    for poly, coords in zip(list(surface.polygons)[-len(board_uvs):], board_uvs):
+    uv = surface.uv_layers.new(name="Parquet")
+    for poly, coords in zip(list(surface.polygons)[-len(uvs):], uvs):
         for loop, coord in zip(poly.loop_indices, coords):
             uv.data[loop].uv = coord
     obj.data = surface
