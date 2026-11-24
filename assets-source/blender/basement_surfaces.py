@@ -430,11 +430,13 @@ HAND = {
     "M": [[(0, 0), (0.05, 1), (0.38, 0.34), (0.7, 1), (0.76, 0)]],
     "E": [[(0.66, 1), (0, 0.98), (0.02, 0), (0.7, 0.02)], [(0.02, 0.52), (0.5, 0.54)]],
     "T": [[(0, 1), (0.76, 0.97)], [(0.38, 0.98), (0.36, 0)]],
+    # Inverted cross standing in for the T of METAL: crossbar low on the shaft.
+    "†": [[(0.38, 1.08), (0.36, -0.08)], [(0.06, 0.3), (0.7, 0.33)]],
 }
 
 
 def paint_graffiti(cellar, name, collection, wall_x, y_centre, z_centre, width, height, text):
-    """BLACK METAL in black spray with an inverted cross, as a thin decal.
+    """BLACK METAL in white spray, its T an inverted cross, as a thin decal.
 
     The decal sits 3 mm off the east wall with its own alpha texture, so it
     keeps crisp, ragged edges close up without flickering against the plaster.
@@ -500,14 +502,8 @@ def paint_graffiti(cellar, name, collection, wall_x, y_centre, z_centre, width, 
         return x
 
     # Two stacked words, the second set in and climbing slightly.
-    end = word("BLACK", -width / 2 + 0.08, 0.1, 0.33, 0.03)
-    end = max(end, word("METAL", -width / 2 + 0.16, -0.38, 0.33, 0.05))
-    # The inverted cross stands apart from the words, crossbar low on the shaft.
-    cx = min(end + 0.3, width / 2 - 0.22)
-    stroke([(cx, 0.58), (cx + 0.012, -0.6)], 0.027)
-    stroke([(cx - 0.19, -0.26), (cx + 0.2, -0.23)], 0.025)
-    drip((cx + 0.14, -0.24), 0.14)
-    drip((cx + 0.012, -0.6), 0.18)
+    word("BLACK", -width / 2 + 0.3, 0.1, 0.33, 0.03)
+    word("ME†AL", -width / 2 + 0.38, -0.38, 0.33, 0.05)
 
     # The wall shows through: no paint over lost plaster, thin over its grain.
     lost = cellar.plaster_loss(world)[0].reshape(h, w)
@@ -518,8 +514,9 @@ def paint_graffiti(cellar, name, collection, wall_x, y_centre, z_centre, width, 
     alpha *= (0.72 + 0.28 * grain) * ~lost * np.where(chips, 0.25, 1)
 
     rgba = np.zeros((h, w, 4), np.float32)
-    # Flat colour outside the strokes keeps the PNG small.
-    rgba[..., :3] = np.where(alpha > 0, 0.03 + 0.03 * grain, 0.03)[..., None]
+    # Off-white paint; flat colour outside the strokes keeps the PNG small.
+    tint = np.where(alpha > 0, 0.82 + 0.1 * grain, 0.88)[..., None]
+    rgba[..., :3] = tint * np.array([1.0, 0.98, 0.94])
     rgba[..., 3] = alpha
     img = bpy.data.images.new(f"{name} - paint", w, h, alpha=True)
     img.pixels.foreach_set(rgba.ravel())
