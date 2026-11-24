@@ -30,6 +30,7 @@ import bpy
 from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from grim_reaper import sculpt_reaper
 from gallery_finishes import frame_profile, oak_floor, paint_finish, paint_uv, soften, turned
 
 HEIGHT = 3.6
@@ -286,29 +287,10 @@ bpy.data.objects.remove(text_obj)
 # of the walkway and the doorway.
 sx, sy = 9.3, -3.6
 box("Statue_Plinth", sx - 0.35, sx + 0.35, sy - 0.35, sy + 0.35, 0, 0.4, IRON, collide=False)
-bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.38, radius2=0.12, depth=1.5, location=(sx, sy, 1.15))
-robe = bpy.context.active_object
-robe.name = "Statue_Robe"
-robe.data.materials.append(CLOTH)
-bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.2, location=(sx - 0.03, sy, 2.0))
-hood = bpy.context.active_object
-hood.name = "Statue_Hood"
-hood.scale = (1.0, 0.9, 1.25)
-hood.data.materials.append(CLOTH)
-bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.025, depth=2.3, location=(sx - 0.25, sy + 0.25, 1.55))
-staff = bpy.context.active_object
-staff.name = "Statue_Staff"
-staff.rotation_euler = (0.12, 0, 0)
-staff.data.materials.append(WOOD)
-blade = bpy.data.objects.new("Statue_Blade", box_mesh("Statue_Blade", (0.03, 0.75, 0.12)))
-blade.location = (sx - 0.25, sy + 0.05, 2.62)
-blade.rotation_euler = (-0.35, 0, 0)
-blade.data.materials.append(BLADE)
-for obj in (robe, hood, staff):
-    for owner in obj.users_collection:
-        owner.objects.unlink(obj)
-    collections["Gallery_Render"].objects.link(obj)
-collections["Gallery_Render"].objects.link(blade)
+STATUE_BONE = material("Aged ivory bone", (0.46, 0.37, 0.24), 0.83)
+BLADE.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.66
+CLOTH.node_tree.nodes["Principled BSDF"].inputs["Sheen Weight"].default_value = 0.23
+sculpt_reaper(collections["Gallery_Render"], sx, sy, CLOTH, STATUE_BONE, WOOD, BLADE)
 proxy = bpy.data.objects.new("COL_Statue", box_mesh("COL_Statue", (0.7, 0.7, 2.4)))
 proxy.location = (sx, sy, 1.2)
 proxy.display_type = "WIRE"
@@ -540,7 +522,6 @@ join("Gallery_Walls", ("Wall_", "Pier_"), "Gallery_Render")
 join("Gallery_Displays", ("Island_", "Partition_"), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Sign_Board", "Sign_Spike_", "Statue_Plinth"), "Gallery_Render")
-join("Statue_Cloak", ("Statue_Robe", "Statue_Hood"), "Gallery_Render")
 join("Basement_Steps", ("Landing_", "Stair_"), "Basement_Render")
 join("Basement_Walls", ("Stairwell_", "Room_Wall_"), "Basement_Render")
 join("Basement_Shell", ("Room_Floor", "Room_Ceiling"), "Basement_Render")
