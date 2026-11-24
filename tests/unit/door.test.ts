@@ -130,6 +130,7 @@ describe('basement room', () => {
     const find = (name: string) => world.scene.getObjectByName(name);
     for (const name of [
       'Basement_Throne',
+      'Basement_Throne_Cloth',
       'Basement_Candle_Stand',
       'Basement_Candles',
       'Bulb_Room',
