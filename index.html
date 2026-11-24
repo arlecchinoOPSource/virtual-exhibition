@@ -6,14 +6,11 @@
     <title>Virtual Exhibition</title>
   </head>
   <body>
-    <main>
-      <header>
-        <h1>Virtual Exhibition</h1>
-        <p>
-          First-person gallery blockout preview ·
-          <a href="./directory.html">Exhibition directory</a>
-        </p>
-      </header>
+    <main class="gallery-app">
+      <a class="directory-fallback" href="./directory.html"
+        >Browse exhibits without 3D</a
+      >
+      <header class="gallery-title"><h1>Virtual Exhibition</h1></header>
       <section id="viewport" aria-label="3D preview">
         <canvas
           id="scene"
@@ -106,10 +103,6 @@
                 </label>
               </fieldset>
             </details>
-            <p class="menu-links">
-              <a href="./directory.html">Exhibition directory</a>: every display
-              and essay without 3D
-            </p>
           </div>
         </div>
         <span id="crosshair" aria-hidden="true" hidden></span>
@@ -120,6 +113,13 @@
         </section>
         <p id="status" role="status">Loading the 3D preview…</p>
       </section>
+      <dialog id="catalogue" aria-labelledby="catalogue-title">
+        <header class="catalogue-bar">
+          <h2 id="catalogue-title">Exhibition Directory</h2>
+          <form method="dialog"><button autofocus>Close</button></form>
+        </header>
+        <ol class="directory" aria-label="Exhibits"></ol>
+      </dialog>
       <dialog id="exhibit-details" aria-labelledby="details-title">
         <h2 id="details-title"></h2>
         <img alt="" hidden />
@@ -150,7 +150,10 @@
           aria-label="Essay pages. Use the arrow keys to scroll and plus or minus to zoom."
         ></div>
       </dialog>
-      <noscript>Enable JavaScript to load the 3D preview.</noscript>
+      <noscript
+        >Enable JavaScript to load the gallery or
+        <a href="./directory.html">open the directory</a>.</noscript
+      >
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

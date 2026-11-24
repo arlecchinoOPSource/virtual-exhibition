@@ -4,6 +4,7 @@ import { loadGallery } from './environments/gallery';
 import { createGreybox } from './environments/greybox';
 import { loadExhibits } from './exhibition/manifest';
 import { createAmbience } from './audio/ambience';
+import { renderDirectory } from './ui/directory-list';
 import { createDetails } from './ui/details';
 import { createViewer } from './ui/viewer';
 import { loadSettings, saveSettings } from './ui/settings';
@@ -21,6 +22,9 @@ async function start() {
   const dialog = document.querySelector<HTMLDialogElement>('#exhibit-details');
   const viewer = document.querySelector<HTMLDialogElement>('#essay-viewer');
 
+  const catalogue = document.querySelector<HTMLDialogElement>('#catalogue');
+  const catalogueList = catalogue?.querySelector<HTMLOListElement>('ol');
+
   if (
     !canvas ||
     !status ||
@@ -31,7 +35,9 @@ async function start() {
     !prompt ||
     !label ||
     !dialog ||
-    !viewer
+    !viewer ||
+    !catalogue ||
+    !catalogueList
   )
     throw new Error('The preview markup is missing.');
 
@@ -47,7 +53,26 @@ async function start() {
     // The greybox stays available as a traversal and interaction test room.
     const useGreybox =
       new URLSearchParams(location.search).get('env') === 'greybox';
-    const world = useGreybox ? createGreybox() : await loadGallery(exhibits);
+    const essayViewer = createViewer(viewer);
+    renderDirectory(catalogueList, exhibits, essayViewer.open);
+    catalogue.addEventListener('close', () => startButton.focus());
+    const gallery = useGreybox ? undefined : await loadGallery(exhibits);
+    const world = gallery
+      ? {
+          ...gallery,
+          actionAt: (
+            hit: Parameters<typeof gallery.actionAt>[0],
+            feet: Parameters<typeof gallery.actionAt>[1],
+          ) =>
+            gallery.isCatalogue(hit)
+              ? {
+                  label: 'E / Click · Open Exhibition Directory',
+                  pause: true,
+                  run: () => catalogue.showModal(),
+                }
+              : gallery.actionAt(hit, feet),
+        }
+      : createGreybox();
     canvas.dataset.environment = useGreybox ? 'greybox' : 'gallery';
     const view = startRenderer(
       world,
@@ -59,11 +84,7 @@ async function start() {
       prompt,
       label,
       // Closing the details leaves the visitor paused on Resume walk.
-      createDetails(
-        dialog,
-        () => startButton.focus(),
-        createViewer(viewer).open,
-      ).open,
+      createDetails(dialog, () => startButton.focus(), essayViewer.open).open,
       // Below ground, the basement's ambience takes over from the gallery's.
       (feet) => ambience.setZone(feet.y < -1.2 ? 'basement' : 'gallery'),
     );
@@ -141,8 +162,15 @@ async function start() {
     status.hidden = true;
   } catch (error) {
     console.error('Virtual Exhibition could not start.', error);
-    status.textContent =
-      'Could not load the preview. Check that WebGL 2 is available and try reloading.';
+    const fallback = document.createElement('a');
+    fallback.href = './directory.html';
+    fallback.textContent = 'Open the accessible exhibition directory';
+    status.replaceChildren(
+      document.createTextNode(
+        'Could not load the preview. Check that WebGL 2 is available and try reloading. ',
+      ),
+      fallback,
+    );
   }
 }
 

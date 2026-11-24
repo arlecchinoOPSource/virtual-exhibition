@@ -1,6 +1,6 @@
 import type { Exhibit } from '../types/exhibit';
 
-const anchorOrder: Exhibit['anchor'][] = [
+export const anchorOrder: Exhibit['anchor'][] = [
   'Exhibit_01',
   'Exhibit_02',
   'Exhibit_03',
@@ -13,6 +13,9 @@ const anchorOrder: Exhibit['anchor'][] = [
   'Exhibit_10',
   'Exhibit_11',
   'Exhibit_12',
+  'Exhibit_13',
+  'Exhibit_14',
+  'Exhibit_15',
 ];
 
 function isLocalAsset(
@@ -28,7 +31,9 @@ function isLocalAsset(
 
 export function parseExhibits(data: unknown): Exhibit[] {
   if (!Array.isArray(data) || data.length !== anchorOrder.length) {
-    throw new Error('The exhibit manifest must contain exactly 12 entries.');
+    throw new Error(
+      `The exhibit manifest must contain exactly ${anchorOrder.length} entries.`,
+    );
   }
 
   return anchorOrder.map((anchor, index): Exhibit => {

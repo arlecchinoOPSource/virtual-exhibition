@@ -270,14 +270,15 @@ proxy.location = (sx, sy, 1.2)
 proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
 
-# Two freestanding islands and a smaller central partition.
+# Two freestanding islands flank the catalogue stand.
 box("Island_Left", -5.5, -2.5, -0.3, 0.3, 0, 2.4, DISPLAY)
 box("Island_Right", 2.5, 5.5, -0.3, 0.3, 0, 2.4, DISPLAY)
-box("Partition_Center", -0.15, 0.15, -1, 1, 0, 2.4, DISPLAY)
+from lectern import build_lectern
+build_lectern(box, material, collections["Gallery_Render"])
 
 marker("Spawn_Gallery", -8.5, 0, 0, "E")
 
-# 01-06 perimeter bays, 07-10 island faces, 11-12 partition faces.
+# 01–06 perimeter bays, 07–10 islands, 11–15 entrance walls.
 anchors = [
     (-4, 5 - ANCHOR_OFFSET, "N"),
     (0, 5 - ANCHOR_OFFSET, "N"),
@@ -289,8 +290,11 @@ anchors = [
     (-4, -0.3 - ANCHOR_OFFSET, "N"),
     (4, 0.3 + ANCHOR_OFFSET, "S"),
     (4, -0.3 - ANCHOR_OFFSET, "N"),
-    (-0.15 - ANCHOR_OFFSET, 0, "E"),
-    (0.15 + ANCHOR_OFFSET, 0, "W"),
+    (-8, 5 - ANCHOR_OFFSET, "N"),
+    (-8, -5 + ANCHOR_OFFSET, "S"),
+    (-10 + ANCHOR_OFFSET, -2.5, "W"),
+    (-10 + ANCHOR_OFFSET, 0, "W"),
+    (-10 + ANCHOR_OFFSET, 2.5, "W"),
 ]
 for index, (x, y, gaze) in enumerate(anchors, start=1):
     marker(f"Exhibit_{index:02}", x, y, ANCHOR_HEIGHT, gaze)
@@ -469,9 +473,40 @@ def join(name, prefixes, collection):
 
 # COL_ proxies stay separate: the engine needs one box per collider.
 join("Gallery_Walls", ("Wall_", "Pier_"), "Gallery_Render")
-join("Gallery_Displays", ("Island_", "Partition_"), "Gallery_Render")
+join("Gallery_Displays", ("Island_",), "Gallery_Render")
+join("Lectern_Woodwork", ("Lectern_",), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
+
+def export(path, collection_names, image_format="AUTO"):
+    bpy.ops.object.select_all(action="DESELECT")
+    for name in collection_names:
+        for obj in collections[name].objects:
+            obj.select_set(True)
+    bpy.ops.export_scene.gltf(
+        filepath=path,
+        export_format="GLB",
+        use_selection=True,
+        export_yup=True,
+        export_apply=True,
+        export_cameras=False,
+        export_lights=True,
+        export_import_convert_lighting_mode="RAW",
+        export_extras=True,
+        export_image_format=image_format,
+        export_jpeg_quality=82,
+    )
+
+
+output = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "."
+export(
+    os.path.join(output, "gallery.glb"),
+    ("Gallery_Render", "Gallery_Collision", "Gallery_Markers", "Gallery_Lights"),
+    "JPEG",
+)
+if "--gallery-only" in sys.argv:
+    sys.exit(0)
+
 join("Basement_Walls", ("Stairwell_", "Room_Wall_"), "Basement_Render")
 join("Basement_Shell", ("Room_Floor", "Room_Ceiling", "Basement_Steps"), "Basement_Render")
 join("Basement_Throne", ("Throne_",), "Basement_Render")
@@ -500,32 +535,6 @@ bake_atlas(bpy.data.objects["Basement_Throne"], OAK, "Throne oak", 1024,
 paint_graffiti(cellar, "Graffiti_Black_Metal", collections["Basement_Render"],
                ROOM_X1, -2.15, BOTTOM + 1.75, 2.3, 1.5, "BLACK METAL")
 
-def export(path, collection_names, image_format="AUTO"):
-    bpy.ops.object.select_all(action="DESELECT")
-    for name in collection_names:
-        for obj in collections[name].objects:
-            obj.select_set(True)
-    bpy.ops.export_scene.gltf(
-        filepath=path,
-        export_format="GLB",
-        use_selection=True,
-        export_yup=True,
-        export_apply=True,
-        export_cameras=False,
-        export_lights=True,
-        export_import_convert_lighting_mode="RAW",
-        export_extras=True,
-        export_image_format=image_format,
-        export_jpeg_quality=82,
-    )
-
-
-output = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "."
-export(
-    os.path.join(output, "gallery.glb"),
-    ("Gallery_Render", "Gallery_Collision", "Gallery_Markers", "Gallery_Lights"),
-    "JPEG",
-)
 export(os.path.join(output, "frame.glb"), ("Frame_Display",))
 export(
     os.path.join(output, "basement.glb"), ("Basement_Render", "Basement_Collision"), "JPEG"
