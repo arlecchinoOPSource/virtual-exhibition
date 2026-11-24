@@ -121,13 +121,13 @@ describe('basement room', () => {
   async function openBasement() {
     const world = await loadWorld();
     await world.door.toggle(outside);
-    world.scene.updateMatrixWorld(true);
+    world.passes[0]!.updateMatrixWorld(true);
     return world;
   }
 
   it('furnishes the room with the specified original props and lights', async () => {
     const world = await openBasement();
-    const find = (name: string) => world.scene.getObjectByName(name);
+    const find = (name: string) => world.passes[0]!.getObjectByName(name);
     for (const name of [
       'Basement_Throne',
       'Basement_Throne_Cloth',
@@ -150,8 +150,13 @@ describe('basement room', () => {
     const throne = new Box3().setFromObject(find('Basement_Throne')!);
     expect(bounds.min.z).toBeGreaterThan(throne.max.z + 0.3);
     const lights: string[] = [];
-    world.scene.traverse((node) => {
+    world.passes[0]!.traverse((node) => {
       if (node instanceof PointLight) lights.push(node.name);
+    });
+    // The basement draws in its own pass, so its bulbs never join the
+    // gallery's light set (which would rebuild every gallery shader).
+    world.scene.traverse((node) => {
+      expect(node instanceof PointLight, node.name).toBe(false);
     });
     expect(lights.sort()).toEqual([
       'Light_Basement_Bulb_Room',
@@ -227,15 +232,18 @@ describe('basement room', () => {
 
   it('fades daylight below ground and restores it upstairs', async () => {
     const world = await openBasement();
-    let sky: HemisphereLight | undefined;
-    world.scene.traverse((node) => {
-      if (node instanceof HemisphereLight) sky = node;
-    });
+    // Both passes share the same fading daylight.
+    const skies: HemisphereLight[] = [];
+    for (const root of [world.scene, world.passes[0]!])
+      root.traverse((node) => {
+        if (node instanceof HemisphereLight) skies.push(node);
+      });
+    expect(skies).toHaveLength(2);
     for (let t = 0; t < 4; t += 1 / 60)
       world.update(1 / 60, new Vector3(22, -3.06, 0));
-    expect(sky?.intensity).toBeLessThan(0.3);
+    for (const sky of skies) expect(sky.intensity).toBeLessThan(0.3);
     for (let t = 0; t < 4; t += 1 / 60) world.update(1 / 60, outside);
-    expect(sky?.intensity).toBeGreaterThan(1.3);
+    for (const sky of skies) expect(sky.intensity).toBeGreaterThan(1.3);
     world.dispose();
   });
 });

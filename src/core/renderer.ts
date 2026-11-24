@@ -11,6 +11,8 @@ const EYE_HEIGHT = 1.65;
 
 export interface World {
   scene: Scene;
+  // Drawn after scene into the same depth buffer, each lit by its own lights.
+  passes?: readonly Scene[];
   solids: readonly Box3[];
   surfaces: Object3D[];
   spawn: { feet: Vector3; yaw: number };
@@ -138,6 +140,9 @@ export function startRenderer(
       updatePrompt();
     }
     renderer.render(world.scene, camera);
+    renderer.autoClear = false;
+    for (const pass of world.passes ?? []) renderer.render(pass, camera);
+    renderer.autoClear = true;
   }
 
   function syncLoop() {
