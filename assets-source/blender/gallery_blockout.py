@@ -399,14 +399,11 @@ box("Room_Wall_West_Lintel", ROOM_X0, ROOM_X0 + WALL, -1.0, 1.0, BOTTOM + 2.2, H
 
 # BLACK METAL graffiti is painted after the cellar surfaces; see below.
 
-# Heavy oak throne on a raised base against the east wall, facing the doorway,
-# with a draped cloth. The collider covers the base so it cannot be climbed.
+# A decrepit oak throne on a raised base against the east wall, facing the
+# doorway, with a dusty cloth. The collider covers the base so it cannot be climbed.
 tx, ty = ROOM_X1 - 0.75, 0.0
-THRONE_CLOTH = material("Throne_Cloth", (0.075, 0.01, 0.012), 0.82)
-cloth_shader = THRONE_CLOTH.node_tree.nodes["Principled BSDF"]
-# A faint, dark-red sheen reads as heavy wool without washing the colour out.
-cloth_shader.inputs["Sheen Weight"].default_value = 0.2
-cloth_shader.inputs["Sheen Tint"].default_value = (0.35, 0.06, 0.06, 1)
+# Faded, dusty wool: fully matte; the dye and dust live in vertex colour.
+THRONE_CLOTH = material("Throne_Cloth", (0.1, 0.04, 0.035), 0.95)
 throne_members, throne_box = build_throne(collections["Basement_Render"], OAK, THRONE_CLOTH, tx, ty, BOTTOM)
 solid("COL_Throne", *throne_box)
 
