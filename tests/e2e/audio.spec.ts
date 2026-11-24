@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { spawnAtBasementDoor } from './basement';
 
 declare global {
   interface Window {
@@ -41,6 +42,27 @@ async function openAudioSettings(page: Page) {
   await page.locator('#settings summary').click();
 }
 
+// Every request for the radio's track, by URL.
+let radioRequests: string[] = [];
+test.beforeEach(({ page }) => {
+  radioRequests = [];
+  page.on('request', (request) => {
+    if (request.url().includes('radio-placeholder'))
+      radioRequests.push(request.url());
+  });
+});
+
+// Horizontal distance from the Web Audio listener to the radio's emitter.
+const radioDistance = (page: Page) =>
+  page.evaluate(() => {
+    const listener = window.audioProbe.contexts[0]?.listener;
+    if (!listener?.positionX) return undefined;
+    return Math.hypot(
+      listener.positionX.value - 26.4,
+      listener.positionZ.value - 3.6,
+    );
+  });
+
 test('plays nothing on load or during the walk until the visitor opts in', async ({
   page,
 }) => {
@@ -51,6 +73,7 @@ test('plays nothing on load or during the walk until the visitor opts in', async
   await page.waitForTimeout(800);
   expect(await contexts(page)).toBe(0);
   await expect(viewport).toHaveAttribute('data-ambience', 'off');
+  expect(radioRequests).toEqual([]);
 });
 
 test('opts in, then changes the volume and mutes', async ({ page }) => {
@@ -87,6 +110,7 @@ test('opts in, then changes the volume and mutes', async ({ page }) => {
 test('switches to the basement ambience below ground and stops the gallery layer', async ({
   page,
 }) => {
+  await spawnAtBasementDoor(page);
   await openAudioSettings(page);
   const viewport = page.locator('#viewport');
   await page.getByLabel('Play environmental sound').check();
@@ -94,19 +118,6 @@ test('switches to the basement ambience below ground and stops the gallery layer
   await page.getByRole('button', { name: 'Start walk' }).click();
   await expect(page.locator('#crosshair')).toBeVisible();
   const prompt = page.locator('#interaction');
-
-  // Strafe onto the south walkway, walk to the right end wall, and strafe
-  // back by the same amount so the visitor stands centred on the doorway.
-  const strafe = async (key: string) => {
-    await page.keyboard.down(key);
-    await page.waitForTimeout(800);
-    await page.keyboard.up(key);
-  };
-  await strafe('d');
-  await page.keyboard.down('w');
-  await page.waitForTimeout(6000);
-  await page.keyboard.up('w');
-  await strafe('a');
   await expect(prompt).toHaveText('E / Click · Open the door');
   await page.keyboard.press('e');
   await expect(prompt).toBeEmpty({ timeout: 10000 });
@@ -128,4 +139,47 @@ test('switches to the basement ambience below ground and stops the gallery layer
   await expect(viewport).toHaveAttribute('data-ambience-layers', 'gallery', {
     timeout: 5000,
   });
+});
+
+test('plays one radio loop in the basement, fetched only once the door opens', async ({
+  page,
+}) => {
+  await spawnAtBasementDoor(page);
+  await openAudioSettings(page);
+  const viewport = page.locator('#viewport');
+  await page.getByLabel('Play environmental sound').check();
+  await page.bringToFront();
+  await page.getByRole('button', { name: 'Start walk' }).click();
+  await expect(page.locator('#crosshair')).toBeVisible();
+  const prompt = page.locator('#interaction');
+  await expect(prompt).toHaveText('E / Click · Open the door');
+  expect(radioRequests).toEqual([]);
+  await page.keyboard.press('e');
+  await expect(prompt).toBeEmpty({ timeout: 10000 });
+  // The track is fetched with the basement, before the visitor reaches it.
+  await expect.poll(() => radioRequests.length).toBe(1);
+
+  await page.keyboard.down('w');
+  await expect(viewport).toHaveAttribute('data-radio', 'playing', {
+    timeout: 15000,
+  });
+  const far = await radioDistance(page);
+  await page.waitForTimeout(1500);
+  await page.keyboard.up('w');
+  await expect(viewport).toHaveAttribute('data-radio-sources', '1');
+  // The listener follows the visitor: walking in brings the set closer.
+  const near = await radioDistance(page);
+  if (far !== undefined && near !== undefined) expect(near).toBeLessThan(far);
+
+  // Leaving fades the loop out, then stops and disconnects its source.
+  await page.keyboard.down('s');
+  await expect(viewport).toHaveAttribute('data-radio', 'idle', {
+    timeout: 15000,
+  });
+  await page.keyboard.up('s');
+  await expect(viewport).toHaveAttribute('data-radio-sources', '0', {
+    timeout: 5000,
+  });
+  await expect(viewport).toHaveAttribute('data-ambience', 'gallery');
+  expect(radioRequests).toHaveLength(1);
 });

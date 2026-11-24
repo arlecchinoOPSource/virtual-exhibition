@@ -137,6 +137,11 @@ export function createAmbience(report: (state: string, live: Zone[]) => void) {
       void context.resume();
       sync();
     },
+    // The radio plays through the same context and master gain, so Sound,
+    // Mute and Volume apply to it too. Undefined until a gesture unlocks audio.
+    channel() {
+      return context && master ? { context, output: master } : undefined;
+    },
     setEnabled(on: boolean) {
       enabled = on;
       if (on) this.unlock();
