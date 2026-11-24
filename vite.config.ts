@@ -10,5 +10,8 @@ export default defineConfig({
       input: { main: page('index'), directory: page('directory') },
     },
   },
-  test: { include: ['tests/unit/**/*.test.ts'] },
+  test: {
+    include: ['tests/unit/**/*.test.ts'],
+    setupFiles: ['tests/unit/bitmap.ts'],
+  },
 });

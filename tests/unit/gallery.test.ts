@@ -251,13 +251,24 @@ describe('basement entrance', () => {
     expect(bounds.getCenter(new Vector3()).z).toBeCloseTo(0, 1);
   });
 
-  it('keeps the statue clear of the walkway and the route to the door', async () => {
+  it('keeps the statue beside the doorway, clear of the door and its approach', async () => {
     const world = await loadWorld();
     const statue = world.scene.getObjectByName('COL_Statue');
     if (!statue) throw new Error('Missing COL_Statue.');
-    expect(new Box3().setFromObject(statue).min.z).toBeGreaterThan(3);
+    const bounds = new Box3().setFromObject(statue);
+    // South of the door frame (z 0.95) and against the end wall.
+    expect(bounds.min.z).toBeGreaterThan(0.95);
+    expect(bounds.max.z).toBeLessThan(2);
+    // The scythe stays in front of the end wall and the sign board.
+    const render = new Box3();
+    for (const name of ['Statue_Cloak', 'Statue_Blade', 'Statue_Staff']) {
+      const part = world.scene.getObjectByName(name);
+      if (!part) throw new Error(`Missing ${name}.`);
+      render.union(new Box3().setFromObject(part));
+    }
+    expect(render.max.x).toBeLessThan(9.94);
     const body = {
-      feet: new Vector3(9, 0, 2.5),
+      feet: new Vector3(8.4, 0, 2.5),
       grounded: true,
       fallSpeed: 0,
     };

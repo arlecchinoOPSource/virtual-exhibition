@@ -29,6 +29,10 @@ import sys
 import bpy
 from mathutils import Vector
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from grim_reaper import sculpt_reaper
+from gallery_finishes import frame_profile, oak_floor, paint_finish, paint_uv, soften, turned
+
 HEIGHT = 3.6
 WALL = 0.2
 ANCHOR_HEIGHT = 1.5
@@ -39,7 +43,7 @@ FRAME_DEPTH = 0.05
 FRAME_BORDER = 0.06
 LIGHT_HEIGHT = 3.3
 LIGHT_THROW = 1.3
-LIGHT_INTENSITY = 18
+LIGHT_INTENSITY = 6.5
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
@@ -70,12 +74,19 @@ def material(name, rgb, roughness=0.85):
     return mat
 
 
-FLOOR = material("Blockout_Floor", (0.08, 0.085, 0.095))
-WALLS = material("Blockout_Wall", (0.33, 0.34, 0.36))
-DISPLAY = material("Blockout_Display", (0.14, 0.17, 0.2))
-CEILING = material("Blockout_Ceiling", (0.25, 0.25, 0.26))
+FLOOR = material("Oiled oak", (0.35, 0.20, 0.09), 0.57)
+WALLS = material("Warm white mineral paint", (0.79, 0.77, 0.73), 0.91)
+paint_finish(WALLS)
+DISPLAY = WALLS
+CEILING = material("Ceiling white", (0.82, 0.81, 0.78), 0.94)
+# Approximate diffuse ceiling bounce where the realtime renderer has no GI.
+ceiling_shader = CEILING.node_tree.nodes["Principled BSDF"]
+ceiling_shader.inputs["Emission Color"].default_value = (0.26, 0.25, 0.23, 1)
+ceiling_shader.inputs["Emission Strength"].default_value = 1
 FIXTURE = material("Fixture_Housing", (0.03, 0.03, 0.035), 0.5)
 FRAME = material("Frame_Moulding", (0.04, 0.035, 0.03), 0.6)
+FIXTURE.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.48
+LENS = material("Recessed frosted lens", (0.85, 0.80, 0.68), 0.30)
 CANVAS = material("Frame_Canvas", (0.75, 0.73, 0.68))
 
 
@@ -112,6 +123,10 @@ def box(
         proxy.location = center
         proxy.display_type = "WIRE"
         collections[proxies].objects.link(proxy)
+    if mat == WALLS:
+        paint_uv(obj)
+        soften(obj, 0.007)
+    return obj
 
 
 GAZE = {"N": (0, 1), "S": (0, -1), "E": (1, 0), "W": (-1, 0)}
@@ -131,36 +146,51 @@ def marker(name, x, y, z, gaze):
 
 
 def gallery_light(index, x, y, gaze):
-    """Hang a spot above the walkway, aimed at the anchor, with a fixture box."""
+    """Align the adjustable track head and its beam with the exhibit anchor."""
     gx, gy = GAZE[gaze]
     position = Vector((x - gx * LIGHT_THROW, y - gy * LIGHT_THROW, LIGHT_HEIGHT))
     aim = Vector((x, y, ANCHOR_HEIGHT)) - position
     name = f"Light_Gallery_{index:02}"
     data = bpy.data.lights.new(name, "SPOT")
     data.energy = LIGHT_INTENSITY
-    data.spot_size = math.radians(50)
-    data.spot_blend = 0.35
+    data.spot_size = math.radians(68)
+    data.spot_blend = 0.72
     data.color = (1.0, 0.95, 0.88)
     light = bpy.data.objects.new(name, data)
     light.location = position
     light.rotation_euler = aim.to_track_quat("-Z", "Y").to_euler()
     collections["Gallery_Lights"].objects.link(light)
-    half = 0.07
-    box(
-        f"Fixture_Gallery_{index:02}",
-        position.x - half,
-        position.x + half,
-        position.y - half,
-        position.y + half,
-        LIGHT_HEIGHT,
-        HEIGHT,
-        FIXTURE,
-        collide=False,
-    )
+    direction = aim.normalized()
+    render = collections["Gallery_Render"]
+    prefix = f"Fixture_Gallery_{index:02}"
+    mount = position - direction * 0.12
+    turned(prefix + "_Body", [(-0.19, 0.046), (-0.185, 0.053),
+           (-0.15, 0.056), (-0.14, 0.052), (-0.13, 0.056),
+           (-0.014, 0.056), (0, 0.058), (0.005, 0.054),
+           (0.005, 0.047), (-0.009, 0.044)], position, direction, FIXTURE, render)
+    turned(prefix + "_Lens", [(0, 0.043), (0.002, 0.043)], position-direction*0.008,
+           direction, LENS, render)
+    side = Vector((-gy, gx, 0))
+    stem = mount + side * 0.065
+    turned(prefix + "_Pivot", [(-0.068, 0.024), (0.076, 0.024)],
+           mount, side, FIXTURE, render)
+    box(prefix + "_Yoke", stem.x-0.013, stem.x+0.013, stem.y-0.013, stem.y+0.013,
+        stem.z, HEIGHT-0.048, FIXTURE, collide=False)
+    box(prefix + "_Adaptor", stem.x-0.048, stem.x+0.048, stem.y-0.048, stem.y+0.048,
+        HEIGHT-0.075, HEIGHT-0.027, FIXTURE, collide=False)
+    # One continuous rail per perimeter row and per island-facing row.
+    if index in (1, 4, 7, 8, 11):
+        if gx:
+            box(prefix+"_Rail", -1.75, 1.75, -0.09, 0.09, HEIGHT-0.03, HEIGHT,
+                FIXTURE, collide=False)
+        else:
+            box(prefix+"_Rail", -5.0, 5.0, stem.y-0.024, stem.y+0.024, HEIGHT-0.03,
+                HEIGHT, FIXTURE, collide=False)
 
 
 # Floor and ceiling. Nothing can reach the ceiling, so it needs no proxy.
-box("Floor", -10 - WALL, 10 + WALL, -5 - WALL, 5 + WALL, -WALL, 0, FLOOR)
+floor = box("Floor", -10 - WALL, 10 + WALL, -5 - WALL, 5 + WALL, -WALL, 0, FLOOR)
+oak_floor(floor, FLOOR)
 box(
     "Ceiling",
     -10 - WALL,
@@ -253,33 +283,16 @@ sign["text"] = text_curve.body
 collections["Gallery_Render"].objects.link(sign)
 bpy.data.objects.remove(text_obj)
 
-# An original Grim Reaper statue on a plinth in the south-east corner, clear
-# of the walkway and the doorway.
-sx, sy = 9.3, -3.6
+# An original Grim Reaper statue on a plinth beside the south door jamb. The
+# door swings outwards into the stairwell, so the statue never blocks it.
+sx, sy = 9.5, -1.5
 box("Statue_Plinth", sx - 0.35, sx + 0.35, sy - 0.35, sy + 0.35, 0, 0.4, IRON, collide=False)
-bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.38, radius2=0.12, depth=1.5, location=(sx, sy, 1.15))
-robe = bpy.context.active_object
-robe.name = "Statue_Robe"
-robe.data.materials.append(CLOTH)
-bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.2, location=(sx - 0.03, sy, 2.0))
-hood = bpy.context.active_object
-hood.name = "Statue_Hood"
-hood.scale = (1.0, 0.9, 1.25)
-hood.data.materials.append(CLOTH)
-bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.025, depth=2.3, location=(sx - 0.25, sy + 0.25, 1.55))
-staff = bpy.context.active_object
-staff.name = "Statue_Staff"
-staff.rotation_euler = (0.12, 0, 0)
-staff.data.materials.append(WOOD)
-blade = bpy.data.objects.new("Statue_Blade", box_mesh("Statue_Blade", (0.03, 0.75, 0.12)))
-blade.location = (sx - 0.25, sy + 0.05, 2.62)
-blade.rotation_euler = (-0.35, 0, 0)
-blade.data.materials.append(BLADE)
-for obj in (robe, hood, staff):
-    for owner in obj.users_collection:
-        owner.objects.unlink(obj)
-    collections["Gallery_Render"].objects.link(obj)
-collections["Gallery_Render"].objects.link(blade)
+STATUE_BONE = material("Aged ivory bone", (0.46, 0.37, 0.24), 0.83)
+BLADE.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.66
+CLOTH.node_tree.nodes["Principled BSDF"].inputs["Sheen Weight"].default_value = 0.23
+HOOD_SHADOW = material("Statue_Hood_Shadow", (0, 0, 0), 1.0)
+HOOD_SHADOW.node_tree.nodes["Principled BSDF"].inputs["Specular IOR Level"].default_value = 0
+sculpt_reaper(collections["Gallery_Render"], sx, sy, CLOTH, STATUE_BONE, WOOD, BLADE, HOOD_SHADOW)
 proxy = bpy.data.objects.new("COL_Statue", box_mesh("COL_Statue", (0.7, 0.7, 2.4)))
 proxy.location = (sx, sy, 1.2)
 proxy.display_type = "WIRE"
@@ -313,13 +326,7 @@ for index, (x, y, gaze) in enumerate(anchors, start=1):
 
 # Reusable frame: back at the origin, front facing -Y, centered on the anchor.
 w, h, d, b = FRAME_WIDTH / 2, FRAME_HEIGHT / 2, FRAME_DEPTH, FRAME_BORDER
-for name, x0, x1, z0, z1 in (
-    ("Frame_Top", -w, w, h - b, h),
-    ("Frame_Bottom", -w, w, -h, -h + b),
-    ("Frame_Left", -w, -w + b, -h + b, h - b),
-    ("Frame_Right", w - b, w, -h + b, h - b),
-):
-    box(name, x0, x1, -d, 0, z0, z1, FRAME, collide=False, collection="Frame_Display")
+frame_profile(collections["Frame_Display"], FRAME, w, h, d, b)
 # The canvas is one textured quad recessed 2 cm behind the moulding's front.
 # Counter-clockwise as seen from the front (-Y), so its normal faces the visitor;
 # UV (0, 0) is the visitor's bottom-left corner.
@@ -517,7 +524,6 @@ join("Gallery_Walls", ("Wall_", "Pier_"), "Gallery_Render")
 join("Gallery_Displays", ("Island_", "Partition_"), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Sign_Board", "Sign_Spike_", "Statue_Plinth"), "Gallery_Render")
-join("Statue_Cloak", ("Statue_Robe", "Statue_Hood"), "Gallery_Render")
 join("Basement_Steps", ("Landing_", "Stair_"), "Basement_Render")
 join("Basement_Walls", ("Stairwell_", "Room_Wall_"), "Basement_Render")
 join("Basement_Shell", ("Room_Floor", "Room_Ceiling"), "Basement_Render")
@@ -527,13 +533,6 @@ join("Basement_Throne", ("Throne_",), "Basement_Render")
 join("Basement_Candle_Stand", ("Candle_Stand_", "Bulb_Cord_"), "Basement_Render")
 join("Basement_Candles", ("Candle_Wax_",), "Basement_Render")
 join("Basement_Flames", ("Candle_Flame_",), "Basement_Render")
-join(
-    "Frame_Moulding",
-    ("Frame_Top", "Frame_Bottom", "Frame_Left", "Frame_Right"),
-    "Frame_Display",
-)
-
-
 def export(path, collection_names):
     bpy.ops.object.select_all(action="DESELECT")
     for name in collection_names:
