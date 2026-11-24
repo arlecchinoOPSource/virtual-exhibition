@@ -78,7 +78,7 @@ def _axes(n):
     return v.cross(n).normalized(), v
 
 
-def bake_atlas(obj, mat, name, width, keep, shade):
+def bake_atlas(obj, mat, name, width, keep, shade, ppm=PIXELS_PER_METRE):
     """Drop hidden faces, give each visible face a unique atlas region and
     bake base colour, roughness and a tangent normal map for it."""
     obj.data.transform(obj.matrix_world)
@@ -98,8 +98,8 @@ def bake_atlas(obj, mat, name, width, keep, shade):
         u, v = _axes(face.normal)
         a = [vert.co.dot(u) for vert in face.verts]
         b = [vert.co.dot(v) for vert in face.verts]
-        size = (math.ceil((max(a) - min(a)) * PIXELS_PER_METRE) + 2 * PAD,
-                math.ceil((max(b) - min(b)) * PIXELS_PER_METRE) + 2 * PAD)
+        size = (math.ceil((max(a) - min(a)) * ppm) + 2 * PAD,
+                math.ceil((max(b) - min(b)) * ppm) + 2 * PAD)
         rects.append((face, u, v, min(a), min(b), size))
 
     # Shelf packing, tallest first.
@@ -121,12 +121,12 @@ def bake_atlas(obj, mat, name, width, keep, shade):
         px, py = places[index]
         for loop in face.loops:
             co = loop.vert.co
-            loop[uv_layer].uv = ((px + PAD + (co.dot(u) - a0) * PIXELS_PER_METRE) / width,
-                                 (py + PAD + (co.dot(v) - b0) * PIXELS_PER_METRE) / height)
+            loop[uv_layer].uv = ((px + PAD + (co.dot(u) - a0) * ppm) / width,
+                                 (py + PAD + (co.dot(v) - b0) * ppm) / height)
         n = face.normal.copy()
         jj, ii = np.mgrid[:h, :w]
-        a = a0 + (ii.ravel() - PAD + 0.5) / PIXELS_PER_METRE
-        b = b0 + (jj.ravel() - PAD + 0.5) / PIXELS_PER_METRE
+        a = a0 + (ii.ravel() - PAD + 0.5) / ppm
+        b = b0 + (jj.ravel() - PAD + 0.5) / ppm
         d = face.calc_center_median().dot(n)
         p = (np.outer(a, u) + np.outer(b, v) + np.asarray(n) * d).astype(np.float64)
         c, r, z = shade(p, np.asarray(n))
@@ -140,7 +140,7 @@ def bake_atlas(obj, mat, name, width, keep, shade):
 
     # Finish maps at half resolution keep transfer down.
     half = lambda m: m.reshape(height // 2, 2, width // 2, 2).mean(axis=(1, 3))
-    dy, dx = np.gradient(half(relief) * PIXELS_PER_METRE / 2)
+    dy, dx = np.gradient(half(relief) * ppm / 2)
     normal = np.stack([-dx, -dy, np.ones_like(dx)], axis=-1)
     normal /= np.linalg.norm(normal, axis=-1, keepdims=True)
     shader = mat.node_tree.nodes["Principled BSDF"]

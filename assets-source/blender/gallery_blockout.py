@@ -33,6 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from grim_reaper import sculpt_reaper
 from sign_lettering import build_sign
 from basement_surfaces import Cellar, bake_atlas, paint_graffiti, stair_surface
+from throne import build_throne, wood_shader
 from gallery_finishes import frame_profile, oak_floor, paint_finish, paint_uv, soften, turned
 
 HEIGHT = 3.6
@@ -398,17 +399,13 @@ box("Room_Wall_West_Lintel", ROOM_X0, ROOM_X0 + WALL, -1.0, 1.0, BOTTOM + 2.2, H
 
 # BLACK METAL graffiti is painted after the cellar surfaces; see below.
 
-# Wooden throne against the east wall, facing the doorway.
+# A decrepit oak throne on a raised base against the east wall, facing the
+# doorway, with a dusty cloth. The collider covers the base so it cannot be climbed.
 tx, ty = ROOM_X1 - 0.75, 0.0
-prop("Throne_Seat", tx - 0.35, tx + 0.35, ty - 0.4, ty + 0.4, BOTTOM + 0.45, BOTTOM + 0.55, OAK)
-prop("Throne_Back", tx + 0.25, tx + 0.35, ty - 0.4, ty + 0.4, BOTTOM + 0.55, BOTTOM + 2.0, OAK)
-for side in (-1, 1):
-    prop(f"Throne_Arm_{'N' if side > 0 else 'S'}", tx - 0.35, tx + 0.25, ty + side * 0.4 - 0.05, ty + side * 0.4 + 0.05, BOTTOM + 0.75, BOTTOM + 0.85, OAK)
-    for ex in (-0.3, 0.3):
-        prop(f"Throne_Leg_{side}_{ex}", tx + ex - 0.05, tx + ex + 0.05, ty + side * 0.35 - 0.05, ty + side * 0.35 + 0.05, BOTTOM, BOTTOM + 0.85, OAK)
-for index, offset in enumerate((-0.3, 0, 0.3)):
-    prop(f"Throne_Spire_{index}", tx + 0.26, tx + 0.34, ty + offset - 0.04, ty + offset + 0.04, BOTTOM + 2.0, BOTTOM + 2.25 + 0.1 * (offset == 0), OAK)
-solid("COL_Throne", tx - 0.4, tx + 0.4, ty - 0.5, ty + 0.5, BOTTOM, BOTTOM + 2.3)
+# Faded, dusty wool: fully matte; the dye and dust live in vertex colour.
+THRONE_CLOTH = material("Throne_Cloth", (0.1, 0.04, 0.035), 0.95)
+throne_members, throne_box = build_throne(collections["Basement_Render"], OAK, THRONE_CLOTH, tx, ty, BOTTOM)
+solid("COL_Throne", *throne_box)
 
 # Iron candle stand with five candles and a warm point light.
 cx, cy = ROOM_X1 - 2.2, 2.6
@@ -483,6 +480,8 @@ cellar = Cellar(
 )
 bake_atlas(bpy.data.objects["Basement_Walls"], PLASTER, "Basement plaster", 2048, cellar.inside, cellar.plaster)
 bake_atlas(bpy.data.objects["Basement_Shell"], CONCRETE, "Basement concrete", 2048, cellar.inside, cellar.concrete)
+bake_atlas(bpy.data.objects["Basement_Throne"], OAK, "Throne oak", 1024,
+           lambda q: q[2] > BOTTOM, wood_shader(throne_members), ppm=300)
 # Hand-sprayed on the south half of the east wall, facing the doorway and clear
 # of the throne, the damp trail on the north half and the candle stand.
 paint_graffiti(cellar, "Graffiti_Black_Metal", collections["Basement_Render"],
