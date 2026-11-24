@@ -132,28 +132,67 @@ def oak_floor(obj, mat):
     bpy.data.meshes.remove(slab)
 
 
+def _tileable(rng, size, low, high, stretch=1.0):
+    """Band-limited noise that wraps seamlessly: white noise filtered in the
+    frequency domain, between low and high cycles per tile. stretch > 1
+    favours horizontal frequencies, giving vertical streaks."""
+    fy, fx = np.meshgrid(np.fft.fftfreq(size) * size, np.fft.fftfreq(size) * size, indexing="ij")
+    radius = np.hypot(fx, fy * stretch)
+    band = (radius >= low) & (radius <= high)
+    field = np.real(np.fft.ifft2(np.fft.fft2(rng.normal(size=(size, size))) * band))
+    return field / (np.abs(field).max() + 1e-9)
+
+
 def paint_finish(mat):
-    # Fine roller stipple in roughness only. The paint stays opaque and clean.
-    size = 128
+    """Matte emulsion on plastered walls, tiled every metre: broad mottling
+    from the plaster beneath, faint vertical roller laps, and an orange-peel
+    stipple that catches raking spotlight."""
+    size = 512
     rng = np.random.default_rng(49)
-    pixels = np.ones((size, size, 4), dtype=np.float32)
-    pixels[:, :, :3] = rng.uniform(0.79, 0.94, (size, size, 1))
-    image = bpy.data.images.new("Paint roller finish", size, size, alpha=False)
-    image.colorspace_settings.name = "Non-Color"
-    image.pixels.foreach_set(pixels.ravel())
-    image.pack()
-    texture = mat.node_tree.nodes.new("ShaderNodeTexImage")
-    texture.image = image
-    mat.node_tree.links.new(texture.outputs["Color"], mat.node_tree.nodes["Principled BSDF"].inputs["Roughness"])
+    mottle = _tileable(rng, size, 2, 6)
+    laps = _tileable(rng, size, 3, 9, stretch=8.0)
+    stipple = _tileable(rng, size, 60, 170)
+    grit = _tileable(rng, size, 170, 256)
+
+    shader = mat.node_tree.nodes["Principled BSDF"]
+    base = np.array(shader.inputs["Base Color"].default_value[:3])
+
+    def image(name, pixels, linear):
+        rgba = np.ones((size, size, 4), dtype=np.float32)
+        rgba[..., :3] = pixels if pixels.ndim == 3 else pixels[..., None]
+        img = bpy.data.images.new(name, size, size, alpha=False)
+        if linear:
+            img.colorspace_settings.name = "Non-Color"
+        img.pixels.foreach_set(np.clip(rgba, 0, 1).ravel())
+        img.pack()
+        node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+        node.image = img
+        return node.outputs["Color"]
+
+    # Base colour as display values: the material colour, gently uneven.
+    tone = 1 + 0.016 * mottle + 0.01 * laps - 0.01 * np.clip(stipple, 0, 1)
+    display = np.where(base <= 0.0031308, base * 12.92, 1.055 * base ** (1 / 2.4) - 0.055)
+    links = mat.node_tree.links
+    links.new(image("Mineral paint - colour", tone[..., None] * display, False), shader.inputs["Base Color"])
+    rough = 0.86 + 0.05 * stipple + 0.03 * grit - 0.02 * laps
+    links.new(image("Mineral paint - roughness", rough, True), shader.inputs["Roughness"])
+    # Stipple and grit in relief, with a breath of the roller laps.
+    height = 0.6 * stipple + 0.25 * grit + 0.4 * laps
+    dy, dx = np.gradient(height)
+    normal = np.stack([0.5 - dx * 0.35, 0.5 - dy * 0.35, np.ones_like(dx)], axis=-1)
+    normal_node = mat.node_tree.nodes.new("ShaderNodeNormalMap")
+    links.new(image("Mineral paint - normal", normal, True), normal_node.inputs["Color"])
+    links.new(normal_node.outputs["Normal"], shader.inputs["Normal"])
 
 
 def paint_uv(obj):
+    # One texture tile per metre of wall, in world position (boxes are unrotated).
     layer = obj.data.uv_layers.new(name="Paint")
     for poly in obj.data.polygons:
         axis = max(range(3), key=lambda i: abs(poly.normal[i]))
         for index in poly.loop_indices:
-            point = obj.data.vertices[obj.data.loops[index].vertex_index].co
-            layer.data[index].uv = [point[i] * 4 for i in range(3) if i != axis]
+            point = obj.location + obj.data.vertices[obj.data.loops[index].vertex_index].co
+            layer.data[index].uv = [point[i] for i in range(3) if i != axis]
 
 
 def soften(obj, width):
