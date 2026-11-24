@@ -78,7 +78,7 @@ def material(name, rgb, roughness=0.85):
     return mat
 
 
-FLOOR = material("Oiled oak", (0.35, 0.20, 0.09), 0.57)
+FLOOR = material("Lacquered oak parquet", (0.45, 0.27, 0.12), 0.2)
 WALLS = material("Warm white mineral paint", (0.79, 0.77, 0.73), 0.91)
 paint_finish(WALLS)
 DISPLAY = WALLS
@@ -504,6 +504,7 @@ output = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "."
 export(
     os.path.join(output, "gallery.glb"),
     ("Gallery_Render", "Gallery_Collision", "Gallery_Markers", "Gallery_Lights"),
+    "JPEG",
 )
 export(os.path.join(output, "frame.glb"), ("Frame_Display",))
 export(
