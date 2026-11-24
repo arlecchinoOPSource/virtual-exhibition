@@ -347,35 +347,37 @@ test('offers the PDF file when the essay fails to load', async ({ page }) => {
   ).toBeVisible();
 });
 
-// Starts the walk, follows the south walkway to the right end, and strafes
-// left until the crosshair finds the basement door.
+// Put the test visitor on the door axis. Separate unit tests walk the gallery.
 async function walkToBasementDoor(page: Page) {
+  await page.route('**/models/gallery.glb', async (route) => {
+    const response = await route.fetch();
+    const model = await response.body();
+    const jsonLength = model.readUInt32LE(12);
+    const document = JSON.parse(
+      model.subarray(20, 20 + jsonLength).toString('utf8'),
+    ) as {
+      nodes: { name?: string; translation?: number[] }[];
+    };
+    const spawn = document.nodes.find(({ name }) => name === 'Spawn_Gallery');
+    if (!spawn) throw new Error('Expected a gallery spawn in the GLB.');
+    spawn.translation = [9.74, 0, 0];
+    const json = JSON.stringify(document);
+    const padded = Buffer.from(
+      json + ' '.repeat((4 - (Buffer.byteLength(json) % 4)) % 4),
+    );
+    const header = Buffer.from(model.subarray(0, 20));
+    header.writeUInt32LE(model.length - jsonLength + padded.length, 8);
+    header.writeUInt32LE(padded.length, 12);
+    await route.fulfill({
+      response,
+      body: Buffer.concat([header, padded, model.subarray(20 + jsonLength)]),
+    });
+  });
   await page.goto('/');
   await page.bringToFront();
   await page.getByRole('button', { name: 'Start walk' }).click();
   await expect(page.locator('#crosshair')).toBeVisible();
   const prompt = page.locator('#interaction');
-  await page.keyboard.down('d');
-  await page.waitForTimeout(800);
-  await page.keyboard.up('d');
-  await page.keyboard.down('w');
-  await page.waitForTimeout(6000);
-  await page.keyboard.up('w');
-  // Back off the end wall, then strafe back onto the door axis in front of
-  // the statue plinth (symmetric with the first strafe).
-  await page.keyboard.down('s');
-  await page.waitForTimeout(700);
-  await page.keyboard.up('s');
-  await page.keyboard.down('a');
-  await page.waitForTimeout(800);
-  await page.keyboard.up('a');
-  // Walk in until the door is in reach; the closed leaf stops the visitor.
-  await page.keyboard.down('w');
-  await expect(prompt).toHaveText('E / Click · Open the door', {
-    timeout: 10000,
-  });
-  await page.waitForTimeout(600);
-  await page.keyboard.up('w');
   await expect(prompt).toHaveText('E / Click · Open the door');
   return prompt;
 }
