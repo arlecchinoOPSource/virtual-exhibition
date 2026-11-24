@@ -2,7 +2,7 @@
 
 `basement.glb` contains two prints of historical artworks, pasted to the basement's side walls (#59). Everything else in `gallery.glb`, `frame.glb`, and `basement.glb` is original to this project.
 
-The source files are kept unmodified in `assets-source/posters/`. `assets-source/blender/posters.py` builds both prints the same way. It adds a narrow paper margin around the image without cropping or resizing it, and lightly tones the sheet: the margin yellows toward its edges and the paper has a faint uneven tone. The glTF export then re-encodes each sheet as a JPEG (quality 82) inside `basement.glb`. No logos, album artwork, typography, or later adaptations are included.
+The source files are kept unmodified in `assets-source/posters/`. `assets-source/blender/posters.py` builds both prints the same way. It adds a narrow paper margin around the image without resizing it (only the Doré scan is cropped, as noted below), and lightly tones the sheet: the margin yellows toward its edges and the paper has a faint uneven tone. The glTF export then re-encodes each sheet as a JPEG (quality 82) inside `basement.glb`. No logos, album artwork, typography, or later adaptations are included.
 
 ## Poster_Kittelsen_Lur
 
@@ -15,14 +15,14 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 
 ## Poster_Dore_Pale_Horse
 
-- **Work:** _Death on the Pale Horse_ (Revelation 6:8), a wood engraving by Héliodore Pisan after Gustave Doré (1832–1883), from Doré's illustrated Bible (_La Sainte Bible_, Tours: Alfred Mame et fils, 1866). The file shows both signatures, Doré's and "H. PISAN". The edition and holding collection still need to be confirmed against the source record.
-- **File:** `assets-source/posters/dore-death-on-the-pale-horse.webp`, 960 × 1198 px WebP, SHA-256 `1d1f3dd68d840307bb0e0ac3e51fbfd0bab2c0b7b021f98447718b46b6f735c8`.
-- **In the model:** `Poster_Dore_Pale_Horse` on the south wall, using material `Poster_Dore_Pale_Horse_Print` and image `Poster_Dore_Pale_Horse - print` (1048 × 1286 px JPEG, 246,102 bytes). The artwork is 0.66 × 0.82 m.
-- **Source (as reported by the project owner):** Wikimedia Commons, [File:Gustave Doré - St. John's vision of death.jpg](https://commons.wikimedia.org/wiki/File:Gustave_Dor%C3%A9_-_St._John%27s_vision_of_death.jpg). File URL: <https://upload.wikimedia.org/wikipedia/commons/8/88/Gustave_Dor%C3%A9_-_St._John%27s_vision_of_death.jpg>. Commons describes it as a scan from _La Sagrada Biblia_, vol. 4 (Félix Torres Amat, 1884), p. 391, via archive.org.
-- **Mismatch to resolve:** the Commons file is 770 × 1012 px. The committed file is 960 × 1198 px, with a different aspect ratio and a wider black border, so it did not come from that Commons file. Its exact origin is unconfirmed. Either replace it with the Commons file or record the URL it actually came from.
-- **Rights:** Commons tags the Commons file public domain in the United States (PD-1923, published before 1931) with the Public Domain Mark 1.0. Doré died in 1883 and Pisan in 1890, so the engraving is in the public domain worldwide. The same reproduction rule applies as for the Kittelsen file.
-- **Attribution:** Gustave Doré (design) and Héliodore Pisan (engraving), _Death on the Pale Horse_, 1866. Public domain.
+- **Work:** _Death on the Pale Horse_ (Revelation 6:8), titled in this source _(La Muerte) Visión de San Juan_. It is a wood engraving by Héliodore Pisan after Gustave Doré (1832–1883); both signatures, Doré's and "H. PISAN", are on the plate. Doré's Bible illustrations were first published in _La Sainte Bible_ (Tours: Alfred Mame et fils, 1866). This impression is from the Spanish edition, _La Sagrada Biblia_, vol. 4 (trans. Félix Torres Amat, 1884), p. 391.
+- **File:** `assets-source/posters/dore-death-on-the-pale-horse.jpg`, 770 × 1012 px greyscale JPEG, 142,279 bytes, SHA-256 `0f700e871e6c728fe7782a0b176cc457f750e59d2a5531e0acc6824bf5fafbeb`. It was downloaded unmodified on 2026-11-25 from the file URL below. Its embedded comment cites <https://archive.org/details/AI159/page/n353/mode/2up>.
+- **Source:** Wikimedia Commons, [File:Gustave Doré - St. John's vision of death.jpg](https://commons.wikimedia.org/wiki/File:Gustave_Dor%C3%A9_-_St._John%27s_vision_of_death.jpg). File URL: <https://upload.wikimedia.org/wikipedia/commons/8/88/Gustave_Dor%C3%A9_-_St._John%27s_vision_of_death.jpg>. Commons credits the scan to archive.org (_La Sagrada Biblia_ T4, item AI159).
+- **Modifications:** At build time, `gallery_blockout.py` crops the scan to the engraved plate, pixel box (8, 12, 760, 961) from the top-left. This removes the scanned page edge and the printed Spanish caption. The general changes listed above also apply.
+- **In the model:** `Poster_Dore_Pale_Horse` on the south wall, using material `Poster_Dore_Pale_Horse_Print` and image `Poster_Dore_Pale_Horse - print` (822 × 1019 px JPEG, 192,355 bytes). The plate is 0.65 × 0.82 m.
+- **Rights:** Commons tags the file public domain in the United States (PD-1923, published before 1931) with the Public Domain Mark 1.0. Its general notice says US public-domain status may not hold everywhere. Doré died in 1883 and Pisan in 1890, so the engraving is also out of copyright under life-plus-100-year terms. The same reproduction rule applies as for the Kittelsen file.
+- **Attribution:** Gustave Doré (design) and Héliodore Pisan (engraving), _Death on the Pale Horse_, from _La Sagrada Biblia_ (1884). Public domain, via Wikimedia Commons.
 
 ## Replacing a print
 
-Overwrite the file in `assets-source/posters/` (keep the file name, or change it in the `hang_poster` call in `gallery_blockout.py`), re-export, and update the entry above. Each print has its own material and image, so the other print and every other texture export unchanged.
+Overwrite the file in `assets-source/posters/` (keep the file name, or change it in the `hang_poster` call in `gallery_blockout.py`, along with any `crop` box), re-export, and update the entry above. Each print has its own material and image, so the other print and every other texture export unchanged.

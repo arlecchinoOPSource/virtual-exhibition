@@ -189,9 +189,9 @@ describe('basement room', () => {
       ],
       [
         'Poster_Dore_Pale_Horse',
-        'dore-death-on-the-pale-horse.webp',
+        'dore-death-on-the-pale-horse.jpg',
         4,
-        1048 / 1286,
+        822 / 1019,
       ],
     ] as const) {
       const poster = find(name);

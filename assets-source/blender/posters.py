@@ -24,25 +24,33 @@ PAPER = np.array([0.86, 0.83, 0.75])
 
 
 def hang_poster(collection, name, source, centre, normal, art_height, margin=0.03, seed=0,
-                curl_corner=(1, 1)):
+                curl_corner=(1, 1), crop=None):
     """Paste a print of `source` on a wall.
 
     centre is the wall point behind the sheet's middle and normal the wall's
     outward horizontal direction. art_height is the artwork's height in metres;
     its width follows the image. curl_corner picks the lifting corner as
-    (right, top) signs seen from the front.
+    (right, top) signs seen from the front. crop, if given, is the
+    (left, top, right, bottom) pixel box to keep, measured from the image's
+    top-left corner like an image editor; the source file stays untouched.
     """
     art = bpy.data.images.load(os.path.join(SOURCES, source))
     w, h = art.size
+    pixels = np.empty(w * h * 4, np.float32)
+    art.pixels.foreach_get(pixels)
+    bpy.data.images.remove(art)
+    # Blender stores rows bottom first.
+    pixels = pixels.reshape(h, w, 4)[..., :3]
+    if crop:
+        left, top, right, bottom = crop
+        pixels = pixels[h - bottom:h - top, left:right]
+        h, w = pixels.shape[:2]
     ppm = h / art_height
     pad = round(margin * ppm)
     W, H = w + 2 * pad, h + 2 * pad
-    pixels = np.empty(w * h * 4, np.float32)
-    art.pixels.foreach_get(pixels)
     sheet = np.empty((H, W, 3), np.float32)
     sheet[:] = PAPER
-    sheet[pad:pad + h, pad:pad + w] = pixels.reshape(h, w, 4)[..., :3]
-    bpy.data.images.remove(art)
+    sheet[pad:pad + h, pad:pad + w] = pixels
 
     # Ageing: a faint mottled tone over the sheet and a yellowed margin.
     jj, ii = np.mgrid[:H, :W]
