@@ -7,39 +7,114 @@ from mathutils import Vector
 
 
 def oak_floor(obj, mat):
-    """Bake one nonrepeating color map across the complete 20.4 m slab."""
-    width, height = 2048, 1024
+    """Cut the visible slab face into boards and map each into a mill-stock atlas."""
     rng = np.random.default_rng(48)
-    pixels = np.ones((height, width, 4), dtype=np.float32)
-    for y0 in range(0, height, 20):
-        rows = min(20, height - y0)
-        x0 = -int(rng.integers(0, 115))
-        while x0 < width:
-            length = int(rng.integers(115, 245))
-            lo, hi = max(0, x0), min(width, x0 + length)
-            y, x = np.mgrid[:rows, lo:hi]
-            u = (x - x0) / length
-            v = y / 20 - rng.uniform(0.15, 0.85)
-            # Long curved growth rings, fine vessels and occasional dark heartwood.
-            axis = v + 0.06 * np.sin(u * 5 + rng.uniform(0, 6))
-            rings = 2 * np.pi * (np.sqrt(axis**2 + (u - 0.5)**2 * 0.6 + 0.02) * 10)
-            grain = 0.034 * np.cos(rings) + 0.013 * np.cos(rings * 2)
-            fiber = rng.normal(0, 0.009, (rows, hi-lo))
-            tone = rng.uniform(0.90, 1.09) + grain + fiber
-            tone[y == 0] *= 0.91
-            tone[x == x0] *= 0.90
-            pixels[y0:y0+rows, lo:hi, :3] = tone[..., None] * (0.66, 0.50, 0.35)
+    width, strips, strip_height = 2048, 16, 64
+    height = strips * strip_height
+    color = np.ones((height, width, 4), dtype=np.float32)
+    rough = np.zeros((height, width), dtype=np.float32)
+    relief = np.zeros_like(rough)
+    y, x = np.mgrid[:strip_height, :width]
+    u, v = x / width, y / strip_height
+    for i in range(strips):
+        # Vary the cut through a virtual log, from straight quarter-sawn grain
+        # to arched grain where the board passes closer to the heart.
+        phase = rng.uniform(0, math.tau)
+        wander = 0.038 * np.sin(u * 9 + phase) + 0.012 * np.sin(u * 21 - phase)
+        # Most boards intersect one side of the growth rings. Narrow patches
+        # of cross-grain and irregular fibre drift break up the arched cuts.
+        drift = np.interp(u[0], np.linspace(0, 1, 27), rng.normal(0, 0.012, 27))
+        offset = rng.uniform(-1.15, 0.12)
+        across = v - offset + wander + drift
+        lengthwise = (u - rng.uniform(0.15, 0.85)) * rng.uniform(0.7, 2.2)
+        radius = np.sqrt(across**2 + lengthwise**2 + 0.08)
+        ring = radius * rng.uniform(15, 23) + 0.18 * np.sin(radius * 24 + phase)
+        earlywood = np.exp(-((np.sin(np.pi * ring) / 0.40) ** 2))
+        # Broken longitudinal vessels taper along the grain direction.
+        fibres = np.sin(2 * np.pi * (across * 39 + 0.19 * np.sin(u*32+phase)))
+        pores = np.maximum(fibres, 0)**6 * (0.5 + 0.5*np.sin(u*78 + v*16 + phase))**2
+        knot = np.zeros_like(u)
+        if i % 4 == 0:
+            dist = np.hypot((u-rng.uniform(0.25, 0.75))/0.009, (v-0.47)/0.077)
+            knot = np.exp(-dist**2) + 0.18*np.exp(-dist)*np.cos(8*dist)
+        tone = rng.uniform(0.93, 1.07) + 0.032*np.sin(ring*1.3)
+        patches = np.interp(u[0], np.linspace(0, 1, 19), rng.uniform(0.25, 1.0, 19))
+        streaks = np.interp(across, np.linspace(-2, 3, 340), rng.normal(0, 0.034, 340))
+        tone += streaks - (0.11*patches*earlywood + 0.065*pores + 0.23*knot)
+        tone += rng.normal(0, 0.006, u.shape)
+        seam = (y == 2) | (y == strip_height-3)
+        tone[seam] *= 0.94
+        rows = slice(i*strip_height, (i+1)*strip_height)
+        color[rows, :, :3] = tone[..., None] * (0.705, 0.555, 0.365)
+        rough[rows] = rng.uniform(0.33, 0.39) + 0.1*earlywood + 0.035*pores
+        relief[rows] = 0.08*earlywood + 0.04*pores + 0.18*seam
+
+    shader = mat.node_tree.nodes["Principled BSDF"]
+    def map_image(name, pixels, linear=False):
+        h, w = pixels.shape[:2]
+        img = bpy.data.images.new(name, w, h, alpha=False)
+        if linear:
+            img.colorspace_settings.name = "Non-Color"
+        img.pixels.foreach_set(np.ascontiguousarray(pixels, dtype=np.float32).ravel())
+        img.pack()
+        node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+        node.image = img
+        return node.outputs["Color"]
+
+    links = mat.node_tree.links
+    links.new(map_image("Honey oak - sawn figure", color), shader.inputs["Base Color"])
+    # Lower-resolution finish maps carry the soft sheen without overspending on transfer.
+    rough = rough.reshape(height//2, 2, width//4, 4).mean(axis=(1, 3))
+    finish = np.ones((*rough.shape, 4), dtype=np.float32)
+    finish[:, :, :3] = rough[:, :, None]
+    links.new(map_image("Satin oil - roughness", finish, True), shader.inputs["Roughness"])
+    down = relief.reshape(height//2, 2, width//4, 4).mean(axis=(1, 3))
+    dy, dx = np.gradient(down)
+    normal = np.ones((*down.shape, 4), dtype=np.float32)
+    normal[:, :, 0] = 0.5 + dx * 0.32
+    normal[:, :, 1] = 0.5 + dy * 0.48
+    normal_node = mat.node_tree.nodes.new("ShaderNodeNormalMap")
+    links.new(map_image("Oak pores - tangent normal", normal, True), normal_node.inputs["Color"])
+    links.new(normal_node.outputs["Normal"], shader.inputs["Normal"])
+    shader.inputs["Coat Weight"].default_value = 0.19
+    shader.inputs["Coat Roughness"].default_value = 0.32
+
+    # Keep the slab sides, bottom, top elevation and independent collider intact.
+    slab = obj.data
+    verts = [tuple(pt.co) for pt in slab.vertices]
+    faces = [tuple(f.vertices) for f in slab.polygons if f.normal.z < 0.9]
+    board_uvs = []
+    z = max(pt[2] for pt in verts)
+    xmin, xmax = min(pt[0] for pt in verts), max(pt[0] for pt in verts)
+    ymin, ymax = min(pt[1] for pt in verts), max(pt[1] for pt in verts)
+    board_width = (ymax-ymin)/54
+    for row in range(54):
+        y0 = ymin + row*board_width
+        x0 = xmin - rng.uniform(0, 1.35)
+        while x0 < xmax:
+            length = rng.uniform(1.45, 2.55)
+            left, right = max(xmin, x0), min(xmax, x0+length)
+            strip = rng.integers(strips)
+            # Clip the sampled board as well as its geometry at the room perimeter.
+            start = rng.uniform(0.01, 0.13)
+            u0, u1 = start+(left-x0)/3.05, start+(right-x0)/3.05
+            if rng.random() < 0.5:
+                u0, u1 = 1-u0, 1-u1
+            v0, v1 = (strip*strip_height + 2.5)/height, ((strip+1)*strip_height - 2.5)/height
+            index = len(verts)
+            verts.extend([(left,y0,z),(right,y0,z),(right,y0+board_width,z),(left,y0+board_width,z)])
+            faces.append(tuple(range(index, index+4)))
+            board_uvs.append(((u0,v0),(u1,v0),(u1,v1),(u0,v1)))
             x0 += length
-    image = bpy.data.images.new("European oak - staggered boards", width, height, alpha=False)
-    image.pixels.foreach_set(pixels.ravel())
-    image.pack()
-    texture = mat.node_tree.nodes.new("ShaderNodeTexImage")
-    texture.image = image
-    mat.node_tree.links.new(texture.outputs["Color"], mat.node_tree.nodes["Principled BSDF"].inputs["Base Color"])
-    uv = obj.data.uv_layers.new(name="FloorPlan")
-    for loop in obj.data.loops:
-        x, y, _ = obj.data.vertices[loop.vertex_index].co
-        uv.data[loop.index].uv = (x / 20.4 + 0.5, y / 10.4 + 0.5)
+    surface = bpy.data.meshes.new("Oak floorboards")
+    surface.from_pydata(verts, [], faces)
+    surface.materials.append(mat)
+    uv = surface.uv_layers.new(name="Board grain")
+    for poly, coords in zip(list(surface.polygons)[-len(board_uvs):], board_uvs):
+        for loop, coord in zip(poly.loop_indices, coords):
+            uv.data[loop].uv = coord
+    obj.data = surface
+    bpy.data.meshes.remove(slab)
 
 
 def paint_finish(mat):
