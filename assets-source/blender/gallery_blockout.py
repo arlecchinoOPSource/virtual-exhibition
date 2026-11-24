@@ -32,6 +32,7 @@ from mathutils import Vector
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from grim_reaper import sculpt_reaper
 from sign_lettering import build_sign
+from basement_surfaces import Cellar, bake_atlas, stair_surface
 from gallery_finishes import frame_profile, oak_floor, paint_finish, paint_uv, soften, turned
 
 HEIGHT = 3.6
@@ -330,6 +331,12 @@ for step in range(STEPS):
     x0 = STAIR_X + RUN * step
     box(f"Stair_{step + 1:02}", x0, x0 + RUN, -0.8, 0.8, BOTTOM - 0.2, -RISE * (step + 1), CONCRETE, **BASEMENT)
 box("Landing_Lower", LOWER_X, END_X, -0.8, 0.8, BOTTOM - 0.2, BOTTOM, CONCRETE, **BASEMENT)
+# The boxes above stay as colliders; the visible flight is a clean surface of
+# treads and risers, so no buried box faces take up texture space.
+for obj in [o for o in collections["Basement_Render"].objects if o.name.startswith(("Landing_", "Stair_"))]:
+    bpy.data.objects.remove(obj)
+stair_surface("Basement_Steps", CONCRETE, collections["Basement_Render"],
+              10 + WALL, STAIR_X, RUN, RISE, STEPS, END_X, -0.8, 0.8)
 for side, y0, y1 in (("North", 0.8, 1.0), ("South", -1.0, -0.8)):
     box(f"Stairwell_Wall_{side}", 10 + WALL, END_X, y0, y1, BOTTOM, HEIGHT, PLASTER, **BASEMENT)
 box("Stairwell_Ceiling", 10 + WALL, END_X, -1.0, 1.0, HEIGHT, HEIGHT + WALL, PLASTER, collide=False, collection="Basement_Render")
@@ -340,8 +347,6 @@ box("Stairwell_Ceiling", 10 + WALL, END_X, -1.0, 1.0, HEIGHT, HEIGHT + WALL, PLA
 # and texture colour here is original.
 ROOM_X0, ROOM_X1, ROOM_Y, ROOM_H = END_X, END_X + 8, 4.0, 2.8
 TOP = BOTTOM + ROOM_H
-BRICK = material("Basement_Brick", (0.2, 0.07, 0.04), 0.95)
-STAIN = material("Basement_Stain", (0.05, 0.045, 0.04), 1.0)
 PAINT = material("Graffiti_Paint", (0.8, 0.79, 0.76), 0.85)
 OAK = material("Throne_Wood", (0.13, 0.06, 0.025), 0.75)
 WAX = material("Candle_Wax", (0.85, 0.8, 0.65), 0.6)
@@ -390,15 +395,7 @@ box("Room_Wall_West_North", ROOM_X0, ROOM_X0 + WALL, 0.8, ROOM_Y, BOTTOM, TOP, P
 box("Room_Wall_West_South", ROOM_X0, ROOM_X0 + WALL, -ROOM_Y, -0.8, BOTTOM, TOP, PLASTER, **BASEMENT)
 box("Room_Wall_West_Lintel", ROOM_X0, ROOM_X0 + WALL, -1.0, 1.0, BOTTOM + 2.2, HEIGHT, PLASTER, collide=False, collection="Basement_Render")
 
-# Weathering: brick showing through broken plaster, and floor stains.
-for index, (x0, x1, z0, z1, side) in enumerate((
-    (20.0, 21.1, -2.2, -1.5, 1), (23.4, 24.2, -1.4, -0.7, 1), (21.6, 22.8, -2.7, -2.1, -1),
-    (25.0, 26.2, -1.9, -1.1, -1),
-)):
-    y = (ROOM_Y - 0.01) * side
-    prop(f"Plaster_Damage_{index:02}", x0, x1, min(y, y - 0.02 * side), max(y, y - 0.02 * side), z0, z1, BRICK)
-for index, (x, y, size) in enumerate(((21.2, 1.6, 1.3), (24.6, -1.8, 1.8), (22.4, -0.4, 0.8))):
-    prop(f"Floor_Stain_{index:02}", x - size / 2, x + size / 2, y - size / 3, y + size / 3, BOTTOM, BOTTOM + 0.004, STAIN)
+# Weathering is baked into the shell textures; see basement_surfaces.py.
 
 # Handwritten-style graffiti: sheared Blender-font lettering on the east wall.
 graffiti_curve = bpy.data.curves.new("Graffiti_Black_Metal", "FONT")
@@ -493,16 +490,24 @@ join("Gallery_Walls", ("Wall_", "Pier_"), "Gallery_Render")
 join("Gallery_Displays", ("Island_", "Partition_"), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
-join("Basement_Steps", ("Landing_", "Stair_"), "Basement_Render")
 join("Basement_Walls", ("Stairwell_", "Room_Wall_"), "Basement_Render")
-join("Basement_Shell", ("Room_Floor", "Room_Ceiling"), "Basement_Render")
-join("Basement_Weathering", ("Plaster_Damage_",), "Basement_Render")
-join("Basement_Stains", ("Floor_Stain_",), "Basement_Render")
+join("Basement_Shell", ("Room_Floor", "Room_Ceiling", "Basement_Steps"), "Basement_Render")
 join("Basement_Throne", ("Throne_",), "Basement_Render")
 join("Basement_Candle_Stand", ("Candle_Stand_", "Bulb_Cord_"), "Basement_Render")
 join("Basement_Candles", ("Candle_Wax_",), "Basement_Render")
 join("Basement_Flames", ("Candle_Flame_",), "Basement_Render")
-def export(path, collection_names):
+
+# Unique weathered atlases for the cellar plaster and concrete.
+cellar = Cellar(
+    room=((ROOM_X0 + WALL, -ROOM_Y, BOTTOM), (ROOM_X1, ROOM_Y, TOP)),
+    stairwell=((10 + WALL, -0.8, BOTTOM - 0.01), (ROOM_X0 + WALL, 0.8, HEIGHT)),
+    stair_x=STAIR_X, lower_x=LOWER_X, stair_top=0.0, floor_z=BOTTOM, ceiling_z=TOP,
+    throne=(tx, ty), candles=(cx, cy),
+)
+bake_atlas(bpy.data.objects["Basement_Walls"], PLASTER, "Basement plaster", 2048, cellar.inside, cellar.plaster)
+bake_atlas(bpy.data.objects["Basement_Shell"], CONCRETE, "Basement concrete", 2048, cellar.inside, cellar.concrete)
+
+def export(path, collection_names, image_format="AUTO"):
     bpy.ops.object.select_all(action="DESELECT")
     for name in collection_names:
         for obj in collections[name].objects:
@@ -517,6 +522,8 @@ def export(path, collection_names):
         export_lights=True,
         export_import_convert_lighting_mode="RAW",
         export_extras=True,
+        export_image_format=image_format,
+        export_jpeg_quality=82,
     )
 
 
@@ -527,5 +534,5 @@ export(
 )
 export(os.path.join(output, "frame.glb"), ("Frame_Display",))
 export(
-    os.path.join(output, "basement.glb"), ("Basement_Render", "Basement_Collision")
+    os.path.join(output, "basement.glb"), ("Basement_Render", "Basement_Collision"), "JPEG"
 )

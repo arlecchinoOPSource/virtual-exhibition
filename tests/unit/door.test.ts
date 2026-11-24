@@ -134,7 +134,8 @@ describe('basement room', () => {
       'Basement_Candles',
       'Bulb_Room',
       'Bulb_Stairs',
-      'Basement_Weathering',
+      'Basement_Walls',
+      'Basement_Shell',
     ])
       expect(find(name), name).toBeDefined();
     const graffiti = find('Graffiti_Black_Metal');
@@ -153,6 +154,51 @@ describe('basement room', () => {
       'Light_Basement_Candles',
     ]);
     world.dispose();
+  });
+
+  it('bakes weathered PBR atlases into the on-demand basement export', async () => {
+    const file = await readFile('public/models/basement.glb');
+    // Budget for the deferred basement, separate from the initial gallery load.
+    expect(file.byteLength).toBeLessThan(1.5e6);
+    const json = JSON.parse(
+      file.subarray(20, 20 + file.readUInt32LE(12)).toString('utf8'),
+    ) as {
+      images: { mimeType: string; bufferView: number }[];
+      bufferViews: { byteOffset?: number; byteLength: number }[];
+      materials: {
+        name: string;
+        normalTexture?: object;
+        pbrMetallicRoughness?: {
+          baseColorTexture?: object;
+          metallicRoughnessTexture?: object;
+        };
+      }[];
+    };
+    for (const name of ['Basement_Plaster', 'Basement_Concrete']) {
+      const material = json.materials.find((entry) => entry.name === name);
+      expect(
+        material?.pbrMetallicRoughness?.baseColorTexture,
+        name,
+      ).toBeDefined();
+      expect(
+        material?.pbrMetallicRoughness?.metallicRoughnessTexture,
+        name,
+      ).toBeDefined();
+      expect(material?.normalTexture, name).toBeDefined();
+    }
+    const binary = 20 + file.readUInt32LE(12) + 8;
+    for (const image of json.images) {
+      expect(image.mimeType).toBe('image/jpeg');
+      const view = json.bufferViews[image.bufferView]!;
+      const jpeg = file.subarray(binary + (view.byteOffset ?? 0));
+      // Read the frame size from the first SOF marker.
+      let offset = 2;
+      while (jpeg[offset + 1] !== 0xc0 && jpeg[offset + 1] !== 0xc2)
+        offset += 2 + jpeg.readUInt16BE(offset + 2);
+      const height = jpeg.readUInt16BE(offset + 5);
+      const width = jpeg.readUInt16BE(offset + 7);
+      expect(Math.max(width, height)).toBeLessThanOrEqual(2048);
+    }
   });
 
   it('lets a visitor cross the room until the throne stops them', async () => {
