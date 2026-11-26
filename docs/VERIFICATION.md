@@ -174,3 +174,5 @@ Checked on 2026-11-26 against `main` at `32baae6` (#95), plus this change. The b
 
 - The picture lights have no visible fixture: the basement's bulbs are its only lamps.
 - With Display spotlights off, the basement frames fall back to the bulbs.
+
+The furnished redesign is accepted, or not, in [ACCEPTANCE.md](ACCEPTANCE.md) (#97).

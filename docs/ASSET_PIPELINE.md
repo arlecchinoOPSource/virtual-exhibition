@@ -43,6 +43,13 @@ Every external model or texture goes through these steps, in order, and its row 
 5. **Fit it to the exhibition.**
    - Harmonize the palette, roughness and detail with the room. Keep base-colour and emissive maps in sRGB and data maps linear, and bake procedural materials glTF can't carry.
    - Reuse materials and geometry, and simplify detail nobody sees. Each room's props share one vertex-colour material and join into one mesh (`<Room>_Props`), so a furnished room costs one draw. `third_party.import_prop` bakes each original material's colour into vertex colours and drops unused UVs.
+   - `third_party.import_prop` also has options for fitting stock models to rooms (#92–#95):
+     - `decimate`: keeps a share of a prop's triangles, for detail nobody sees at visiting distance.
+     - `only`: takes one item from a set, such as one vase of eight.
+     - `glass`: moves alpha-blended faces to a shared transparent material (`Prop_Glass`), since vertex colours carry no transparency.
+     - `flatten`: compresses depth away from a wall, so a tower, banner or building becomes a shallow relief.
+   - A small palette texture is sampled per face into the vertex colours, and the texture itself is not exported.
+   - A walkable surface, such as the street's sidewalk, gets no collider.
    - Add an axis-aligned `COL_` proxy only where navigation needs it, inside the plan's furniture envelope (`assets-source/layout/redesign.json`).
    - Decoration must not block the frames' ray targeting.
 6. **Keep it reproducible.**
