@@ -243,3 +243,73 @@ Confirm final manifest, approvals, attribution, release notes, and a tagged vers
 **Dependencies.** Production verification and final content approval.
 
 **Acceptance.** Every approved document works, credits and known limitations are documented, and GitHub has a v1.0.0 release.
+
+## 9. Exhibition Redesign — Walkable Layout and 18 Frames
+
+Tracked by #98. Earlier milestones stay as recorded above. No deployment or release is part of this work.
+
+### Define the measured exhibition redesign and frame placement plan (#86)
+
+Turn the Canva sketch into a dimensioned plan with furniture envelopes, 18 frame slots, routes and the basement relation.
+
+**Dependencies.** Current main and the audited Canva board.
+
+**Acceptance.** The plan, diagram and checks in docs/DESIGN.md are reviewable; uncertainties are explicit; no route crosses furniture or blocks the basement.
+
+### Build the revised walkable gallery shell and reconnect the basement (#87)
+
+Build the measured shell, partitions and collision proxies in Blender; keep the basement separate and lazily loaded.
+
+**Dependencies.** #86.
+
+**Acceptance.** A full walk through all sections and the basement works in both directions without trapping, clipping or falls.
+
+### Support 18 exhibits with section-aware delayed basement frame loading (#88)
+
+Extend the manifest to 18 slots and hang the basement frames only after the basement loads.
+
+**Dependencies.** #87.
+
+**Acceptance.** Three frames per section, no startup basement requests, and all 18 entries in the accessible directory.
+
+### Verify the walkable 18-frame milestone before furnishing (#89)
+
+Record routes, frame actions, basement loading and performance baselines.
+
+**Dependencies.** #88.
+
+**Acceptance.** A recorded decision accepts the spatial layout before any room is furnished.
+
+## 10. Exhibition Redesign — Furnished Rooms
+
+### Establish the third-party asset intake and Blender-to-GitHub process (#90)
+
+Record provenance, licences, measurements and optimised exports for every imported asset.
+
+**Dependencies.** #86; final placement waits for #89.
+
+**Acceptance.** Each asset has a complete rights and reproducibility record.
+
+### Furnish the sections (#91–#95)
+
+Finish the art studio first as the visual reference (#91), then the terracotta reading area (#92), teal living room (#93), theater (#94) and Filipino street (#95).
+
+**Dependencies.** #89 and #90; each room after #91 follows its reviewed reference.
+
+**Acceptance.** Furniture stays inside the planned envelopes or the layout checks are re-run; frames, routes and performance are re-verified.
+
+### Reconcile basement frames, existing props and positional radio playback (#96)
+
+Place the three basement frames around the existing posters and props, and reconcile #61's radio playback.
+
+**Dependencies.** #88.
+
+**Acceptance.** Basement frames, door, stairs and sound behave correctly after integration, with an attended listening check.
+
+### Accept the furnished redesign and reconcile existing release checks (#97)
+
+Collect final evidence and update the existing verification issues.
+
+**Dependencies.** #89–#96.
+
+**Acceptance.** Both milestone gates pass and the docs support a separate release decision.
