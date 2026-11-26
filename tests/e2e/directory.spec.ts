@@ -68,9 +68,10 @@ test('keeps the keyboard fallback and fills the gallery viewport', async ({
   expect(size).toBeGreaterThanOrEqual(0.9);
   const entry = page.getByRole('dialog', { name: 'Gallery entry' });
   await expect(entry.getByLabel('Password')).toBeFocused();
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Tab');
-  const fallback = entry.getByRole('link', {
+  await expect(entry.getByRole('link')).toHaveCount(0);
+  await unlockGallery(page);
+  await page.keyboard.press('Shift+Tab');
+  const fallback = page.getByRole('link', {
     name: 'Browse exhibits without 3D',
   });
   await expect(fallback).toBeFocused();
