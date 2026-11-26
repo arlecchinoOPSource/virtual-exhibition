@@ -28,12 +28,12 @@ Every external asset the exhibition considers is listed here, whether it is used
 
 ## Reading area (#92)
 
-| ID                                              | Page title          | Creator        | Licence   | Board label       | Status    | Notes |
-| ----------------------------------------------- | ------------------- | -------------- | --------- | ----------------- | --------- | ----- |
-| [9RjoPxajS8Z](https://poly.pizza/m/9RjoPxajS8Z) | Quill and parchment | Bruno Oliveira | CC BY 3.0 | Writing materials | Candidate |       |
-| [tACDGJ4CGW](https://poly.pizza/m/tACDGJ4CGW)   | Bookcase with Books | Quaternius     | CC0       | Bookshelf         | Candidate |       |
-| [V86Go2rlnq](https://poly.pizza/m/V86Go2rlnq)   | Desk                | Quaternius     | CC0       | Desk              | Candidate |       |
-| [9ylwwjAp8KM](https://poly.pizza/m/9ylwwjAp8KM) | Scroll              | Justin Randall | CC BY 3.0 | Scroll            | Candidate |       |
+| ID                                              | Page title          | Creator        | Licence   | Board label       | Status   | Notes                                                      |
+| ----------------------------------------------- | ------------------- | -------------- | --------- | ----------------- | -------- | ---------------------------------------------------------- |
+| [9RjoPxajS8Z](https://poly.pizza/m/9RjoPxajS8Z) | Quill and parchment | Bruno Oliveira | CC BY 3.0 | Writing materials | Imported | Reading area (#92), on the desk. See below.                |
+| [tACDGJ4CGW](https://poly.pizza/m/tACDGJ4CGW)   | Bookcase with Books | Quaternius     | CC0       | Bookshelf         | Imported | Reading area (#92), both shelves from one mesh. See below. |
+| [V86Go2rlnq](https://poly.pizza/m/V86Go2rlnq)   | Desk                | Quaternius     | CC0       | Desk              | Imported | Reading area (#92). See below.                             |
+| [9ylwwjAp8KM](https://poly.pizza/m/9ylwwjAp8KM) | Scroll              | Justin Randall | CC BY 3.0 | Scroll            | Imported | Reading area (#92), three by the south wall. See below.    |
 
 ## Living room (#93)
 
@@ -124,4 +124,40 @@ The route walk goes round the statue and the easel.
 - Median frame time: unchanged at 16.7 ms.
 - `gallery.glb`: 2.91 → 4.57 MB across #90 and #91, which takes the cold load to 5.32 MB.
 
-**Limit:** at this rate four more furnished rooms won't fit the 5 MB gallery budget. Geometry compression (meshopt with its small decoder), or simplifying the heaviest props, is needed before #92–#95.
+**Simplified in #92:** to keep room for the other furnished rooms, `import_prop` can now collapse a prop to a share of its triangles. The Drafting Table keeps 35% (10,389 → 3,636 triangles) and the Watercolor Set 30% (3,218 → 965). That brings `Studio_Props` from 1.62 MB to 0.78 MB. At visiting distance the studio looks the same.
+
+### Reading area (#92): Bookcase with Books, Desk, Quill and parchment, Scroll
+
+These follow the same steps as the studio props. The desk, the quill and parchment, and the three scrolls share one vertex-colour material (`Reading_Prop_Paint`) and join into `Reading_Props`. The bookcase is stored once, as the mesh `Reading_Shelf`. Two nodes draw it: `Reading_Shelf_West` and `Reading_Shelf_East`. The scrolls are edge decoration and have no collider. Every other prop gets an axis-aligned `COL_` box.
+
+| Asset                                                        | Original (downloaded 2026-11-26)                | Measured original                                                                                            | Placed                                                                                                                                                                            |
+| ------------------------------------------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bookcase with Books (tACDGJ4CGW), Quaternius, CC0            | 589,464 B, SHA-256 `d2e2cd56…`, FBX2glTF v0.9.7 | 4 objects (3 meshes), 11 materials, no textures; 10,948 triangles, 21,193 vertices; 1.84 × 0.66 × 3.37 units | Scaled ×0.519 to 1.75 m tall (0.96 × 0.34 m), kept to 35% (3,831 triangles); against the spine at x −7.58 to −6.62 and again at −2.58 to −1.62, clear of Exhibit_07 and 08        |
+| Desk (V86Go2rlnq), Quaternius, CC0                           | 135,916 B, SHA-256 `3878f6d9…`, FBX2glTF v0.9.7 | 6 objects (5 meshes), 2 materials, no textures; 2,640 triangles, 4,595 vertices; 1.82 × 0.85 × 0.92 units    | Scaled ×0.824 to 0.76 m (1.50 × 0.70 m), kept to 50% (1,320 triangles); against the south partition at x −6.95 to −5.45, drawers to the room, leaving chair space before the axis |
+| Quill and parchment (9RjoPxajS8Z), Bruno Oliveira, CC BY 3.0 | 28,276 B, SHA-256 `28978627…`, obj2gltf         | 1 mesh, 8 materials, no textures; 766 triangles, 1,512 vertices; 0.77 × 0.39 × 0.52 units                    | Scaled ×0.426 to 0.22 m (0.33 × 0.17 m), unsimplified, in the middle of the desk top                                                                                              |
+| Scroll (9ylwwjAp8KM), Justin Randall, CC BY 3.0              | 117,104 B, SHA-256 `ca6f9346…`, obj2gltf        | 1 mesh, 3 materials, no textures; 2,100 triangles, 4,232 vertices; 0.58 × 0.08 × 0.17 units                  | Three copies scaled ×0.713 to 0.12 m (0.41 m long), each kept to 25% (525 triangles): two on the floor by the south partition at x −5.26 to −4.34, one resting on them            |
+
+The reading side of the spine and of the south partitions gets an original terracotta finish. It is a plain 1 cm panel (`Reading_Terracotta`, one draw), run from the studio and living-room door jambs at x −10 to the east end. It leaves the theater door clear. Ceilings and floors stay the shared white and oak. Both ends of the band stay open.
+
+**Plan changes:** both shelf envelopes are 0.05 m deeper (y 1.6 to 2.0), and the desk envelope is 0.4 m wider (x −7.0 to −5.4). They now fit the measured models (layout-plan test).
+
+**Validation:** the Khronos glTF Validator reports 0 errors and 0 warnings on all four originals, and 0 errors on `gallery.glb`. Unit tests check:
+
+- `Reading_Props` is one vertex-coloured draw with no UVs;
+- the two shelves share one geometry;
+- every collision box is inside its envelope;
+- there is no scroll collider;
+- walking into the desk stops clear of the axis route;
+- clear sightlines to Exhibit_07, 08 and 09.
+
+The route walk passes in front of both shelves, round the desk's chair space and along the scrolls. `frames.spec.ts` reaches all three reading frames in Firefox.
+
+**Cost (Firefox, M5, against #91):**
+
+- `gallery.glb`: 4.58 → 4.34 MB, so the cold load goes from 5.32 to 5.10 MB. The new room costs about 0.61 MB, and simplifying the studio saves about 0.85 MB.
+- Unit-test draw count: 4 more (props, two shelf nodes and terracotta). The cap goes from 58 to 62.
+- Elevator view: 57 draws.
+- Reading view, looking west from the east end: 46 draws, 58.9k triangles.
+- Median frame time: unchanged at 16.7 ms in every view.
+
+**Browser:** Firefox at 100% and 50% resolution: `docs/renders/shell/reading-100.jpg` and `reading-50.jpg`. Also `reading-desk.jpg`, `reading-shelf.jpg` and `reading-band-from-catalogue.jpg`.

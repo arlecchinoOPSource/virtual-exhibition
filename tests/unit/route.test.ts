@@ -79,7 +79,15 @@ const basementLoop: Leg[] = placed([
 const reading: Leg[] = [
   ['reading east end', 3.7, 0],
   ['reading north-east corner', 3.7, 1.7],
-  ['reading north-west', -7.7, 1.7],
+  ['in front of the east shelf', -2.1, 1.2],
+  ['under Exhibit_07', -4, 1.7],
+  ['in front of the west shelf', -7.1, 1.2],
+  ['reading south-west, beside the desk', -7.6, -1.7],
+  ['out round the chair space', -7.6, -0.85],
+  ['in front of the desk', -6.2, -0.85],
+  ['along the scrolls', -4.3, -1.3],
+  ['under Exhibit_09', -1, -1.7],
+  ['back across the band', -7.6, 0],
   ['catalogue end of the band', -12.5, 0],
 ];
 const southLoop: Leg[] = [
