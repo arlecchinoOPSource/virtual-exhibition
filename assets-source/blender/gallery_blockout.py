@@ -297,6 +297,22 @@ proxy = bpy.data.objects.new("COL_Elevator_Doors",
 proxy.location = (-14 - WALL / 2, middle, DOOR_HEIGHT / 2)
 proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
+
+# Studio props from the asset register (docs/ASSET_REGISTER.md). Each comes
+# from its untouched original in assets-source/third-party/<id>/ and must fit
+# its plan envelope; third_party.py prints its measures for the register.
+from third_party import import_prop
+easel_rect = next(item["rect"] for item in PLAN["furniture"] if item["id"] == "Studio_Easel")
+easel, easel_measures = import_prop(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "third-party", "2ZP3o8hyPA",
+                 "art-easel-set-up.glb"),
+    "Studio_Easel", collections["Gallery_Render"], easel_rect, height=1.85, turn_deg=-90)
+print("THIRD_PARTY Studio_Easel", easel_measures)
+ex0, ex1, ey0, ey1 = easel_measures["bounds"]
+proxy = bpy.data.objects.new("COL_Studio_Easel", box_mesh("COL_Studio_Easel", (ex1 - ex0, ey1 - ey0, 1.85)))
+proxy.location = ((ex0 + ex1) / 2, (ey0 + ey1) / 2, 1.85 / 2)
+proxy.display_type = "WIRE"
+collections["Gallery_Collision"].objects.link(proxy)
 # Basement entrance in the right end wall: a hinged door, its frame, a sign,
 # and a statue. The door collider is a separate proxy the engine toggles.
 # The basement and its entrance are modelled in their original frame (door in

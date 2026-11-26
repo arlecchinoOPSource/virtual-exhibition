@@ -27,4 +27,5 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm test
+      - run: npm run validate:models
       - run: npm run build

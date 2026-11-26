@@ -21,3 +21,44 @@
 Record source, creator, permission or license, attribution text, and modifications for every external asset next to its approved delivery location. Keep unapproved photos and coursework outside the public repository. The default ignore rules exclude references and essays. An approved essay can be explicitly allowlisted after verifying permission and removing student or file metadata that should stay private.
 
 Keep large editable binaries outside ordinary Git history, in private shared storage or Git LFS if the team approves the account limits and workflow. Commit optimized public exports only after rights and size checks. Cloudflare Pages must receive actual content files rather than LFS pointer text. Split or compress oversized production assets before considering separate asset storage.
+
+## Third-party asset intake
+
+Every external model or texture goes through these steps, in order, and its row in the [asset register](ASSET_REGISTER.md) records each one. A page that exists, or an export that succeeds, does not count as an import.
+
+1. **Register it.** Record the source URL and ID, the page's real title, the creator, the exact licence and version with its link, the attribution the licence needs, its intended room, and a status: selected, candidate, deferred or rejected. Correct the board's label when the page shows something else.
+2. **Download only what is selected, from the source.**
+   - Keep the untouched original outside `public/`, in `assets-source/third-party/<id>/`. Record the download date, the original file name and its SHA-256.
+   - Inspect archive contents and any licence files before importing.
+   - Never commit credentials, unlicensed references or reference photos.
+3. **Import and measure.**
+   - Import the glTF/GLB, or convert a supplied OBJ/FBX, into Blender.
+   - Record triangles, vertices, objects, materials, textures and their dimensions, its real-world size and the original file size.
+   - Keep the vertex colours, UVs and textures it needs. Check normals, alpha and dependencies.
+4. **Normalize.**
+   - Scale it to metric real-world size and apply its transforms.
+   - Set a useful origin, usually its base on the floor, and stable descriptive names.
+   - Check Blender Z-up against glTF Y-up.
+   - Remove cameras, lights, animation and unused pieces unless they are deliberately kept. Don't carry stock lights into a room.
+5. **Fit it to the exhibition.**
+   - Harmonize the palette, roughness and detail with the room. Keep base-colour and emissive maps in sRGB and data maps linear, and bake procedural materials glTF can't carry.
+   - Reuse materials and geometry, and simplify detail nobody sees.
+   - Add an axis-aligned `COL_` proxy only where navigation needs it, inside the plan's furniture envelope (`assets-source/layout/redesign.json`).
+   - Decoration must not block the frames' ray targeting.
+6. **Keep it reproducible.**
+   - Put the import and adaptation script in `assets-source/blender/`, with the command that regenerates it.
+   - Commit optimized exports to `public/models/`, never raw downloads.
+   - Keep large originals out of Git history unless they are small and their licence allows redistribution. Don't add Git LFS without checking hosting support.
+7. **Export and validate.** Export a self-contained GLB, then:
+   - check it with the Khronos glTF Validator (`npm run validate:models`, which also runs in CI and fails on any error) and the actual Three.js `GLTFLoader`;
+   - confirm the materials, transforms, pivots, node names and collision in the browser;
+   - record the optimized size, triangles, materials and draws, and texture memory against the original.
+8. **Credit it.** Update `public/models/CREDITS.md` and the register with the title, creator, source, licence and a note of changes; CC BY requires all of these. Make sure visitors can reach the credits. Check that every referenced file exists with the right case, with no machine-local paths or external fetches at runtime.
+9. **Review it.** Open a focused pull request:
+   - provenance and licence evidence;
+   - source and export locations, and regeneration commands;
+   - before/after measurements;
+   - browser screenshots at normal and reduced resolution;
+   - check results and known limits.
+
+   Reject or replace any asset whose redistribution rights are unclear.

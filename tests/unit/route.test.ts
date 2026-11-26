@@ -41,6 +41,9 @@ const northLoop: Leg[] = [
   ['out of the elevator', -13.0, 4.05],
   ['studio south-west corner', -13.7, 2.5],
   ['studio north-west corner', -13.7, 7.2],
+  // The easel stands against the north wall, so go round by the south side.
+  ['studio west side', -13.7, 3.6],
+  ['studio south side', -8.0, 3.6],
   ['studio north-east corner', -7.0, 7.2],
   ['studio south-east corner', -7.0, 2.5],
   ['studio to street opening', -7.6, 5.5],

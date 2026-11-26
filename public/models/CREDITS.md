@@ -1,6 +1,6 @@
 # Third-party artwork in the models
 
-`basement.glb` contains two prints of historical artworks, pasted to the basement's side walls (#59). Everything else in `gallery.glb`, `frame.glb`, and `basement.glb` is original to this project.
+`basement.glb` contains two prints of historical artworks, pasted to the basement's side walls (#59). `gallery.glb` contains one third-party model, the studio easel (#90). Everything else in `gallery.glb`, `frame.glb`, and `basement.glb` is original to this project. The full register of candidate assets is `docs/ASSET_REGISTER.md`.
 
 The source files are kept unmodified in `assets-source/posters/`. `assets-source/blender/posters.py` builds both prints the same way. It adds a narrow paper margin around the image without resizing it (only the Doré scan is cropped, as noted below), and lightly tones the sheet: the margin yellows toward its edges and the paper has a faint uneven tone. The glTF export then re-encodes each sheet as a JPEG (quality 82) inside `basement.glb`. No logos, album artwork, typography, or later adaptations are included.
 
@@ -22,6 +22,20 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **In the model:** `Poster_Dore_Pale_Horse` on the south wall, using material `Poster_Dore_Pale_Horse_Print` and image `Poster_Dore_Pale_Horse - print` (822 × 1019 px JPEG, 192,736 bytes). The plate is 1.30 × 1.64 m.
 - **Rights:** Commons tags the file public domain in the United States (PD-1923, published before 1931) with the Public Domain Mark 1.0. Its general notice says US public-domain status may not hold everywhere. Doré died in 1883 and Pisan in 1890, so the engraving is also out of copyright under life-plus-100-year terms. The same reproduction rule applies as for the Kittelsen file.
 - **Attribution:** Gustave Doré (design) and Héliodore Pisan (engraving), _Death on the Pale Horse_, from _La Sagrada Biblia_ (1884). Public domain, via Wikimedia Commons.
+
+## Studio_Easel
+
+- **Work:** "Art Easel Set Up" by reyshapes, from [Poly Pizza](https://poly.pizza/m/2ZP3o8hyPA). It is an H-frame studio easel with a brush, a palette, paint jars and a can.
+- **Licence:** Public Domain, [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Attribution isn't required; the creator is credited anyway.
+- **File:** `assets-source/third-party/2ZP3o8hyPA/art-easel-set-up.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/de6672ae-e7be-47eb-9836-f4894bbc82f2.glb>. It is 315,024 bytes, SHA-256 `077681f09cc23e190159d9f48c33bac5032dc6eaf6cf582297b6d1ed4aa32d84`, made by FBX2glTF.
+- **In the model:** `Studio_Easel` against the studio's north wall, using the single material `Studio_Easel_Paint`, with `COL_Studio_Easel` as its collision box.
+- **Modifications:** `assets-source/blender/third_party.py` makes these changes at build time:
+  - its one mesh is kept and the root empty is removed;
+  - it is scaled from 12.5 units to 1.85 m tall (×0.148, after the original's 100× FBX scale);
+  - it is turned to face into the room, with its origin at the centre of its base;
+  - its ten identical white materials are replaced by one vertex-colour material, keeping the original vertex colours.
+
+  Geometry is otherwise unchanged: 3,266 triangles and 5,843 vertices.
 
 ## Replacing a print
 
