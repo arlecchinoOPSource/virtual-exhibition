@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "validate:models": "node assets-source/validate_models.mjs"
   },
   "dependencies": {
     "pdfjs-dist": "^5.7.284",
@@ -26,6 +27,7 @@
     "@types/node": "^24",
     "@types/three": "^0.187.0",
     "eslint": "^10.14.0",
+    "gltf-validator": "2.0.0-dev.3.10",
     "prettier": "^3.10.1",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.2",

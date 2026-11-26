@@ -50,7 +50,7 @@ Every external model or texture goes through these steps, in order, and its row 
    - Commit optimized exports to `public/models/`, never raw downloads.
    - Keep large originals out of Git history unless they are small and their licence allows redistribution. Don't add Git LFS without checking hosting support.
 7. **Export and validate.** Export a self-contained GLB, then:
-   - check it with a glTF validator and the actual Three.js `GLTFLoader`;
+   - check it with the Khronos glTF Validator (`npm run validate:models`, which also runs in CI and fails on any error) and the actual Three.js `GLTFLoader`;
    - confirm the materials, transforms, pivots, node names and collision in the browser;
    - record the optimized size, triangles, materials and draws, and texture memory against the original.
 8. **Credit it.** Update `public/models/CREDITS.md` and the register with the title, creator, source, licence and a note of changes; CC BY requires all of these. Make sure visitors can reach the credits. Check that every referenced file exists with the right case, with no machine-local paths or external fetches at runtime.
