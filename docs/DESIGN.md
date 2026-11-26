@@ -8,9 +8,9 @@ The shell is 24.0 × 16.5 m inside with the south-east corner cut away and a 3.6
 
 - original bamboo panelling on its walls, drawn by `gallery_finishes.bamboo_finish`;
 - warmer spotlights (about 2700 K) on its three frames;
-- the drafting table as its central worktable;
-- the easel;
-- the watercolours on an original supply cabinet;
+- the drafting table as its worktable, against the north wall;
+- the easel east of it, its canvas facing the room;
+- the watercolours on an original supply cabinet in the north-west corner;
 - the horse statue in the corner beside the elevator.
 
 Its props are one vertex-coloured draw. The furniture envelopes for the other rooms wait for #92–#95.
@@ -84,7 +84,7 @@ Eighteen slots, three per section, are numbered in walking order. Frames are the
 | ---------- | -------- | ------ | ------ | -------------------------------- | ---- |
 | Exhibit_01 | studio   | −6.72  | 3.30   | studio/street partition          | E    |
 | Exhibit_02 | studio   | −8.00  | 7.48   | north wall                       | N    |
-| Exhibit_03 | studio   | −13.98 | 6.30   | west wall, north of the elevator | W    |
+| Exhibit_03 | studio   | −13.98 | 6.10   | west wall, north of the elevator | W    |
 | Exhibit_04 | street   | −3.50  | 7.08   | facade face                      | N    |
 | Exhibit_05 | street   | 1.50   | 7.08   | facade face                      | N    |
 | Exhibit_06 | street   | −1.00  | 2.22   | spine, north face                | S    |

@@ -42,7 +42,8 @@ const northLoop: Leg[] = [
   // The horse statue stands in the studio's south-west corner.
   ['studio south-west, beside the statue', -13.1, 2.5],
   ['studio west side, past the statue', -13.1, 3.6],
-  ['studio north-west corner', -13.7, 7.2],
+  // The supply cabinet fills the north-west corner.
+  ['studio north-west, by the cabinet', -13.7, 6.7],
   // The easel stands against the north wall, so go round by the south side.
   ['studio west side', -13.7, 3.6],
   ['studio south side', -8.0, 3.6],

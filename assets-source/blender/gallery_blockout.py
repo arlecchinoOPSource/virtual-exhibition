@@ -319,8 +319,8 @@ def prop_proxy(name, bounds, z1, z0=0.0):
 
 STUDIO_PROPS = (
     # name, file, envelope, height (m), turn (deg), wall
-    ("Studio_Easel", "2ZP3o8hyPA/art-easel-set-up.glb", "Studio_Easel", 1.85, -90, "N"),
-    ("Studio_Worktable", "8Z4yYj39NWS/drafting-table.glb", "Studio_Worktable", 1.35, 180, "C"),
+    ("Studio_Easel", "2ZP3o8hyPA/art-easel-set-up.glb", "Studio_Easel", 1.85, 90, "N"),
+    ("Studio_Worktable", "8Z4yYj39NWS/drafting-table.glb", "Studio_Worktable", 1.35, 180, "N"),
     ("Studio_Statue", "AK9CmjFnL6/horse-statue.glb", "Studio_Statue", 1.3, 0, "C"),
 )
 for name, file, rect, height, turn_deg, wall in STUDIO_PROPS:

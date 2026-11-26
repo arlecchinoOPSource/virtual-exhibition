@@ -43,14 +43,14 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
 - **File:** `assets-source/third-party/8Z4yYj39NWS/drafting-table.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/46576848-ecb9-4203-b4d3-7d4be9f375d7.glb>. It is 781,752 bytes, SHA-256 `b717fecca098e859e04010cedbe9f905b94b29faf63ea0b26ab71f494ea1ccc8`.
 - **In the model:** part of `Studio_Props` (the studio's worktable, with its lamp, pencil cup, T-square and stool, and `COL_Studio_Worktable`).
-- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.35 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is kept whole, stool included, and turned to face the elevator. Geometry is otherwise unchanged.
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.35 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is kept whole, stool included, and stands against the north wall facing the room. Geometry is otherwise unchanged.
 
 ## Studio_Props: Watercolor Set
 
 - **Work:** "Watercolor Set" by Don Carson, from [Poly Pizza](https://poly.pizza/m/cAmECzmVE2_).
 - **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
 - **File:** `assets-source/third-party/cAmECzmVE2_/watercolor-set.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/971bbe97-7b60-4b34-ad2c-8a6a3463ac0c.glb>. It is 254,252 bytes, SHA-256 `8d661f01448bf81dac06b3b36ecd2994ab088129180d90f8631e0b88459838cb`.
-- **In the model:** part of `Studio_Props` (standing on an original supply cabinet against the north wall).
+- **In the model:** part of `Studio_Props` (standing on an original supply cabinet in the north-west corner).
 - **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.2 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Geometry is otherwise unchanged.
 
 ## Studio_Props: Horse Statue
