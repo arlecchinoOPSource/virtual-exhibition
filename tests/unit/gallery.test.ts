@@ -271,7 +271,17 @@ describe('gallery blockout', () => {
     const root = await parseModel('gallery');
     root.getObjectByName('Exhibit_05')?.removeFromParent();
     expect(() => createGallery(root, new Group())).toThrow(
-      'anchor count differs',
+      'The gallery is missing Exhibit_05.',
+    );
+  });
+
+  it('rejects a basement slot exported in the gallery', async () => {
+    const root = await parseModel('gallery');
+    const stray = new Group();
+    stray.name = 'Exhibit_16';
+    root.add(stray);
+    expect(() => createGallery(root, new Group())).toThrow(
+      'Exhibit_16 does not belong in the gallery.',
     );
   });
 });

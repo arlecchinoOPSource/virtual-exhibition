@@ -118,5 +118,29 @@
     "status": "placeholder",
     "image": null,
     "pdf": null
+  },
+  {
+    "anchor": "Exhibit_16",
+    "title": "Artwork placeholder 16",
+    "description": "Reserved for future exhibition content.",
+    "status": "placeholder",
+    "image": null,
+    "pdf": null
+  },
+  {
+    "anchor": "Exhibit_17",
+    "title": "Artwork placeholder 17",
+    "description": "Reserved for future exhibition content.",
+    "status": "placeholder",
+    "image": null,
+    "pdf": null
+  },
+  {
+    "anchor": "Exhibit_18",
+    "title": "Artwork placeholder 18",
+    "description": "Reserved for future exhibition content.",
+    "status": "placeholder",
+    "image": null,
+    "pdf": null
   }
 ]

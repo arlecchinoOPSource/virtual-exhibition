@@ -1,8 +1,13 @@
-type ExhibitAnchor =
-  `Exhibit_${'01' | '02' | '03' | '04' | '05' | '06' | '07' | '08' | '09' | '10' | '11' | '12' | '13' | '14' | '15'}`;
+export type ExhibitAnchor =
+  `Exhibit_${'01' | '02' | '03' | '04' | '05' | '06' | '07' | '08' | '09' | '10' | '11' | '12' | '13' | '14' | '15' | '16' | '17' | '18'}`;
+
+// The six sections of the exhibition (docs/DESIGN.md), three frames each.
+export type Section =
+  'studio' | 'street' | 'reading' | 'living' | 'theater' | 'basement';
 
 interface ExhibitDetails {
   anchor: ExhibitAnchor;
+  section: Section;
   title: string;
   description: string;
 }

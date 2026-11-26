@@ -144,7 +144,7 @@ def box(
 GAZE = {"N": (0, 1), "S": (0, -1), "E": (1, 0), "W": (-1, 0)}
 
 
-def marker(name, x, y, z, gaze):
+def marker(name, x, y, z, gaze, collection="Gallery_Markers"):
     """Add an empty whose +Y points along gaze: 'N', 'S', 'E', or 'W'."""
     empty = bpy.data.objects.new(name, None)
     empty.empty_display_type = "SINGLE_ARROW"
@@ -154,7 +154,7 @@ def marker(name, x, y, z, gaze):
         0,
         {"N": 0, "S": math.pi, "E": -math.pi / 2, "W": math.pi / 2}[gaze],
     )
-    collections["Gallery_Markers"].objects.link(empty)
+    collections[collection].objects.link(empty)
 
 
 def gallery_light(index, x, y, gaze):
@@ -401,7 +401,7 @@ spawn = PLAN["spawn"]
 marker("Spawn_Gallery", *spawn["at"], 0, spawn["gaze"])
 
 # The fifteen upstairs slots, three per section, numbered in walking order.
-# Basement slots 16-18 join with #88 once the basement hangs its own frames.
+# Basement slots 16-18 export with basement.glb (below).
 for frame in PLAN["frames"]:
     if frame["section"] == "basement":
         continue
@@ -659,6 +659,12 @@ hang_poster(collections["Basement_Render"], "Poster_Dore_Pale_Horse",
 
 # Turn and move the finished basement into place (see PLACE above).
 place(list(collections["Basement_Render"].objects) + list(collections["Basement_Collision"].objects))
+# The basement's three frame slots (#88), already in world coordinates in the
+# plan, so they are added after the move. They export with basement.glb and
+# are hung only once it loads.
+for frame in PLAN["frames"]:
+    if frame["section"] == "basement":
+        marker(frame["slot"], *frame["at"], BOTTOM + ANCHOR_HEIGHT, frame["gaze"], "Basement_Render")
 
 export(os.path.join(output, "frame.glb"), ("Frame_Display",))
 export(

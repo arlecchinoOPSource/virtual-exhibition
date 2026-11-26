@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { createGallery } from '../../src/environments/gallery';
 import { hangExhibits } from '../../src/exhibition/displays';
-import { parseExhibits } from '../../src/exhibition/manifest';
+import { parseExhibits, sectionOf } from '../../src/exhibition/manifest';
 import type { Exhibit } from '../../src/types/exhibit';
 
 async function parseModel(name: 'gallery' | 'frame') {
@@ -21,9 +21,10 @@ async function setup() {
     await parseModel('gallery'),
     await parseModel('frame'),
   );
+  // Upstairs entries only: the basement's three hang once it loads.
   const exhibits = parseExhibits(
     JSON.parse(await readFile('public/data/exhibits.json', 'utf8')),
-  );
+  ).filter((exhibit) => sectionOf[exhibit.anchor] !== 'basement');
   return { world, exhibits };
 }
 
