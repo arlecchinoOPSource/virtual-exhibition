@@ -475,6 +475,51 @@ describe('third-party props', () => {
   });
 });
 
+describe('living room', () => {
+  it('furnishes the living room in one prop draw, one glass draw and clear frames', async () => {
+    const world = await loadWorld();
+    const props = world.scene.getObjectByName('Living_Props');
+    if (!(props instanceof Mesh)) throw new Error('Missing Living_Props.');
+    expect((props.material as MeshStandardMaterial).vertexColors).toBe(true);
+    expect(props.geometry.getAttribute('uv')).toBeUndefined();
+    // The display case's and the TV's glass stay see-through.
+    const glass = world.scene.getObjectByName('Living_Glass');
+    if (!(glass instanceof Mesh)) throw new Error('Missing Living_Glass.');
+    const glassMaterial = glass.material as MeshStandardMaterial;
+    expect(glassMaterial.transparent).toBe(true);
+    expect(glassMaterial.opacity).toBeLessThan(0.5);
+    for (const id of [
+      'Living_TV',
+      'Living_Small_Table',
+      'Living_Couch',
+      'Living_Display_Case',
+      'Living_Dining_Set',
+      'Living_Vase',
+    ]) {
+      const proxy = world.scene.getObjectByName(`COL_${id}`);
+      if (!proxy) throw new Error(`Missing COL_${id}.`);
+      const bounds = new Box3().setFromObject(proxy);
+      const [x0, x1, y0, y1] = plan.furniture.find((item) => item.id === id)!
+        .rect as [number, number, number, number];
+      expect(bounds.min.x, id).toBeGreaterThanOrEqual(x0 - 1e-3);
+      expect(bounds.max.x, id).toBeLessThanOrEqual(x1 + 1e-3);
+      expect(bounds.min.z, id).toBeGreaterThanOrEqual(-y1 - 1e-3);
+      expect(bounds.max.z, id).toBeLessThanOrEqual(-y0 + 1e-3);
+    }
+    for (const slot of ['Exhibit_10', 'Exhibit_11', 'Exhibit_12']) {
+      const frame = plan.frames.find((f) => f.slot === slot)!;
+      const [gx, gz] = gazes[frame.gaze]!;
+      const target = new Vector3(frame.at[0], 1.5, -frame.at[1]);
+      const camera = new PerspectiveCamera();
+      camera.position.copy(target).add(new Vector3(-gx * 1.5, 0.1, -gz * 1.5));
+      camera.lookAt(target);
+      const pick = createSurfacePicker(camera, world.surfaces, 3);
+      expect(pick()?.name, slot).toBe('Frame_Canvas');
+    }
+    world.dispose();
+  });
+});
+
 describe('gallery export budget', () => {
   it('keeps both models within the gallery transfer budget', async () => {
     const sizes = await Promise.all(
@@ -502,8 +547,9 @@ describe('gallery export budget', () => {
     // arrival elevator (its sliding leaves stay separate), and two for the
     // studio (#91): its joined props and its bamboo panelling; four for the
     // reading area (#92): its joined props, the shelf drawn twice and its
-    // terracotta finish.
-    expect(drawCalls).toBeLessThanOrEqual(62);
+    // terracotta finish; three for the living room (#93): its joined props,
+    // the shared glass of the display case and TV, and its teal paint.
+    expect(drawCalls).toBeLessThanOrEqual(65);
     world.dispose();
   });
 

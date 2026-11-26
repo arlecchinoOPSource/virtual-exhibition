@@ -13,6 +13,7 @@ import json
 import math
 import re
 
+import bmesh
 import bpy
 from mathutils import Matrix, Vector
 
@@ -20,15 +21,20 @@ from mathutils import Matrix, Vector
 BAKED = "Baked"
 
 
-def bake_colours(mesh, path):
-    """Bake each face's glTF base colour factor, times any vertex colour the
-    model has, into one corner colour attribute (8-bit, sRGB-encoded), so a single material
-    can show every original material's colour."""
+def _document(path):
+    """The JSON chunk of a GLB."""
     with open(path, "rb") as glb:
         glb.seek(12)
         length = int.from_bytes(glb.read(4), "little")
         glb.read(4)
-        document = json.loads(glb.read(length))
+        return json.loads(glb.read(length))
+
+
+def bake_colours(mesh, path):
+    """Bake each face's glTF base colour factor, times any vertex colour the
+    model has, into one corner colour attribute (8-bit, sRGB-encoded), so a single material
+    can show every original material's colour."""
+    document = _document(path)
     factors = {m.get("name"): m.get("pbrMetallicRoughness", {}).get("baseColorFactor", [1, 1, 1, 1])
                for m in document.get("materials", [])}
 
@@ -67,7 +73,7 @@ def vertex_colour_material(name, roughness=0.8):
 
 
 def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", gap=0.05,
-                base_z=0.0, material=None, decimate=1.0):
+                base_z=0.0, material=None, decimate=1.0, only=None, glass=None):
     """Import, normalize and place a prop. Returns the object and its measures.
 
     envelope is the plan rectangle [x0, x1, y0, y1] in Blender metres; the prop
@@ -77,11 +83,21 @@ def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", ga
     turn_deg turns the model about Z so its front faces into the room.
     decimate below 1 collapses the mesh to that share of its triangles, for
     props whose detail costs more transfer than it shows at visiting distance.
+    only keeps just the meshes whose names start with it (one item of a set).
+    glass is (name, material): faces of the original's alpha-blended materials
+    move to a separate object with that shared material, since vertex colours
+    carry no transparency. Returns that object in measures["glass"].
     """
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=path)
     imported = [obj for obj in bpy.data.objects if obj not in before]
     meshes = [obj for obj in imported if obj.type == "MESH"]
+    if only:
+        dropped = [obj for obj in meshes if not obj.name.startswith(only)]
+        imported = [obj for obj in imported if obj not in dropped]
+        meshes = [obj for obj in meshes if obj not in dropped]
+        for obj in dropped:
+            bpy.data.objects.remove(obj, do_unlink=True)
     source = {
         "objects": len(imported),
         "meshes": len(meshes),
@@ -139,6 +155,29 @@ def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", ga
         raise ValueError(f"{name} ({size.x:.2f} x {size.y:.2f} m) does not fit its envelope {envelope}.")
 
     bake_colours(mesh, path)
+    glassy = None
+    if glass:
+        blended = {m.get("name") for m in _document(path).get("materials", [])
+                   if m.get("alphaMode") == "BLEND"}
+        flags = [bool(mesh.materials) and re.sub(r"\.\d{3}$", "", mesh.materials[p.material_index].name)
+                 in blended for p in mesh.polygons]
+        if any(flags):
+            glassy = bpy.data.objects.new(glass[0], mesh.copy())
+            glassy.data.name = glass[0]
+            glassy.location = prop.location
+            collection.objects.link(glassy)
+            for target, keep in ((mesh, False), (glassy.data, True)):
+                bm = bmesh.new()
+                bm.from_mesh(target)
+                bm.faces.ensure_lookup_table()
+                bmesh.ops.delete(bm, geom=[f for f in bm.faces if flags[f.index] != keep],
+                                 context="FACES")
+                bm.to_mesh(target)
+                bm.free()
+            glassy.data.materials.clear()
+            glassy.data.materials.append(glass[1])
+            while glassy.data.uv_layers:
+                glassy.data.uv_layers.remove(glassy.data.uv_layers[0])
     # No texture reads them, so the UVs only cost transfer.
     while mesh.uv_layers:
         mesh.uv_layers.remove(mesh.uv_layers[0])
@@ -152,6 +191,7 @@ def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", ga
         "triangles_out": sum(len(p.vertices) - 2 for p in mesh.polygons),
         "size_m": tuple(round(v, 3) for v in size),
         "bounds": tuple(round(v, 3) for v in bounds),
+        "glass": glassy,
     }
 
 

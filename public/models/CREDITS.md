@@ -93,6 +93,54 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **In the model:** part of `Reading_Props` (three copies by the reading area's south partition; no collider).
 - **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.12 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 25% of its triangles, and used three times.
 
+## Living_Props: old tv
+
+- **Work:** "old tv" by Justin Randall, from [Poly Pizza](https://poly.pizza/m/9y-mTmCyefL).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/9y-mTmCyefL/old-tv.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/eb7cdd7c-3cd6-4f56-91f1-b006816c9371.glb>. It is 235,456 bytes, SHA-256 `bbbff469f383523003c244d8ba3f7ed5007a4817d7359d7b49f24838b7fa36fa`.
+- **In the model:** part of `Living_Props` (on an original cabinet against the living room's west wall); its screen glass is in `Living_Glass`.
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.5 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 35% of its triangles. Its screen glass uses a shared transparent material.
+
+## Living_Props: Bowl of Fruit
+
+- **Work:** "Bowl of Fruit" by sirkitree, from [Poly Pizza](https://poly.pizza/m/2kBAnLbWgMJ).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/2kBAnLbWgMJ/bowl-of-fruit.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/e226eeca-f47a-4c6d-af00-fffbed5f20ca.glb>. It is 68,252 bytes, SHA-256 `9f2e667eaa1739217e5d2ec8363337ff307dff783d8d4df296ba6b7cbff90c77`.
+- **In the model:** part of `Living_Props` (on the original coffee table).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.16 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 50% of its triangles.
+
+## Living_Props: Couch Large
+
+- **Work:** "Couch Large" by Quaternius, from [Poly Pizza](https://poly.pizza/m/6MoOyPtetL).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/6MoOyPtetL/couch-large.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/7ac6188b-72be-4c82-81c8-85deab020a1c.glb>. It is 30,800 bytes, SHA-256 `c75418e4e222e1dfe7cddb42e98f44017cfc051071a81a4072fa153b8fbe7e76`.
+- **In the model:** part of `Living_Props` (facing the TV, with `COL_Living_Couch`).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.75 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Geometry is otherwise unchanged.
+
+## Living_Props: Display Case
+
+- **Work:** "Display Case" by CMHT Oculus, from [Poly Pizza](https://poly.pizza/m/cp6KFmnPnnn).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/cp6KFmnPnnn/display-case.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/5c1a22e7-b567-4ea4-b3c4-c2ede476b862.glb>. It is 36,764 bytes, SHA-256 `f03696c93efd3e31a88eeb36131fcfc059613f803627c97a813edee2adf6cde6`.
+- **In the model:** part of `Living_Props` (against the living room's south wall, with `COL_Living_Display_Case`); its glass is in `Living_Glass`.
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.65 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Its glass uses a shared transparent material.
+
+## Living_Props: Dining Set
+
+- **Work:** "Dining Set" by CMHT Oculus, from [Poly Pizza](https://poly.pizza/m/emZBrrhot73).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/emZBrrhot73/dining-set.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/73d542fa-ef4d-4d10-8c53-99eb11ae6700.glb>. It is 77,616 bytes, SHA-256 `e034abcfd847512bb0608d276295f4e6a54b19906e3d591be513839dcead508a`.
+- **In the model:** part of `Living_Props` (with `COL_Living_Dining_Set`).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.9 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Geometry is otherwise unchanged.
+
+## Living_Props: Eight Vases (one vase)
+
+- **Work:** "Eight Vases" by Paul Spooner, from [Poly Pizza](https://poly.pizza/m/083bnosQpkP).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/083bnosQpkP/eight-vases.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/7020fbb4-4cb8-4eb0-affb-394b49a7a2cf.glb>. It is 95,204 bytes, SHA-256 `f3a111603a71f9fa0d1224db9eaac3bf3125daad59cb1c46cf58c8e4b74e2873`.
+- **In the model:** part of `Living_Props` (one vase, `vase.113`, in the living room's north-west corner).
+- **Modifications:** Only `vase.113` is used; the other seven vases are left out. `assets-source/blender/third_party.py` joins its parts, scales it to 0.75 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs.
+
 ## Replacing a print
 
 Overwrite the file in `assets-source/posters/` (keep the file name, or change it in the `hang_poster` call in `gallery_blockout.py`, along with any `crop` box), re-export, and update the entry above. Each print has its own material and image, so the other print and every other texture export unchanged.

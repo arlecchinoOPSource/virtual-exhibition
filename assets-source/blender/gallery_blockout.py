@@ -414,6 +414,70 @@ for index, (x0, x1, y0, y1) in enumerate((
 )):
     box(f"Reading_Terracotta_{index:02}", x0, x1, y0, y1, 0, HEIGHT, TERRACOTTA, collide=False)
 
+# Living room (#93). One old TV on an original cabinet, an original coffee
+# table carrying the bowl of fruit, the couch facing the TV, the display case,
+# the dining set and one vase from the Eight Vases set. Opaque parts join into
+# Living_Props; the case's and the TV's alpha-blended glass moves to one shared
+# glass material (Living_Glass), since vertex colours carry no transparency.
+LIVING_PAINT = vertex_colour_material("Living_Prop_Paint")
+LIVING_GLASS = material("Living glass", (0.75, 0.85, 0.85), 0.05)
+LIVING_GLASS.node_tree.nodes["Principled BSDF"].inputs["Alpha"].default_value = 0.3
+LIVING_GLASS.surface_render_method = "BLENDED"
+WOOD_DARK = (0.12, 0.06, 0.03)
+
+
+def living_prop(file, name, rect, height, turn_deg, wall, **options):
+    prop, measures = import_prop(os.path.join(THIRD_PARTY, file), f"Living_Prop_{name}",
+                                 collections["Gallery_Render"], rect, height, turn_deg, wall,
+                                 material=LIVING_PAINT, glass=(f"Living_Glass_{name}", LIVING_GLASS),
+                                 **options)
+    print("THIRD_PARTY Living_" + name, {k: v for k, v in measures.items() if k != "glass"})
+    return measures
+
+
+tx0, tx1, ty0, ty1 = envelope["Living_TV"]
+cabinet = (tx0 + 0.05, tx1 - 0.05, ty0 + 0.05, ty1 - 0.05)
+colour_block("Living_Prop_TV_Cabinet", collections["Gallery_Render"], cabinet, 0, 0.5, WOOD_DARK,
+             LIVING_PAINT)
+prop_proxy("Living_TV", cabinet, 1.0)
+living_prop("9y-mTmCyefL/old-tv.glb", "TV", cabinet, 0.5, 90, "W", gap=0.02, base_z=0.5,
+            decimate=0.35)
+
+# An original coffee table: a 4 cm top on four square legs.
+cx0, cx1, cy0, cy1 = envelope["Living_Small_Table"]
+table = (cx0 + 0.02, cx1 - 0.02, cy0 + 0.05, cy1 - 0.05)
+colour_block("Living_Prop_Table_Top", collections["Gallery_Render"], table, 0.41, 0.45, WOOD_DARK,
+             LIVING_PAINT)
+for index, (lx, ly) in enumerate(((0, 2), (1, 2), (0, 3), (1, 3))):
+    x = table[lx] + (0.03 if lx == 0 else -0.03)
+    y = table[ly] + (0.03 if ly == 2 else -0.03)
+    colour_block(f"Living_Prop_Table_Leg_{index}", collections["Gallery_Render"],
+                 (x - 0.02, x + 0.02, y - 0.02, y + 0.02), 0, 0.41, WOOD_DARK, LIVING_PAINT)
+prop_proxy("Living_Small_Table", table, 0.45)
+living_prop("2kBAnLbWgMJ/bowl-of-fruit.glb", "Fruit", table, 0.16, 0, "C", base_z=0.45,
+            decimate=0.5)
+
+for file, name, rect, height, turn_deg, wall, options in (
+    ("6MoOyPtetL/couch-large.glb", "Couch", "Living_Couch", 0.75, -90, "C", {}),
+    ("cp6KFmnPnnn/display-case.glb", "Display_Case", "Living_Display_Case", 1.65, 180, "S", {}),
+    ("emZBrrhot73/dining-set.glb", "Dining_Set", "Living_Dining_Set", 0.9, 0, "C", {}),
+    ("083bnosQpkP/eight-vases.glb", "Vase", "Living_Vase", 0.75, 0, "C", {"only": "vase.113"}),
+):
+    measures = living_prop(file, name, envelope[rect], height, turn_deg, wall, **options)
+    prop_proxy(rect, measures["bounds"], height)
+
+# Original teal paint on the living room's side of its walls, 1 cm thick.
+TEAL = material("Living teal paint", (0.07, 0.25, 0.24), 0.8)
+for index, (x0, x1, y0, y1) in enumerate((
+    (-14.0, -13.99, -9.0, -2.2),    # west wall
+    (-14.0, -3.1, -9.0, -8.99),     # south wall
+    (-14.0, -12.0, -2.21, -2.2),    # north, west of the living door
+    (-10.0, -3.1, -2.21, -2.2),     # north, east of the living door
+    (-3.11, -3.1, -9.0, -6.5),      # east partition, south of the theater opening
+    (-3.11, -3.1, -4.5, -2.2),      # east partition, north of the theater opening
+)):
+    box(f"Living_Teal_{index:02}", x0, x1, y0, y1, 0, HEIGHT, TEAL, collide=False)
+
 # Basement entrance in the right end wall: a hinged door, its frame, a sign,
 # and a statue. The door collider is a separate proxy the engine toggles.
 # The basement and its entrance are modelled in their original frame (door in
@@ -703,6 +767,9 @@ join("Studio_Props", ("Studio_Prop_",), "Gallery_Render")
 join("Studio_Bamboo", ("Studio_Bamboo_",), "Gallery_Render")
 join("Reading_Props", ("Reading_Prop_",), "Gallery_Render")
 join("Reading_Terracotta", ("Reading_Terracotta_",), "Gallery_Render")
+join("Living_Props", ("Living_Prop_",), "Gallery_Render")
+join("Living_Glass", ("Living_Glass_",), "Gallery_Render")
+join("Living_Teal", ("Living_Teal_",), "Gallery_Render")
 join("Elevator_Car", ("Elevator_Wall_", "Elevator_Floor", "Elevator_Ceiling",
                       "Elevator_Handrail", "Elevator_Surround_", "Elevator_Front_",
                       "Elevator_Panel", "Elevator_Button_", "Elevator_Indicator"),

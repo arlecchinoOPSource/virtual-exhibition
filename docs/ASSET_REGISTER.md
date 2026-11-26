@@ -15,6 +15,8 @@ Every external asset the exhibition considers is listed here, whether it is used
 - **Candidate:** licence clear, awaiting its room issue.
 - **Deferred:** something needs deciding first.
 - **Rejected:** not to be published.
+- **Not used:** licence clear, but another asset fills its role.
+- **Imported:** downloaded, measured, credited and in an export.
 
 ## Studio (#91)
 
@@ -37,15 +39,15 @@ Every external asset the exhibition considers is listed here, whether it is used
 
 ## Living room (#93)
 
-| ID                                              | Page title    | Creator        | Licence   | Board label    | Status    | Notes                                                                                                              |
-| ----------------------------------------------- | ------------- | -------------- | --------- | -------------- | --------- | ------------------------------------------------------------------------------------------------------------------ |
-| [083bnosQpkP](https://poly.pizza/m/083bnosQpkP) | Eight Vases   | Paul Spooner   | CC BY 3.0 | Vase           | Candidate | Eight vases in one file; use one.                                                                                  |
-| [cp6KFmnPnnn](https://poly.pizza/m/cp6KFmnPnnn) | Display Case  | CMHT Oculus    | CC BY 3.0 | Display Case   | Candidate |                                                                                                                    |
-| [6MoOyPtetL](https://poly.pizza/m/6MoOyPtetL)   | Couch Large   | Quaternius     | CC0       | Couch          | Candidate |                                                                                                                    |
-| [emZBrrhot73](https://poly.pizza/m/emZBrrhot73) | Dining Set    | CMHT Oculus    | CC BY 3.0 | Dining Set     | Candidate | "If it fits": must sit inside the 2.4 × 2.0 m envelope.                                                            |
-| [2tfjTOK1Lh4](https://poly.pizza/m/2tfjTOK1Lh4) | Retro TV      | Alex Safayan   | CC BY 3.0 | Small Table    | Deferred  | A TV, not a table. The living room still needs a small table (#93); this can be the TV if 9y-mTmCyefL is not used. |
-| [9y-mTmCyefL](https://poly.pizza/m/9y-mTmCyefL) | old tv        | Justin Randall | CC BY 3.0 | Old TV         | Candidate |                                                                                                                    |
-| [2kBAnLbWgMJ](https://poly.pizza/m/2kBAnLbWgMJ) | Bowl of Fruit | sirkitree      | CC BY 3.0 | Bowl of fruits | Candidate |                                                                                                                    |
+| ID                                              | Page title    | Creator        | Licence   | Board label    | Status   | Notes                                                                                                                        |
+| ----------------------------------------------- | ------------- | -------------- | --------- | -------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| [083bnosQpkP](https://poly.pizza/m/083bnosQpkP) | Eight Vases   | Paul Spooner   | CC BY 3.0 | Vase           | Imported | Living room (#93): one vase of the eight (`vase.113`). See below.                                                            |
+| [cp6KFmnPnnn](https://poly.pizza/m/cp6KFmnPnnn) | Display Case  | CMHT Oculus    | CC BY 3.0 | Display Case   | Imported | Living room (#93), glass kept see-through. See below.                                                                        |
+| [6MoOyPtetL](https://poly.pizza/m/6MoOyPtetL)   | Couch Large   | Quaternius     | CC0       | Couch          | Imported | Living room (#93). See below.                                                                                                |
+| [emZBrrhot73](https://poly.pizza/m/emZBrrhot73) | Dining Set    | CMHT Oculus    | CC BY 3.0 | Dining Set     | Imported | Living room (#93); fits its 2.4 × 2.0 m envelope at 1.89 × 1.93 m. See below.                                                |
+| [2tfjTOK1Lh4](https://poly.pizza/m/2tfjTOK1Lh4) | Retro TV      | Alex Safayan   | CC BY 3.0 | Small Table    | Not used | A TV, not a table. #93 uses 9y-mTmCyefL as the one TV, and the small table is an original model (see below). Not downloaded. |
+| [9y-mTmCyefL](https://poly.pizza/m/9y-mTmCyefL) | old tv        | Justin Randall | CC BY 3.0 | Old TV         | Imported | Living room (#93), the one TV. See below.                                                                                    |
+| [2kBAnLbWgMJ](https://poly.pizza/m/2kBAnLbWgMJ) | Bowl of Fruit | sirkitree      | CC BY 3.0 | Bowl of fruits | Imported | Living room (#93), on the coffee table. See below.                                                                           |
 
 ## Theater (#94)
 
@@ -161,3 +163,49 @@ The route walk passes in front of both shelves, round the desk's chair space and
 - Median frame time: unchanged at 16.7 ms in every view.
 
 **Browser:** Firefox at 100% and 50% resolution: `docs/renders/shell/reading-100.jpg` and `reading-50.jpg`. Also `reading-desk.jpg`, `reading-shelf.jpg` and `reading-band-from-catalogue.jpg`.
+
+### Living room (#93): old tv, Bowl of Fruit, Couch Large, Display Case, Dining Set, Eight Vases
+
+These follow the same steps. Opaque parts share `Living_Prop_Paint` and join into `Living_Props`, which is one draw.
+
+**Glass:** the display case's glass and the TV screen are alpha-blended (alpha 0.4) in the originals. Vertex colours can't carry that. `import_prop(glass=…)` moves those faces into `Living_Glass`, a second draw with one shared 30%-opaque glass material. This is the cabinet alpha cost the issue asks about: one transparent draw of 244 vertices.
+
+**Small table:** the board's "Small Table" link is a TV (see the table above). The room's small table is an original model instead: a 0.46 × 0.9 m coffee table, 0.45 m tall, carrying the Bowl of Fruit. The TV stands on an original 0.5 m cabinet.
+
+**Choices:** only one TV and one vase are used. The Eight Vases file is imported with `only="vase.113"`, the tall beige vase, so the other seven never enter the scene.
+
+| Asset                                              | Original (downloaded 2026-11-26)               | Measured original                                                                                          | Placed                                                                                                                        |
+| -------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| old tv (9y-mTmCyefL), Justin Randall, CC BY 3.0    | 235,456 B, SHA-256 `bbbff469…`, obj2gltf       | 48 meshes, 7 materials (1 blended), no textures; 2,808 triangles, 5,328 vertices; 1.86 × 1.56 × 1.88 units | Scaled ×0.266 to 0.5 m (0.41 × 0.50 m), kept to 35% (854 triangles); on the cabinet against the west wall, facing the couch   |
+| Bowl of Fruit (2kBAnLbWgMJ), sirkitree, CC BY 3.0  | 68,252 B, SHA-256 `9f2e667e…`, obj2gltf        | 4 meshes, 5 materials, no textures; 764 triangles, 1,696 vertices; 0.32 × 0.33 × 0.32 units                | Scaled ×0.505 to 0.16 m, kept to 50% (382 triangles); in the middle of the coffee table                                       |
+| Couch Large (6MoOyPtetL), Quaternius, CC0          | 30,800 B, SHA-256 `c75418e4…`, FBX2glTF v0.9.7 | 1 mesh, 2 materials, no textures; 1,460 triangles, 804 vertices; 5.48 × 1.99 × 2.11 units                  | Scaled ×0.356 to 0.75 m (0.71 × 1.95 m), unsimplified; centred in its envelope, facing the TV across the coffee table         |
+| Display Case (cp6KFmnPnnn), CMHT Oculus, CC BY 3.0 | 36,764 B, SHA-256 `f03696c9…`, obj2gltf        | 1 mesh, 3 materials (1 blended glass), no textures; 762 triangles, 1,460 vertices; 26 × 17 × 72 units      | Scaled ×0.0229 to 1.65 m (0.60 × 0.39 m); against the south wall, west of Exhibit_11                                          |
+| Dining Set (emZBrrhot73), CMHT Oculus, CC BY 3.0   | 77,616 B, SHA-256 `e034abcf…`, obj2gltf        | 1 mesh, 9 materials, no textures; 1,564 triangles, 3,006 vertices; 66.4 × 67.9 × 31.6 units                | Scaled ×0.0285 to 0.9 m (1.89 × 1.93 m), unsimplified; in the north-east of the room, clear of the cross route and Exhibit_12 |
+| Eight Vases (083bnosQpkP), Paul Spooner, CC BY 3.0 | 95,204 B, SHA-256 `f3a11160…`, obj2gltf        | 8 meshes (480 triangles each), 3 materials, no textures; 3,840 triangles; 11.5 × 9.0 × 7.4 units           | One vase, scaled ×0.138 to 0.75 m (0.25 m wide); in the north-west corner                                                     |
+
+**Walls:** the room's side of its walls gets an original teal paint (`Living_Teal`, 1 cm, one draw). Floor and ceiling stay the shared oak and white.
+
+**Plan changes:**
+
+- The TV envelope is 0.15 m deeper (x −14.0 to −13.4), to take the cabinet.
+- The small-table envelope is unchanged and now holds the coffee table.
+
+**Validation:** the Khronos glTF Validator reports 0 errors and 0 warnings on all six originals, and 0 errors on `gallery.glb`. Unit tests check:
+
+- `Living_Props` is one vertex-coloured draw with no UVs;
+- `Living_Glass` is transparent;
+- every collision box is inside its envelope;
+- clear sightlines to Exhibit_10, 11 and 12.
+
+The route walk passes the vase, goes under Exhibit_10, round the coffee table and couch, along the south wall past the display case and under Exhibit_11, then to the theater. `frames.spec.ts` reaches all three living-room frames in Firefox.
+
+**Cost (Firefox, M5, against #92):**
+
+- `gallery.glb`: 4.34 → 4.74 MB, so the cold load goes from 5.10 to 5.50 MB.
+- Unit-test draw count: 3 more (props, glass and teal). The cap goes from 62 to 65.
+- Living view, looking west from the theater opening: 25 draws, 52.4k triangles.
+- Median frame time: unchanged at 16.7 ms.
+
+**Browser:** Firefox at 100% and 50% resolution: `docs/renders/shell/living-100.jpg` and `living-50.jpg`. Also `living-tv.jpg`, `living-display-case.jpg` and `living-dining.jpg`.
+
+**Limits:** the palette is the creators' own. The couch's dark red and the case's dark wood sit well against the teal, but they are not matched to the owner's reference photographs, which are references only and not cleared textures.
