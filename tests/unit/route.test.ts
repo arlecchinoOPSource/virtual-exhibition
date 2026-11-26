@@ -6,8 +6,9 @@ import { createGallery } from '../../src/environments/gallery';
 import { stepBody } from '../../src/player/collision';
 
 // Walks the exported collision geometry along the accepted plan's routes
-// (#86, #87): arrival, both loops through all five upstairs sections, every
-// room corner, down the stairs to the basement and back up, at walking pace.
+// (#86, #87): out of the arrival elevator, both loops through all five
+// upstairs sections, every room corner, down the stairs to the basement and
+// back up, and back into the elevator, at walking pace.
 
 async function parseModel(name: 'gallery' | 'frame' | 'basement') {
   const file = await readFile(`public/models/${name}.glb`);
@@ -80,6 +81,7 @@ const southLoop: Leg[] = [
   ['theater door', 2.4, -2.5],
   ['reading area from the theater', 2.4, 0],
   ['arrival', -12.5, 0],
+  ['back into the elevator', -15.5, 0],
 ];
 
 describe('walking the accepted layout', () => {
@@ -124,6 +126,10 @@ describe('walking the accepted layout', () => {
       }
     };
 
+    // The walk starts; the elevator doors slide open onto the gallery.
+    world.elevator.open();
+    for (let t = 0; t < 2.5; t += 1 / FPS) world.update(1 / FPS);
+    expect(world.elevator.state).toBe('open');
     walk(northLoop);
     await world.door.toggle(body.feet);
     for (let t = 0; t < 1.2; t += 1 / FPS) world.update(1 / FPS);

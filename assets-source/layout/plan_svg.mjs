@@ -7,7 +7,7 @@ const plan = JSON.parse(
   readFileSync(new URL('./redesign.json', import.meta.url), 'utf8'),
 );
 const S = 40; // pixels per metre
-const [X0, X1, Y0, Y1] = [-15.5, 28, -10.5, 9];
+const [X0, X1, Y0, Y1] = [-17.5, 28, -10.5, 9];
 const W = (X1 - X0) * S;
 const H = (Y1 - Y0) * S + 120;
 const px = (x) => ((x - X0) * S).toFixed(1);
@@ -91,7 +91,7 @@ for (const f of plan.furniture)
   );
 for (const w of plan.walls) out.push(rect(w.rect, 'fill="#333"'));
 out.push(rect(plan.lectern.rect, 'fill="#6b4a2b"'));
-const [ex0, ex1, ey0, ey1] = plan.elevator_cue.rect;
+const [ex0, ex1, ey0, ey1] = plan.elevator.doors;
 out.push(rect([ex0 - 0.15, ex1, ey0, ey1], 'fill="#999"'));
 
 // Existing posters and graffiti: grey bars on the room side of their walls.
@@ -141,7 +141,7 @@ out.push(
   `<path d="M${px(sx - 0.4)},${py(sy + 0.35)} L${px(sx + 0.45)},${py(sy)} L${px(sx - 0.4)},${py(sy - 0.35)} Z" fill="#1d5fa0"/>`,
 );
 out.push(text(sx, sy - 0.9, 'Spawn', 'class="note" text-anchor="middle"'));
-out.push(text(-13.8, 1.0, 'Elevator cue', 'class="note"'));
+out.push(text(-16.0, 1.35, 'Elevator', 'class="note"'));
 out.push(text(-8.7, -1.45, 'Catalogue', 'class="note"'));
 const [hx, hy] = plan.basement_door.hinge;
 out.push(
@@ -186,8 +186,8 @@ out.push(
     '24.4 m outside, 24.0 m inside',
     'class="dim" text-anchor="middle"',
   ),
-  `<line x1="${px(-14.9)}" y1="${py(-9.2)}" x2="${px(-14.9)}" y2="${py(7.7)}" ${tick}/>`,
-  `<text class="dim" transform="translate(${px(-15.1)},${py(-0.75)}) rotate(-90)" text-anchor="middle">16.9 m outside, 16.5 m inside</text>`,
+  `<line x1="${px(-16.9)}" y1="${py(-9.2)}" x2="${px(-16.9)}" y2="${py(7.7)}" ${tick}/>`,
+  `<text class="dim" transform="translate(${px(-17.1)},${py(-0.75)}) rotate(-90)" text-anchor="middle">16.9 m outside, 16.5 m inside</text>`,
 );
 
 const legend = [

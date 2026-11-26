@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { moveSpawn } from './spawn';
 
 async function openSettings(page: Page) {
+  // Start at the arrival end of the band, with spotlit frames in view: the
+  // real spawn is inside the closed elevator car.
+  await moveSpawn(page, [-12.5, 0, 0]);
   await page.goto('/');
   const canvas = page.locator('#scene');
   await expect(canvas).toHaveAttribute('data-environment', 'gallery');

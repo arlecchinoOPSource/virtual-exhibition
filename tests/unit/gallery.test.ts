@@ -49,7 +49,7 @@ const gazes: Record<string, [number, number]> = {
 };
 
 describe('gallery blockout', () => {
-  it('spawns at the arrival end of the central band facing the basement door', async () => {
+  it('spawns inside the arrival elevator facing its doors and the basement door', async () => {
     const world = await loadWorld();
     const [x, y] = plan.spawn.at;
     expect(world.spawn.feet.x).toBeCloseTo(x);
@@ -157,7 +157,11 @@ describe('gallery blockout', () => {
         stepBody(body, dx, dz, 1 / 120, world.solids);
     };
 
-    // The west wall behind the elevator.
+    // The back wall of the elevator car.
+    walk(-0.025, 0);
+    expect(body.feet.x).toBeCloseTo(-15.96, 1);
+    // The gallery's west wall, beside the elevator doorway.
+    body.feet.set(-13, 0, -1.5);
     walk(-0.025, 0);
     expect(body.feet.x).toBeCloseTo(-13.76, 1);
     // The spine north of the band, between the studio and living doors.
@@ -178,8 +182,12 @@ describe('gallery blockout', () => {
 
   it('lays parquet over every upstairs section with no holes', async () => {
     const world = await loadWorld();
-    const floor = world.scene.getObjectByName('Floor');
-    if (!floor) throw new Error('Missing Floor.');
+    // The gallery floor, and the elevator car's own floor.
+    const floors = ['Floor', 'Elevator_Car'].map((name) => {
+      const found = world.scene.getObjectByName(name);
+      if (!found) throw new Error(`Missing ${name}.`);
+      return found;
+    });
     const ray = new Raycaster();
     const down = new Vector3(0, -1, 0);
     for (const section of plan.sections) {
@@ -188,10 +196,57 @@ describe('gallery blockout', () => {
       for (let x = x0 + 0.25; x < x1; x += 0.5)
         for (let y = y0 + 0.25; y < y1; y += 0.5) {
           ray.set(new Vector3(x, 1, -y), down);
-          const hit = ray.intersectObject(floor, true)[0];
+          const hit = ray.intersectObjects(floors, true)[0];
           expect(hit?.point.y, `${section.id} at ${x}, ${y}`).toBeCloseTo(0, 3);
         }
     }
+    world.dispose();
+  });
+
+  it('holds the visitor in the elevator until its doors slide open', async () => {
+    const world = await loadWorld();
+    const body = {
+      feet: world.spawn.feet.clone(),
+      grounded: true,
+      fallSpeed: 0,
+    };
+    const walkEast = (frames: number) => {
+      for (let count = 0; count < frames; count++)
+        stepBody(body, 0.025, 0, 1 / 120, world.solids);
+    };
+    const leaves = ['Elevator_Door_South', 'Elevator_Door_North'].map((name) =>
+      world.scene.getObjectByName(name)!,
+    );
+    const closed = leaves.map((leaf) => leaf.position.z);
+    expect(world.elevator.state).toBe('closed');
+    // Closed doors stop the visitor in the car, short of the doorway.
+    walkEast(200);
+    expect(body.feet.x).toBeCloseTo(-14.44, 1);
+
+    world.elevator.open();
+    world.update(0.5);
+    expect(world.elevator.state).toBe('opening');
+    expect(leaves.map((leaf) => leaf.position.z)).toEqual(closed);
+    walkEast(50);
+    expect(body.feet.x).toBeCloseTo(-14.44, 1);
+    // Opening again mid-slide is ignored.
+    world.elevator.open();
+    for (let t = 0; t < 2; t += 1 / 60) world.update(1 / 60);
+    expect(world.elevator.state).toBe('open');
+    // Each leaf slid its own width away from the middle, into the wall.
+    expect(leaves[0]!.position.z - closed[0]!).toBeCloseTo(0.9);
+    expect(leaves[1]!.position.z - closed[1]!).toBeCloseTo(-0.9);
+    walkEast(200);
+    expect(body.feet.x).toBeGreaterThan(-12);
+    world.dispose();
+  });
+
+  it('opens the elevator at once for reduced motion', async () => {
+    const world = await loadWorld();
+    world.elevator.open(true);
+    expect(world.elevator.state).toBe('open');
+    const leaf = world.scene.getObjectByName('Elevator_Door_South')!;
+    expect(leaf.position.z).toBeCloseTo(0.45 + 0.9, 3);
     world.dispose();
   });
 
@@ -299,7 +354,9 @@ describe('gallery export budget', () => {
         expect(Math.max(width, height)).toBeLessThanOrEqual(2048);
       }
     });
-    expect(drawCalls).toBeLessThanOrEqual(52);
+    // 52 for the shell, lectern, statue and fifteen frames, plus three for
+    // the arrival elevator: its two sliding leaves must stay separate meshes.
+    expect(drawCalls).toBeLessThanOrEqual(56);
     world.dispose();
   });
 

@@ -4,7 +4,7 @@
 
 The gallery follows the accepted redesign plan below (#86), built as an undecorated shell in #87. It replaced the original 20 × 10 m blockout with recessed bays, two freestanding islands and a central lectern; that history stays in git and `docs/ROADMAP.md`. Keep the routes, viewing zones and the basement approach clear.
 
-The shell is 24.0 × 16.5 m inside with the south-east corner cut away and a 3.6 m ceiling. Full-height partitions divide it into the arrival, studio, street, reading area, living room, theater and rear landing, as planned. A 0.4 m furring wall along the street's north wall stands in for the facades #95 will dress. The catalogue lectern stands beside the arrival axis with its reader on the north side, and a static elevator door on the west wall marks the arrival. The visitor spawns 1.5 m in front of it facing east, down the central band to the 1.6 × 2.4 m basement doorway in the east wall, which has not moved. Each display has a test frame with a red top-left mark and its own track spot light. `assets-source/blender/gallery_blockout.py` builds the walls, partitions, spawn, lectern placement and anchors from `assets-source/layout/redesign.json`, so the plan and the export cannot drift apart. No furniture is placed yet; the furniture envelopes in the plan wait for #91–#95.
+The shell is 24.0 × 16.5 m inside with the south-east corner cut away and a 3.6 m ceiling. Full-height partitions divide it into the arrival, studio, street, reading area, living room, theater and rear landing, as planned. A 0.4 m furring wall along the street's north wall stands in for the facades #95 will dress. The catalogue lectern stands beside the arrival axis with its reader on the north side. The visitor arrives in an enclosed elevator car behind the west wall, 2.0 × 2.0 m inside with a 2.6 m lit ceiling, facing east through its doors down the central band to the 1.6 × 2.4 m basement doorway in the east wall, which has not moved. When the walk starts the car's two steel leaves slide 0.9 m apart into the wall over 1.8 s, after a 0.6 s beat, and stay open; with reduced motion they are simply open. `COL_Elevator_Doors` keeps the visitor in the car until the gap is half open. Each display has a test frame with a red top-left mark and its own track spot light. `assets-source/blender/gallery_blockout.py` builds the walls, partitions, spawn, lectern placement and anchors from `assets-source/layout/redesign.json`, so the plan and the export cannot drift apart. No furniture is placed yet; the furniture envelopes in the plan wait for #91–#95.
 
 ![Top-down render of the exported shell, ceiling hidden](renders/shell/overview.jpg)
 
@@ -42,22 +42,23 @@ The upstairs interior is 24.0 × 16.5 m (x −14 to 10, y −9 to 7.5), with a 6
 
 A full-length spine at y = 2 and a parallel partition at y = −2 make a 4 m central band: arrival at its west end, the reading area in its middle (open at both ends), and the rear landing and basement door at its east end. The studio and street sit north of the spine, and the living room and theater south of the partition.
 
-| Section      | Plan rectangle                         | Size         | Furniture envelopes                                                                                                                 |
-| ------------ | -------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Arrival      | x −14 to −8, y −2 to 2                 | 6.0 × 4.0 m  | Catalogue lectern 0.8 × 0.7 m, reader on its north side; static elevator doors on the west wall                                     |
-| Studio       | x −14 to −6.7, y 2.2 to 7.5            | 7.3 × 5.3 m  | Worktable 3.0 × 2.1 m (1.8 × 0.9 m table with 0.6 m working space), easel 1.0 × 1.2 m, statue 0.8 × 0.8 m, supply shelf 2.0 × 0.5 m |
-| Street       | x −6.5 to 4, y 2.2 to 7.5              | 10.5 × 5.3 m | Facades 0.4 m deep along the north wall, two planters 0.6 × 0.6 m, jeepney 3.2 × 1.4 m where the street meets the rear landing      |
-| Reading      | x −8 to 4, y −2 to 2                   | 12.0 × 4.0 m | Two bookshelves 1.0 × 0.35 m, desk with chair 1.2 × 1.3 m, scrolls 1.0 × 0.6 m                                                      |
-| Living       | x −14 to −3.1, y −9 to −2.2            | 10.9 × 6.8 m | Couch 0.9 × 2.0 m, small table 0.5 × 1.0 m, TV 0.45 × 1.2 m, display case 1.0 × 0.45 m, dining set 2.4 × 2.0 m, vase                |
-| Theater      | x −2.9 to 4, y −9 to −2.2              | 6.9 × 6.8 m  | Two benches 1.7 × 0.45 m, two castle wall pieces 0.6 × 0.4 m, vase                                                                  |
-| Rear landing | x 4 to 10, y −2 to 7.5                 | 6.0 × 9.5 m  | Existing statue; the door landing x 8 to 10, y −1 to 1 stays clear                                                                  |
-| Basement     | x 19.2 to 27, y −4 to 4, floor z −3.06 | 7.8 × 8.0 m  | Existing throne, candle stand and radio table at their current positions                                                            |
+| Section      | Plan rectangle                                    | Size         | Furniture envelopes                                                                                                                 |
+| ------------ | ------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Elevator     | x −16.2 to −14.2, y −1 to 1, behind the west wall | 2.0 × 2.0 m  | Handrail; 1.8 m sliding doors; lit ceiling at 2.6 m                                                                                 |
+| Arrival      | x −14 to −8, y −2 to 2                            | 6.0 × 4.0 m  | Catalogue lectern 0.8 × 0.7 m, reader on its north side; elevator doors in the west wall                                            |
+| Studio       | x −14 to −6.7, y 2.2 to 7.5                       | 7.3 × 5.3 m  | Worktable 3.0 × 2.1 m (1.8 × 0.9 m table with 0.6 m working space), easel 1.0 × 1.2 m, statue 0.8 × 0.8 m, supply shelf 2.0 × 0.5 m |
+| Street       | x −6.5 to 4, y 2.2 to 7.5                         | 10.5 × 5.3 m | Facades 0.4 m deep along the north wall, two planters 0.6 × 0.6 m, jeepney 3.2 × 1.4 m where the street meets the rear landing      |
+| Reading      | x −8 to 4, y −2 to 2                              | 12.0 × 4.0 m | Two bookshelves 1.0 × 0.35 m, desk with chair 1.2 × 1.3 m, scrolls 1.0 × 0.6 m                                                      |
+| Living       | x −14 to −3.1, y −9 to −2.2                       | 10.9 × 6.8 m | Couch 0.9 × 2.0 m, small table 0.5 × 1.0 m, TV 0.45 × 1.2 m, display case 1.0 × 0.45 m, dining set 2.4 × 2.0 m, vase                |
+| Theater      | x −2.9 to 4, y −9 to −2.2                         | 6.9 × 6.8 m  | Two benches 1.7 × 0.45 m, two castle wall pieces 0.6 × 0.4 m, vase                                                                  |
+| Rear landing | x 4 to 10, y −2 to 7.5                            | 6.0 × 9.5 m  | Existing statue; the door landing x 8 to 10, y −1 to 1 stays clear                                                                  |
+| Basement     | x 19.2 to 27, y −4 to 4, floor z −3.06            | 7.8 × 8.0 m  | Existing throne, candle stand and radio table at their current positions                                                            |
 
 The studio worktable and living-room furniture were placed first. The section sizes follow from them, the frame viewing zones, and the routes.
 
 ### Arrival and circulation
 
-The visitor arrives at the west end of the central band at (−12.5, 0), facing east down the band toward the basement door 22.5 m away. A static elevator door on the west wall behind the spawn marks the arrival; it does not operate. The studio door (2.0 m) is ahead on the left, the living-room door (2.0 m) ahead on the right, and the catalogue lectern stands on the right of the band with a 1.5 × 1.2 m approach on its north side.
+The visitor arrives inside the elevator car at (−15.5, 0), facing east through its doors and down the band toward the basement door 25.5 m away. The doors slide open when the walk starts; the elevator does not travel. The studio door (2.0 m) is ahead on the left, the living-room door (2.0 m) ahead on the right, and the catalogue lectern stands on the right of the band with a 1.5 × 1.2 m approach on its north side.
 
 The routes are the testable targets from the brief, not code or legal claims: 2.0 m main routes, 1.2–1.5 m secondary routes, and a 1.7 × 1.5 m clear viewing zone in front of each frame. Two loops start and end at arrival:
 
@@ -101,10 +102,10 @@ Content stays bound to slot IDs, so nothing is lost when frames move. Exhibit_01
 
 Accepted with the layout on 2026-11-26. The far plane, jeepney and partition-height items are checks for the issues named, not open layout questions.
 
-- **Arrival.** The board sketches the elevator at the front-left corner. The plan puts arrival at the west end of the central band so the studio and living-room doors are equally close and the basement door is visible down the axis. Moving it to the studio corner would put the spawn inside a furnished room.
+- **Arrival.** The board sketches the elevator at the front-left corner. The plan puts arrival at the west end of the central band, in an elevator car behind the west wall, so the studio and living-room doors are equally close and the basement door is visible down the axis. Moving it to the studio corner would put the spawn inside a furnished room.
 - **Doraemon placement.** Exhibit_01 lands in the studio by walking order. The essay's subject also fits the living room; swapping two manifest entries in #88 moves it without changing geometry.
 - **Theater partitions.** The board shows two short freestanding partitions. The plan hangs all three theater frames on the perimeter and uses low castle wall pieces instead, which keeps the 6.9 m room open for benches. Freestanding wings remain possible in #94 if they stay out of the routes and viewing zones.
 - **Jeepney size.** A real jeepney is about 6–7 m long. The 3.2 × 1.4 m envelope assumes a shortened or scaled model; #95 decides which.
 - **Full-height partitions.** Partitions reach the ceiling to keep lighting and occlusion simple. #87 may lower them if sightlines need it.
-- **Far plane.** The longest upstairs sightline is about 29 m, but spawn to the basement's east wall is 39.5 m along the axis when the door is open. That is near the 40 m camera far plane; #87 should check it.
+- **Far plane.** The longest upstairs sightline is about 29 m, but spawn to the basement's east wall is 42.5 m along the axis from the elevator when the door is open. #87 raised the camera far plane from 40 to 45 m to cover it.
 - **Basement access width.** The existing 1.6 m door and stairwell stay below the 2 m main-route target.

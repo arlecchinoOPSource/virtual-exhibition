@@ -13,6 +13,7 @@ import type { BufferGeometry, Material, Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { hangExhibits } from '../exhibition/displays';
 import { createDoor } from './door';
+import { createElevator } from './elevator';
 import { paintExhibit } from '../exhibition/placeholder';
 import type { Exhibit } from '../types/exhibit';
 
@@ -83,6 +84,18 @@ export function createGallery(
   const doorCollider = colliders.get('COL_Door_Basement');
   if (!hinge || !doorMesh || !doorCollider)
     throw new Error('The gallery is missing the basement door.');
+  const leaves = ['Elevator_Door_South', 'Elevator_Door_North'].map((name) =>
+    root.getObjectByName(name),
+  );
+  const elevatorCollider = colliders.get('COL_Elevator_Doors');
+  if (!leaves[0] || !leaves[1] || !elevatorCollider)
+    throw new Error('The gallery is missing the arrival elevator doors.');
+  // The visitor arrives in the elevator car; its doors open as the walk starts.
+  const elevator = createElevator(
+    leaves as Object3D[],
+    elevatorCollider,
+    solids,
+  );
   const catalogue = root.getObjectByName('Catalogue_Pages');
   const cataloguePrint = root.getObjectByName('Catalogue_Print');
   if (!catalogue) throw new Error('The gallery is missing its catalogue.');
@@ -130,6 +143,7 @@ export function createGallery(
       ).y,
     },
     door,
+    elevator,
     isCatalogue(object: Object3D | undefined) {
       return (
         object === catalogue ||
@@ -144,6 +158,7 @@ export function createGallery(
     },
     update(seconds: number, feet?: Vector3) {
       door.update(seconds);
+      elevator.update(seconds);
       if (!feet) return;
       const depth = Math.min(1, Math.max(0, (-feet.y - 0.3) / 2.1));
       const target = 1 - 0.9 * depth * depth * (3 - 2 * depth);

@@ -13,8 +13,9 @@ baked into basement.glb (posters.py, public/models/CREDITS.md).
 Units are meters with Z up. The shell follows the accepted plan in
 assets-source/layout/redesign.json (docs/DESIGN.md): a 24.0 x 16.5 m
 interior, x -14..10 and y -9..7.5, with the south-east corner cut away and a
-3.6 m ceiling. The visitor spawns at the west end of the central band (-X)
-and the basement opening is in the east wall (+X) at x = 10, where it has
+3.6 m ceiling. The visitor spawns inside an enclosed elevator car behind the
+west wall (-X), whose doors slide open onto the central band when the walk
+starts. The basement opening is in the east wall (+X) at x = 10, where it has
 always been, so the basement keeps its world transform.
 
 Every marker's local +Y axis points the way a visitor looks: forward at the
@@ -210,22 +211,72 @@ oak_floor(floor, FLOOR, exclude=(NOTCH,))
 box("Ceiling", FOOT_X0, FOOT_X1, FOOT_Y0, FOOT_Y1, HEIGHT, HEIGHT + WALL, CEILING,
     collide=False)
 
+# The arrival elevator: an enclosed car behind the west wall where the visitor
+# spawns. Its walls, handrail, door surround and leaves share one satin steel
+# (only lightly metallic: the scene has no environment map to reflect), and
+# the whole ceiling is a lit panel. Three materials keep it to three draws.
+ELEVATOR = PLAN["elevator"]
+car_x0, car_x1, car_y0, car_y1 = ELEVATOR["car"]
+CAR_HEIGHT = ELEVATOR["car_height"]
+_, _, door_y0, door_y1 = ELEVATOR["doors"]
+DOOR_HEIGHT = ELEVATOR["door_height"]
+PANEL = material("Elevator satin steel", (0.6, 0.59, 0.56), 0.36)
+PANEL.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.3
+CAR_FLOOR = material("Elevator floor stone", (0.15, 0.14, 0.13), 0.55)
+CAR_LIGHT = material("Elevator ceiling light", (0.95, 0.92, 0.86), 0.6)
+car_light = CAR_LIGHT.node_tree.nodes["Principled BSDF"]
+car_light.inputs["Emission Color"].default_value = (1.0, 0.93, 0.82, 1)
+car_light.inputs["Emission Strength"].default_value = 0.9
+
 # Outer walls and full-height partitions. The street's north wall carries a
 # 0.4 m furring wall that #95 dresses as shallow facades; frames 04 and 05
-# hang on its face.
+# hang on its face. The car's walls stop just above its ceiling.
 for wall in PLAN["walls"]:
-    if not wall["id"].startswith(("Stairwell_", "Room_")):
+    if wall["id"].startswith(("Stairwell_", "Room_")):
+        continue
+    if wall["id"].startswith("Elevator_"):
+        box(wall["id"], *wall["rect"], 0, CAR_HEIGHT + 0.1, PANEL)
+    else:
         box(wall["id"], *wall["rect"], 0, HEIGHT, WALLS)
 facade = next(item for item in PLAN["furniture"] if item["id"] == "Street_Facades")
 box("Street_Facade_Base", *facade["rect"], 0, HEIGHT, WALLS)
 box("Wall_East_Lintel", 10, 10 + WALL, -0.8, 0.8, 2.4, HEIGHT, WALLS)
+box("Wall_West_Lintel", -14 - WALL, -14, door_y0, door_y1, DOOR_HEIGHT, HEIGHT, WALLS)
 
-# A static elevator behind the spawn marks the arrival; it does not open.
-STEEL = material("Elevator brushed steel", (0.46, 0.46, 0.47), 0.32)
-STEEL.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.85
-box("Elevator_Surround", -14.0, -13.96, -1.05, 1.05, 0, 2.55, FIXTURE, collide=False)
-for name, y0, y1 in (("South", -0.9, -0.008), ("North", 0.008, 0.9)):
-    box(f"Elevator_Leaf_{name}", -13.96, -13.945, y0, y1, 0, 2.4, STEEL, collide=False)
+box("Elevator_Floor", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, -WALL, 0, CAR_FLOOR)
+box("Elevator_Ceiling", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, CAR_HEIGHT,
+    CAR_HEIGHT + 0.1, CAR_LIGHT, collide=False)
+box("Elevator_Handrail", car_x0, car_x0 + 0.04, -0.75, 0.75, 0.88, 0.92, PANEL, collide=False)
+for name, y0, y1 in (("South", door_y0 - 0.12, door_y0), ("North", door_y1, door_y1 + 0.12)):
+    box(f"Elevator_Surround_{name}", -14, -13.97, y0, y1, 0, DOOR_HEIGHT + 0.12, PANEL,
+        collide=False)
+box("Elevator_Surround_Head", -14, -13.97, door_y0 - 0.12, door_y1 + 0.12, DOOR_HEIGHT,
+    DOOR_HEIGHT + 0.12, PANEL, collide=False)
+# Inside the car: the front wall around the doorway in the same steel, a call
+# panel beside the door and a lit floor indicator over it.
+for name, y0, y1 in (("South", car_y0, door_y0), ("North", door_y1, car_y1)):
+    box(f"Elevator_Front_{name}", car_x1 - 0.04, car_x1, y0, y1, 0, CAR_HEIGHT, PANEL,
+        collide=False)
+box("Elevator_Front_Head", car_x1 - 0.04, car_x1, door_y0, door_y1, DOOR_HEIGHT, CAR_HEIGHT,
+    PANEL, collide=False)
+box("Elevator_Panel", car_x1 - 0.5, car_x1 - 0.2, car_y1 - 0.025, car_y1, 1.0, 1.45, PANEL,
+    collide=False)
+for index, z in enumerate((1.12, 1.26)):
+    box(f"Elevator_Button_{index}", car_x1 - 0.37, car_x1 - 0.33, car_y1 - 0.035,
+        car_y1 - 0.025, z, z + 0.04, CAR_LIGHT, collide=False)
+box("Elevator_Indicator", car_x1 - 0.055, car_x1 - 0.04, -0.16, 0.16, DOOR_HEIGHT + 0.05,
+    DOOR_HEIGHT + 0.12, CAR_LIGHT, collide=False)
+# Two leaves inside the wall's thickness, meeting on the axis. Each slides its
+# own width into the wall beside it (src/environments/elevator.ts), where the
+# wall hides it; COL_Elevator_Doors holds the visitor in the car until then.
+middle = (door_y0 + door_y1) / 2
+for name, y0, y1 in (("South", door_y0, middle), ("North", middle, door_y1)):
+    box(f"Elevator_Door_{name}", -14.14, -14.06, y0, y1, 0, DOOR_HEIGHT, PANEL, collide=False)
+proxy = bpy.data.objects.new("COL_Elevator_Doors",
+                             box_mesh("COL_Elevator_Doors", (WALL, door_y1 - door_y0, DOOR_HEIGHT)))
+proxy.location = (-14 - WALL / 2, middle, DOOR_HEIGHT / 2)
+proxy.display_type = "WIRE"
+collections["Gallery_Collision"].objects.link(proxy)
 # Basement entrance in the right end wall: a hinged door, its frame, a sign,
 # and a statue. The door collider is a separate proxy the engine toggles.
 DOOR = material("Door_Basement", (0.05, 0.045, 0.04), 0.7)
@@ -486,7 +537,11 @@ def join(name, prefixes, collection):
 
 # COL_ proxies stay separate: the engine needs one box per collider.
 join("Gallery_Walls", ("Wall_", "Partition_", "Street_Facade_"), "Gallery_Render")
-join("Elevator_Arrival", ("Elevator_",), "Gallery_Render")
+# The leaves stay separate so they can slide; the rest of the car is one mesh.
+join("Elevator_Car", ("Elevator_Wall_", "Elevator_Floor", "Elevator_Ceiling",
+                      "Elevator_Handrail", "Elevator_Surround_", "Elevator_Front_",
+                      "Elevator_Panel", "Elevator_Button_", "Elevator_Indicator"),
+     "Gallery_Render")
 join("Lectern_Woodwork", ("Lectern_",), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")

@@ -1,8 +1,14 @@
 {
   "about": "Exhibition redesign plan for issue #86, accepted by the owner on 2026-11-26. Blender metres: +X east toward the basement, +Y north, +Z up; three.js position = (x, z, -y). Rectangles are [x0, x1, y0, y1] in plan. Wall rectangles include their thickness. Furniture envelopes are planning sizes, not measured models. Frame 'gaze' is the direction a visitor looks to see the frame, as in gallery_blockout.py marker().",
   "levels": {
-    "upstairs": { "floor_z": 0, "ceiling_z": 3.6 },
-    "basement": { "floor_z": -3.06, "ceiling_z": -0.26 }
+    "upstairs": {
+      "floor_z": 0,
+      "ceiling_z": 3.6
+    },
+    "basement": {
+      "floor_z": -3.06,
+      "ceiling_z": -0.26
+    }
   },
   "targets": {
     "main_route_width": 2.0,
@@ -19,11 +25,17 @@
     "rotate_z_deg": 0,
     "note": "The new east wall stays at x = 10, so the door, stairwell, room, props, lights, posters and radio emitter keep their current world positions."
   },
-  "spawn": { "id": "Spawn_Gallery", "at": [-12.5, 0], "gaze": "E" },
-  "elevator_cue": {
-    "id": "Elevator_Arrival",
-    "wall": "Wall_West",
-    "rect": [-14.05, -14.0, -0.9, 0.9]
+  "spawn": {
+    "id": "Spawn_Gallery",
+    "at": [-15.5, 0],
+    "gaze": "E"
+  },
+  "elevator": {
+    "car": [-16.2, -14.2, -1.0, 1.0],
+    "car_height": 2.6,
+    "doors": [-14.2, -14.0, -0.9, 0.9],
+    "door_height": 2.4,
+    "note": "Arrival car. Two leaves slide 0.9 m apart into the west wall once the walk starts; nothing else moves."
   },
   "lectern": {
     "id": "Lectern",
@@ -38,6 +50,12 @@
     "landing_clear": [8.0, 10.0, -1.0, 1.0]
   },
   "sections": [
+    {
+      "id": "elevator",
+      "level": "upstairs",
+      "rect": [-16.2, -14.2, -1.0, 1.0],
+      "frames": false
+    },
     {
       "id": "arrival",
       "level": "upstairs",
@@ -88,40 +106,166 @@
     }
   ],
   "walls": [
-    { "id": "Wall_West", "rect": [-14.2, -14.0, -9.2, 7.7] },
-    { "id": "Wall_North", "rect": [-14.2, 10.2, 7.5, 7.7] },
-    { "id": "Wall_East_North", "rect": [10.0, 10.2, 0.8, 7.7] },
-    { "id": "Wall_East_South", "rect": [10.0, 10.2, -2.2, -0.8] },
-    { "id": "Wall_Notch_North", "rect": [4.0, 10.2, -2.2, -2.0] },
-    { "id": "Wall_Notch_West", "rect": [4.0, 4.2, -9.2, -2.0] },
-    { "id": "Wall_South", "rect": [-14.2, 4.2, -9.2, -9.0] },
-    { "id": "Partition_Spine_West", "rect": [-14.0, -12.0, 2.0, 2.2] },
-    { "id": "Partition_Spine", "rect": [-10.0, 4.0, 2.0, 2.2] },
-    { "id": "Partition_South_West", "rect": [-14.0, -12.0, -2.2, -2.0] },
-    { "id": "Partition_South", "rect": [-10.0, 1.4, -2.2, -2.0] },
-    { "id": "Partition_South_East", "rect": [3.4, 4.0, -2.2, -2.0] },
-    { "id": "Partition_Studio_South", "rect": [-6.7, -6.5, 2.2, 4.5] },
-    { "id": "Partition_Studio_North", "rect": [-6.7, -6.5, 6.5, 7.5] },
-    { "id": "Partition_Living_South", "rect": [-3.1, -2.9, -9.0, -6.5] },
-    { "id": "Partition_Living_North", "rect": [-3.1, -2.9, -4.5, -2.2] },
-    { "id": "Stairwell_Wall_North", "rect": [10.2, 19.0, 0.8, 1.0] },
-    { "id": "Stairwell_Wall_South", "rect": [10.2, 19.0, -1.0, -0.8] },
-    { "id": "Room_Wall_North", "rect": [19.0, 27.2, 4.0, 4.2] },
-    { "id": "Room_Wall_South", "rect": [19.0, 27.2, -4.2, -4.0] },
-    { "id": "Room_Wall_East", "rect": [27.0, 27.2, -4.0, 4.0] },
-    { "id": "Room_Wall_West_North", "rect": [19.0, 19.2, 0.8, 4.0] },
-    { "id": "Room_Wall_West_South", "rect": [19.0, 19.2, -4.0, -0.8] }
+    {
+      "id": "Wall_West_South",
+      "rect": [-14.2, -14.0, -9.2, -0.9]
+    },
+    {
+      "id": "Wall_West_North",
+      "rect": [-14.2, -14.0, 0.9, 7.7]
+    },
+    {
+      "id": "Elevator_Wall_West",
+      "rect": [-16.3, -16.2, -1.1, 1.1]
+    },
+    {
+      "id": "Elevator_Wall_North",
+      "rect": [-16.3, -14.2, 1.0, 1.1]
+    },
+    {
+      "id": "Elevator_Wall_South",
+      "rect": [-16.3, -14.2, -1.1, -1.0]
+    },
+    {
+      "id": "Wall_North",
+      "rect": [-14.2, 10.2, 7.5, 7.7]
+    },
+    {
+      "id": "Wall_East_North",
+      "rect": [10.0, 10.2, 0.8, 7.7]
+    },
+    {
+      "id": "Wall_East_South",
+      "rect": [10.0, 10.2, -2.2, -0.8]
+    },
+    {
+      "id": "Wall_Notch_North",
+      "rect": [4.0, 10.2, -2.2, -2.0]
+    },
+    {
+      "id": "Wall_Notch_West",
+      "rect": [4.0, 4.2, -9.2, -2.0]
+    },
+    {
+      "id": "Wall_South",
+      "rect": [-14.2, 4.2, -9.2, -9.0]
+    },
+    {
+      "id": "Partition_Spine_West",
+      "rect": [-14.0, -12.0, 2.0, 2.2]
+    },
+    {
+      "id": "Partition_Spine",
+      "rect": [-10.0, 4.0, 2.0, 2.2]
+    },
+    {
+      "id": "Partition_South_West",
+      "rect": [-14.0, -12.0, -2.2, -2.0]
+    },
+    {
+      "id": "Partition_South",
+      "rect": [-10.0, 1.4, -2.2, -2.0]
+    },
+    {
+      "id": "Partition_South_East",
+      "rect": [3.4, 4.0, -2.2, -2.0]
+    },
+    {
+      "id": "Partition_Studio_South",
+      "rect": [-6.7, -6.5, 2.2, 4.5]
+    },
+    {
+      "id": "Partition_Studio_North",
+      "rect": [-6.7, -6.5, 6.5, 7.5]
+    },
+    {
+      "id": "Partition_Living_South",
+      "rect": [-3.1, -2.9, -9.0, -6.5]
+    },
+    {
+      "id": "Partition_Living_North",
+      "rect": [-3.1, -2.9, -4.5, -2.2]
+    },
+    {
+      "id": "Stairwell_Wall_North",
+      "rect": [10.2, 19.0, 0.8, 1.0]
+    },
+    {
+      "id": "Stairwell_Wall_South",
+      "rect": [10.2, 19.0, -1.0, -0.8]
+    },
+    {
+      "id": "Room_Wall_North",
+      "rect": [19.0, 27.2, 4.0, 4.2]
+    },
+    {
+      "id": "Room_Wall_South",
+      "rect": [19.0, 27.2, -4.2, -4.0]
+    },
+    {
+      "id": "Room_Wall_East",
+      "rect": [27.0, 27.2, -4.0, 4.0]
+    },
+    {
+      "id": "Room_Wall_West_North",
+      "rect": [19.0, 19.2, 0.8, 4.0]
+    },
+    {
+      "id": "Room_Wall_West_South",
+      "rect": [19.0, 19.2, -4.0, -0.8]
+    }
   ],
   "openings": [
-    { "id": "Studio_Door", "rect": [-12.0, -10.0, 2.0, 2.2], "width": 2.0 },
-    { "id": "Living_Door", "rect": [-12.0, -10.0, -2.2, -2.0], "width": 2.0 },
-    { "id": "Theater_Door", "rect": [1.4, 3.4, -2.2, -2.0], "width": 2.0 },
-    { "id": "Studio_Street", "rect": [-6.7, -6.5, 4.5, 6.5], "width": 2.0 },
-    { "id": "Living_Theater", "rect": [-3.1, -2.9, -6.5, -4.5], "width": 2.0 },
-    { "id": "Reading_West_End", "rect": [-8.0, -8.0, -2.0, 2.0], "width": 4.0 },
-    { "id": "Reading_East_End", "rect": [4.0, 4.0, -2.0, 2.0], "width": 4.0 },
-    { "id": "Street_East_End", "rect": [4.0, 4.0, 2.2, 7.5], "width": 5.3 },
-    { "id": "Basement_Door", "rect": [10.0, 10.2, -0.8, 0.8], "width": 1.6 }
+    {
+      "id": "Elevator_Doors",
+      "rect": [-14.2, -14.0, -0.9, 0.9],
+      "width": 1.8
+    },
+    {
+      "id": "Studio_Door",
+      "rect": [-12.0, -10.0, 2.0, 2.2],
+      "width": 2.0
+    },
+    {
+      "id": "Living_Door",
+      "rect": [-12.0, -10.0, -2.2, -2.0],
+      "width": 2.0
+    },
+    {
+      "id": "Theater_Door",
+      "rect": [1.4, 3.4, -2.2, -2.0],
+      "width": 2.0
+    },
+    {
+      "id": "Studio_Street",
+      "rect": [-6.7, -6.5, 4.5, 6.5],
+      "width": 2.0
+    },
+    {
+      "id": "Living_Theater",
+      "rect": [-3.1, -2.9, -6.5, -4.5],
+      "width": 2.0
+    },
+    {
+      "id": "Reading_West_End",
+      "rect": [-8.0, -8.0, -2.0, 2.0],
+      "width": 4.0
+    },
+    {
+      "id": "Reading_East_End",
+      "rect": [4.0, 4.0, -2.0, 2.0],
+      "width": 4.0
+    },
+    {
+      "id": "Street_East_End",
+      "rect": [4.0, 4.0, 2.2, 7.5],
+      "width": 5.3
+    },
+    {
+      "id": "Basement_Door",
+      "rect": [10.0, 10.2, -0.8, 0.8],
+      "width": 1.6
+    }
   ],
   "furniture": [
     {
@@ -295,7 +439,7 @@
       "section": "studio",
       "at": [-13.98, 4.0],
       "gaze": "W",
-      "wall": "Wall_West"
+      "wall": "Wall_West_North"
     },
     {
       "slot": "Exhibit_02",
@@ -358,7 +502,7 @@
       "section": "living",
       "at": [-13.98, -4.0],
       "gaze": "W",
-      "wall": "Wall_West"
+      "wall": "Wall_West_South"
     },
     {
       "slot": "Exhibit_11",
@@ -419,17 +563,47 @@
   ],
   "routes": [
     {
+      "id": "Elevator",
+      "kind": "secondary",
+      "rect": [-16.2, -12.5, -0.8, 0.8],
+      "note": "out of the arrival car once its doors open"
+    },
+    {
       "id": "Axis",
       "kind": "main",
       "rect": [-13.0, 10.0, -0.6, 1.4],
       "note": "arrival, reading area and rear landing"
     },
-    { "id": "Studio_Link", "kind": "main", "rect": [-12.0, -10.0, -0.6, 4.2] },
-    { "id": "Studio_South", "kind": "main", "rect": [-12.5, -6.7, 2.2, 4.2] },
-    { "id": "Studio_East", "kind": "main", "rect": [-8.7, -6.7, 2.2, 6.5] },
-    { "id": "Studio_Street", "kind": "main", "rect": [-8.7, -6.5, 4.5, 6.5] },
-    { "id": "Street", "kind": "main", "rect": [-6.5, 10.0, 3.6, 5.6] },
-    { "id": "Rear", "kind": "main", "rect": [8.0, 10.0, -0.6, 5.6] },
+    {
+      "id": "Studio_Link",
+      "kind": "main",
+      "rect": [-12.0, -10.0, -0.6, 4.2]
+    },
+    {
+      "id": "Studio_South",
+      "kind": "main",
+      "rect": [-12.5, -6.7, 2.2, 4.2]
+    },
+    {
+      "id": "Studio_East",
+      "kind": "main",
+      "rect": [-8.7, -6.7, 2.2, 6.5]
+    },
+    {
+      "id": "Studio_Street",
+      "kind": "main",
+      "rect": [-8.7, -6.5, 4.5, 6.5]
+    },
+    {
+      "id": "Street",
+      "kind": "main",
+      "rect": [-6.5, 10.0, 3.6, 5.6]
+    },
+    {
+      "id": "Rear",
+      "kind": "main",
+      "rect": [8.0, 10.0, -0.6, 5.6]
+    },
     {
       "id": "Living_Link",
       "kind": "secondary",
