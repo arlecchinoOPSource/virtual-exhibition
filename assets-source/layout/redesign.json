@@ -179,6 +179,14 @@
       "rect": [-6.7, -6.5, 6.5, 7.5]
     },
     {
+      "id": "Partition_Street_Rear_South",
+      "rect": [4.0, 4.2, 2.2, 3.6]
+    },
+    {
+      "id": "Partition_Street_Rear_North",
+      "rect": [4.0, 4.2, 5.6, 7.1]
+    },
+    {
       "id": "Partition_Living_South",
       "rect": [-3.1, -2.9, -9.0, -6.5]
     },
@@ -257,9 +265,9 @@
       "width": 4.0
     },
     {
-      "id": "Street_East_End",
-      "rect": [4.0, 4.0, 2.2, 7.5],
-      "width": 5.3
+      "id": "Street_Rear",
+      "rect": [4.0, 4.2, 3.6, 5.6],
+      "width": 2.0
     },
     {
       "id": "Basement_Door",
@@ -324,7 +332,7 @@
     {
       "id": "Street_House",
       "section": "rear",
-      "rect": [4.0, 8.0, 6.75, 7.1],
+      "rect": [4.2, 8.0, 6.75, 7.1],
       "note": "original two-storey house front behind the truck (#95)"
     },
     {
@@ -653,7 +661,8 @@
     {
       "id": "Street",
       "kind": "main",
-      "rect": [-6.5, 10.0, 3.6, 5.6]
+      "rect": [-6.5, 10.0, 3.6, 5.6],
+      "note": "through the Street_Rear door when open"
     },
     {
       "id": "Rear",

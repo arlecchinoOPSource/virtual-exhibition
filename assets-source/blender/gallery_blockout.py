@@ -261,7 +261,7 @@ bx0, bx1, by0, by1 = PLAN["basement_door"]["opening"]
 box("Wall_Notch_Lintel", bx0, bx1, by0, by1, 2.4, HEIGHT, WALLS)
 box("Wall_West_Lintel", -14 - WALL, -14, door_y0, door_y1, DOOR_HEIGHT, HEIGHT, WALLS)
 
-# Trim the five enclosed room passages using the measured opening rectangles.
+# Trim the enclosed room passages using the measured opening rectangles.
 # The wide, unwalled room transitions and the two working doors need no casing.
 CASING = material("Gallery portal dark walnut", (0.13, 0.073, 0.038), 0.52)
 DOOR = material("Door_Basement", (0.05, 0.045, 0.04), 0.7)
@@ -274,6 +274,7 @@ ROOM_DOORS = {
     "Living_Door": -1,
     "Theater_Door": 1,
     "Studio_Street": 1,
+    "Street_Rear": -1,
     "Living_Theater": 1,
 }
 HEAD = 2.55
@@ -497,6 +498,9 @@ for index, (x0, x1, y0, y1, z0) in enumerate((
     (-10.0, 1.4, -2.0, -1.99, 0),  # south partition, west of the theater door
     (3.4, 4.0, -2.0, -1.99, 0),    # south partition, east of the theater door
     (1.4, 3.4, -2.0, -1.99, HEADER_TOP),
+    (4.2, 4.21, 2.2, 3.6, 0),     # rear landing face of the street partition
+    (4.2, 4.21, 3.6, 5.6, HEADER_TOP),
+    (4.2, 4.21, 5.6, 7.1, 0),
 )):
     box(f"Reading_Terracotta_{index:02}", x0, x1, y0, y1, z0, HEIGHT, TERRACOTTA, collide=False)
 

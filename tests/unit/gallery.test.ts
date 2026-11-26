@@ -51,17 +51,19 @@ const gazes: Record<string, [number, number]> = {
   E: [1, 0],
   W: [-1, 0],
 };
+const roomDoors = [
+  'Studio_Door',
+  'Living_Door',
+  'Theater_Door',
+  'Studio_Street',
+  'Living_Theater',
+  'Street_Rear',
+];
 
 describe('gallery blockout', () => {
   it('starts both leaves closed and opens or closes each passage from either handle', async () => {
     const world = await loadWorld();
-    for (const id of [
-      'Studio_Door',
-      'Living_Door',
-      'Theater_Door',
-      'Studio_Street',
-      'Living_Theater',
-    ]) {
+    for (const id of roomDoors) {
       const [x0, x1, y0, y1] = plan.openings.find(
         (opening) => opening.id === id,
       )!.rect;
@@ -133,21 +135,13 @@ describe('gallery blockout', () => {
     world.dispose();
   });
 
-  it('keeps the walnut jamb faces proud of the wall ends at all five openings', async () => {
+  it('keeps the walnut jamb faces proud of the wall ends at each room opening', async () => {
     const model = await parseModel('gallery');
     model.updateMatrixWorld(true);
     const casing = model.getObjectByName('Gallery_Door_Casing')!;
     const walls = model.getObjectByName('Gallery_Walls')!;
-    const openings = plan.openings.filter(({ id }) =>
-      [
-        'Studio_Door',
-        'Living_Door',
-        'Theater_Door',
-        'Studio_Street',
-        'Living_Theater',
-      ].includes(id),
-    );
-    expect(openings).toHaveLength(5);
+    const openings = plan.openings.filter(({ id }) => roomDoors.includes(id));
+    expect(openings).toHaveLength(roomDoors.length);
     for (const {
       id,
       rect: [x0, x1, y0, y1],
@@ -185,6 +179,7 @@ describe('gallery blockout', () => {
       ['Theater_Door', 'Theater_Burgundy', 'Reading_Terracotta'],
       ['Studio_Street', 'Studio_Bamboo', 'Gallery_Walls'],
       ['Living_Theater', 'Living_Teal', 'Theater_Burgundy'],
+      ['Street_Rear', 'Gallery_Walls', 'Reading_Terracotta'],
     ] as const;
 
     const endWall = new Raycaster(
@@ -824,7 +819,7 @@ describe('gallery export budget', () => {
     // street (#95) fits within the same cap: its props join into one draw and
     // the truck's glass shares Prop_Glass.
     // The casings share one draw, while each moving leaf and its pull have two.
-    expect(drawCalls).toBeLessThanOrEqual(88);
+    expect(drawCalls).toBeLessThanOrEqual(92);
     world.dispose();
   });
 
