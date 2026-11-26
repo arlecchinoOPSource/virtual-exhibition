@@ -655,7 +655,8 @@ describe('gallery export budget', () => {
     // for the theater (#94): its joined props and its burgundy paint. The
     // street (#95) fits within the same cap: its props join into one draw and
     // the truck's glass shares Prop_Glass.
-    expect(drawCalls).toBeLessThanOrEqual(67);
+    // The five room casings share one additional draw.
+    expect(drawCalls).toBeLessThanOrEqual(68);
     world.dispose();
   });
 

@@ -260,6 +260,35 @@ bx0, bx1, by0, by1 = PLAN["basement_door"]["opening"]
 box("Wall_Notch_Lintel", bx0, bx1, by0, by1, 2.4, HEIGHT, WALLS)
 box("Wall_West_Lintel", -14 - WALL, -14, door_y0, door_y1, DOOR_HEIGHT, HEIGHT, WALLS)
 
+# Trim the five enclosed room passages using the measured opening rectangles.
+# The wide, unwalled room transitions and the two working doors need no casing.
+CASING = material("Gallery portal dark walnut", (0.13, 0.073, 0.038), 0.52)
+ROOM_DOORS = {"Studio_Door", "Living_Door", "Theater_Door", "Studio_Street", "Living_Theater"}
+HEAD = 2.55
+for opening in PLAN["openings"]:
+    name = opening["id"]
+    if name not in ROOM_DOORS:
+        continue
+    x0, x1, y0, y1 = opening["rect"]
+    along_x = (x1 - x0) > (y1 - y0)
+    low, high, depth0, depth1 = (x0, x1, y0, y1) if along_x else (y0, y1, x0, x1)
+
+    def door_part(label, a, b, d0, d1, bottom, top, mat):
+        rect = (a, b, d0, d1) if along_x else (d0, d1, a, b)
+        obj = box(label, *rect, bottom, top, mat, collide=False)
+        if mat == CASING:
+            soften(obj, 0.006)
+
+    # Jambs overlap the wall faces, leaving the planned opening width clear.
+    door_part(f"Portal_Trim_{name}_Left", low - 0.085, low,
+              depth0 - 0.037, depth1 + 0.037, 0, HEAD, CASING)
+    door_part(f"Portal_Trim_{name}_Right", high, high + 0.085,
+              depth0 - 0.037, depth1 + 0.037, 0, HEAD, CASING)
+    door_part(f"Portal_Trim_{name}_Head", low - 0.085, high + 0.085,
+              depth0 - 0.037, depth1 + 0.037, HEAD, HEAD + 0.10, CASING)
+    door_part(f"Wall_Portal_{name}_Infill", low, high,
+              depth0, depth1, HEAD + 0.10, HEIGHT, WALLS)
+
 box("Elevator_Floor", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, -WALL, 0, CAR_FLOOR)
 box("Elevator_Ceiling", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, CAR_HEIGHT,
     CAR_HEIGHT + 0.1, CAR_LIGHT, collide=False)
@@ -942,6 +971,7 @@ join("Elevator_Car", ("Elevator_Wall_", "Elevator_Floor", "Elevator_Ceiling",
                       "Elevator_Panel", "Elevator_Button_", "Elevator_Indicator"),
      "Gallery_Render")
 join("Lectern_Woodwork", ("Lectern_",), "Gallery_Render")
+join("Gallery_Door_Casing", ("Portal_Trim_",), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
 
