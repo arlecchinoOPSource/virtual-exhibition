@@ -27,7 +27,7 @@ const BASEMENT_FLOOR = -3.06;
 // Plan points in Blender (x, y). Upstairs legs stay at floor level. The
 // basement legs are written in the basement's original frame (stairs running
 // east from x 12 to 18) and placed by the plan's basement_transform.
-type Leg = [label: string, x: number, y: number];
+type Leg = [label: string, x: number, y: number, openDoor?: string];
 const { basement_transform: place } = JSON.parse(
   readFileSync('assets-source/layout/redesign.json', 'utf8'),
 ) as { basement_transform: { translate: number[]; rotate_z_deg: number } };
@@ -49,7 +49,7 @@ const northLoop: Leg[] = [
   ['studio south side', -8.0, 3.6],
   ['studio north-east corner', -7.0, 7.2],
   ['studio south-east corner', -7.0, 2.5],
-  ['studio to street opening', -7.6, 5.5],
+  ['studio to street opening', -7.6, 5.5, 'Studio_Street'],
   ['street west end', -6.0, 5.5],
   ['under Exhibit_04, on the sidewalk', -3.5, 6.4],
   ['under Exhibit_05, on the sidewalk', 1.5, 6.4],
@@ -101,7 +101,7 @@ const reading: Leg[] = [
   ['catalogue end of the band', -12.5, 0],
 ];
 const southLoop: Leg[] = [
-  ['living door', -11, 0],
+  ['living door', -11, 0, 'Living_Door'],
   ['living door', -11, -3],
   ['past the open living room doors', -11, -3.45],
   ['around the living room door leaf', -13, -3.45],
@@ -121,7 +121,7 @@ const southLoop: Leg[] = [
   ['under Exhibit_11', -5.5, -7.9],
   ['living south-east corner', -3.4, -8.7],
   ['living north-east corner', -3.4, -2.5],
-  ['living to theater opening', -3.4, -5.5],
+  ['living to theater opening', -3.6, -5.5, 'Living_Theater'],
   ['theater west side', -2.3, -5.5],
   ['theater aisle, clear of the open door and bench', 0.5, -5.5],
   ['past the theater benches', 0.5, -8.3],
@@ -133,10 +133,10 @@ const southLoop: Leg[] = [
   ['under Exhibit_14', 3.4, -5.6],
   ['theater north-east, beside the flower pot', 3.1, -2.5],
   ['theater north-west, below the window', -2.6, -2.75],
-  ['theater door', 2.4, -2.5],
+  ['theater door', 2.4, -2.65, 'Theater_Door'],
   ['reading area from the theater', 2.4, 0],
   ['catalogue end of the band', -12.5, 0],
-  ['studio door', -11, 0],
+  ['studio door', -11, 0, 'Studio_Door'],
   ['studio door', -11, 3.2],
   ['beside the elevator', -13.0, 4.05],
   ['back into the elevator', -15.5, 4.05],
@@ -158,7 +158,7 @@ describe('walking the accepted layout', () => {
 
     // Steers straight at each point; the leg fails if the visitor is stuck.
     const walk = (legs: Leg[]) => {
-      for (const [label, x, y] of legs) {
+      for (const [label, x, y, openDoor] of legs) {
         const target = new Vector3(x, 0, -y);
         let frames = 0;
         for (; frames < FPS * 20; frames++) {
@@ -185,6 +185,15 @@ describe('walking the accepted layout', () => {
         for (let i = 0; i < FPS / 4; i++)
           stepBody(body, 0, 0, 1 / FPS, world.solids);
         expect(body.grounded, label).toBe(true);
+        if (openDoor) {
+          const leaf = world.scene.getObjectByName(
+            `Room_Door_${openDoor}_Left_Leaf`,
+          );
+          const action = world.actionAt(leaf, body.feet);
+          expect(action?.label, label).toBe('E / Click · Open the doors');
+          action?.run();
+          world.update(0.8);
+        }
       }
     };
 

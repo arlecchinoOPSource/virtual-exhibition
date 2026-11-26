@@ -79,8 +79,8 @@ export function createDoor(
   };
 }
 
-// The exported leaves start open. The jamb pivots rotate in opposite
-// directions and share one interaction, so the pair always moves together.
+// The exported open pose is the pivot reference. Start play with the leaves
+// closed and keep both jamb pivots and their colliders in sync.
 export function createRoomDoor(
   hinges: Object3D[],
   colliders: ReadonlyMap<string, Box3>,
@@ -99,8 +99,7 @@ export function createRoomDoor(
     hinge.rotation.y = angle;
     hinge.updateMatrixWorld(true);
     const closed = new Box3().setFromObject(proxy);
-    hinge.rotation.y = 0;
-    hinge.updateMatrixWorld(true);
+    solid.copy(closed);
     sweep.union(open).union(closed);
     return { hinge, angle, solid, open, closed };
   });
@@ -112,8 +111,8 @@ export function createRoomDoor(
   const blocked = (feet: Vector3) =>
     clearance.containsPoint(probe.copy(feet).setY(feet.y + 1));
 
-  let position = 0;
-  let target = 0;
+  let position = 1;
+  let target = 1;
   return {
     label(feet: Vector3) {
       if (position !== target) return '';

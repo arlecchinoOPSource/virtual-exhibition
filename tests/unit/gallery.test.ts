@@ -53,7 +53,7 @@ const gazes: Record<string, [number, number]> = {
 };
 
 describe('gallery blockout', () => {
-  it('swings both leaves from either handle and clears or blocks each passage', async () => {
+  it('starts both leaves closed and opens or closes each passage from either handle', async () => {
     const world = await loadWorld();
     for (const id of [
       'Studio_Door',
@@ -79,15 +79,8 @@ describe('gallery blockout', () => {
       expect(inDoorway.label).toBe('Step back to clear the doors');
       inDoorway.run();
       world.update(1);
-      expect(left.rotation.y).toBe(0);
-
-      const close = world.actionAt(leftPull, feet)!;
-      expect(close.label).toContain('Close the doors');
-      close.run();
-      world.update(0.4);
-      expect(Math.abs(left.rotation.y)).toBeCloseTo(Math.PI / 4);
+      expect(Math.abs(left.rotation.y)).toBeCloseTo(Math.PI / 2);
       expect(left.rotation.y).toBeCloseTo(-right.rotation.y);
-      world.update(0.4);
       world.scene.updateMatrixWorld(true);
       const leftLeaf = left.getObjectByName(`${left.name}_Leaf`)!;
       const leftBounds = new Box3().setFromObject(leftLeaf);
@@ -118,13 +111,24 @@ describe('gallery blockout', () => {
       const open = world.actionAt(rightLeaf, feet)!;
       expect(open.label).toContain('Open the doors');
       open.run();
-      world.update(1);
+      world.update(0.4);
+      expect(Math.abs(left.rotation.y)).toBeCloseTo(Math.PI / 4);
+      expect(left.rotation.y).toBeCloseTo(-right.rotation.y);
+      world.update(0.4);
       expect(left.rotation.y).toBeCloseTo(0);
       expect(right.rotation.y).toBeCloseTo(0);
       walk();
       expect(body.feet.clone().sub(center).dot(toward), id).toBeGreaterThan(
         0.5,
       );
+      const close = world.actionAt(leftPull, feet)!;
+      expect(close.label).toContain('Close the doors');
+      close.run();
+      world.update(1);
+      expect(Math.abs(left.rotation.y)).toBeCloseTo(Math.PI / 2);
+      body.feet.copy(center).addScaledVector(toward, -0.5);
+      walk();
+      expect(body.feet.clone().sub(center).dot(toward), id).toBeLessThan(-0.2);
     }
     world.dispose();
   });
