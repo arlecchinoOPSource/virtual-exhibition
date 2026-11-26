@@ -171,10 +171,7 @@ describe('basement room', () => {
     world.scene.traverse((node) => {
       if (node instanceof PointLight) galleryPoints.push(node.name);
     });
-    expect(galleryPoints.sort()).toEqual([
-      'Light_Entrance_Torch_1',
-      'Light_Entrance_Torch_2',
-    ]);
+    expect(galleryPoints).toEqual(['Light_Entrance_Torch']);
     expect(lights.sort()).toEqual([
       'Light_Basement_Bulb_Room',
       'Light_Basement_Bulb_Stairs',

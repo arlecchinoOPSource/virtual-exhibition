@@ -818,20 +818,19 @@ for label, y0, y1, bottom in (
 box("Entrance_Charcoal_Ceiling", 4.0, 10.0, -2.0, 2.0, HEIGHT - 0.012,
     HEIGHT, ALCOVE, collide=False)
 
-# Two wrought-iron wall torches on the north jamb, opposite the statue.
+# A wrought-iron wall torch on the north jamb, opposite the statue.
 torch_metal, torch_flames = Sculpture(), Sculpture()
-for index, y in enumerate((1.19, 1.67), start=1):
-    x, z = 9.79, 1.92
-    torch_metal.tube([(9.985, y, 1.585), (9.89, y, 1.60), (x, y, 1.75),
-                      (x, y, z)], [0.035, 0.020, 0.022, 0.033], 8)
-    torch_metal.tube([(x, y, z - 0.04), (x, y, z + 0.03)],
-                     [0.037, 0.069], 10)
-    torch_flames.tube([(x, y, z + 0.015), (x - 0.006, y, z + 0.095),
-                       (x + 0.012, y - 0.016, z + 0.17),
-                       (x + 0.028, y - 0.028, z + 0.24)],
-                      [0.039, 0.049, 0.025, 0.002], 9, pleats=3)
-    point_light(f"Light_Entrance_Torch_{index}", x - 0.10, y, z + 0.12, 1.35,
-                (1.0, 0.43, 0.14), collection="Gallery_Lights", reach=2.2)
+x, y, z = 9.79, 1.19, 1.92
+torch_metal.tube([(9.985, y, 1.585), (9.89, y, 1.60), (x, y, 1.75),
+                  (x, y, z)], [0.035, 0.020, 0.022, 0.033], 8)
+torch_metal.tube([(x, y, z - 0.04), (x, y, z + 0.03)],
+                 [0.037, 0.069], 10)
+torch_flames.tube([(x, y, z + 0.015), (x - 0.006, y, z + 0.095),
+                   (x + 0.012, y - 0.016, z + 0.17),
+                   (x + 0.028, y - 0.028, z + 0.24)],
+                  [0.039, 0.049, 0.025, 0.002], 9, pleats=3)
+point_light("Light_Entrance_Torch", x - 0.10, y, z + 0.12, 1.35,
+            (1.0, 0.43, 0.14), collection="Gallery_Lights", reach=2.2)
 torch_metal.object("Entrance_Torch_Brackets", IRON, collections["Gallery_Render"])
 torch_flames.object("Entrance_Torch_Flames", glow("Torch fire", (1.0, 0.31, 0.055), 4.0),
                     collections["Gallery_Render"])

@@ -12,6 +12,7 @@ import {
 import type { BufferGeometry, Material, Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { hangExhibits } from '../exhibition/displays';
+import { shadeEntrance } from './entrance-shadow';
 import { createDoor, createRoomDoor } from './door';
 import { createElevator } from './elevator';
 import { paintExhibit } from '../exhibition/placeholder';
@@ -294,6 +295,7 @@ export async function loadGallery(exhibits: readonly Exhibit[]) {
     },
   );
   const displays = hangExhibits(world.anchors, upstairs, paintExhibit);
+  shadeEntrance(world.scene);
   return {
     ...world,
     exhibitAt: (object: Object3D | undefined) =>
