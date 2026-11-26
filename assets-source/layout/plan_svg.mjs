@@ -7,7 +7,7 @@ const plan = JSON.parse(
   readFileSync(new URL('./redesign.json', import.meta.url), 'utf8'),
 );
 const S = 40; // pixels per metre
-const [X0, X1, Y0, Y1] = [-17.5, 12.5, -20, 9];
+const [X0, X1, Y0, Y1] = [-17.5, 29, -10, 9];
 const W = (X1 - X0) * S;
 const H = (Y1 - Y0) * S + 120;
 const px = (x) => ((x - X0) * S).toFixed(1);
@@ -154,7 +154,7 @@ out.push(text(-8.7, -1.45, 'Catalogue', 'class="note"'));
 // stairwell, away from the gallery side.
 const [hx, hy] = plan.basement_door.hinge;
 const [ox0, ox1, oy0, oy1] = plan.basement_door.opening;
-const [lx0, ly0, lx1, ly1] = plan.basement_door.landing_clear;
+const [lx0, lx1, ly0, ly1] = plan.basement_door.landing_clear;
 const closed =
   ox1 - ox0 > oy1 - oy0
     ? [Math.abs(hx - ox0) < 0.01 ? ox1 : ox0, hy]
@@ -171,7 +171,7 @@ const sweep = v1[0] * v2[1] - v1[1] * v2[0] > 0 ? 1 : 0;
 out.push(
   `<path d="M${px(hx)},${py(hy)} L${px(closed[0])},${py(closed[1])} A${1.6 * S},${1.6 * S} 0 0 ${sweep} ${px(swung[0])},${py(swung[1])}" fill="none" stroke="#b23" stroke-width="1.2"/>`,
 );
-out.push(text(8.3, -6.0, 'Stairs down, south (1.6 m)', 'class="note"'));
+out.push(text(12.0, 1.25, 'Stairs down, east (1.6 m)', 'class="note"'));
 for (const s of plan.sections) {
   const [x0, x1, , y1] = s.rect;
   out.push(
@@ -194,9 +194,9 @@ for (const s of plan.sections) {
 }
 out.push(
   text(
-    7.0,
-    -19.7,
-    'Basement, floor z −3.06 m, turned a quarter turn to run south',
+    bcx,
+    by0 - 0.7,
+    'Basement floor z −3.06 m',
     'class="note" text-anchor="middle"',
   ),
 );

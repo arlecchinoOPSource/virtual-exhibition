@@ -1,5 +1,5 @@
 {
-  "about": "Exhibition redesign plan for issue #86, accepted by the owner on 2026-11-26 and revised the same day: the arrival elevator opens into the studio and the basement door into the cut-away corner. Blender metres: +X east toward the basement, +Y north, +Z up; three.js position = (x, z, -y). Rectangles are [x0, x1, y0, y1] in plan. Wall rectangles include their thickness. Furniture envelopes are planning sizes, not measured models. Frame 'gaze' is the direction a visitor looks to see the frame, as in gallery_blockout.py marker().",
+  "about": "Exhibition redesign plan for issue #86, accepted by the owner on 2026-11-26 and revised to place the basement door in the east wall of the rear landing. Blender metres: +X east toward the basement, +Y north, +Z up; three.js position = (x, z, -y). Rectangles are [x0, x1, y0, y1] in plan. Wall rectangles include their thickness. Furniture envelopes are planning sizes, not measured models. Frame 'gaze' is the direction a visitor looks to see the frame, as in gallery_blockout.py marker().",
   "levels": {
     "upstairs": {
       "floor_z": 0,
@@ -21,9 +21,9 @@
     "frame_centre_height": 1.5
   },
   "basement_transform": {
-    "translate": [7.0, 8.0, 0],
-    "rotate_z_deg": -90,
-    "note": "The basement and its entrance (door, frame, sign, statue) are built in their original frame, door at x = 10 with the stairs running east, then turned a quarter turn clockwise about the origin and moved: new (x, y) = (y + 7, 8 - x). The door now opens south from the rear landing through the cut-away corner's north wall."
+    "translate": [0.0, 0.0, 0],
+    "rotate_z_deg": 0,
+    "note": "The basement keeps its authored orientation: the door in the gallery's east wall opens to a stairwell and room extending east."
   },
   "spawn": {
     "id": "Spawn_Gallery",
@@ -44,10 +44,10 @@
     "gaze": "S"
   },
   "basement_door": {
-    "hinge": [7.8, -2.1],
-    "opening": [6.2, 7.8, -2.2, -2.0],
-    "swing": "outward into the stairwell, south; the gallery side never sweeps",
-    "landing_clear": [6.0, 8.0, -2.0, 0.0]
+    "hinge": [10.1, 0.8],
+    "opening": [10.0, 10.2, -0.8, 0.8],
+    "swing": "outward into the stairwell, east",
+    "landing_clear": [8.0, 10.0, -0.8, 0.8]
   },
   "sections": [
     {
@@ -101,7 +101,7 @@
     {
       "id": "basement",
       "level": "basement",
-      "rect": [3.0, 11.0, -19.0, -11.2],
+      "rect": [19.2, 27.0, -4.0, 4.0],
       "frames": true
     }
   ],
@@ -131,16 +131,16 @@
       "rect": [-14.2, 10.2, 7.5, 7.7]
     },
     {
-      "id": "Wall_East",
-      "rect": [10.0, 10.2, -2.2, 7.7]
+      "id": "Wall_East_South",
+      "rect": [10.0, 10.2, -2.2, -0.8]
     },
     {
-      "id": "Wall_Notch_North_West",
-      "rect": [4.0, 6.2, -2.2, -2.0]
+      "id": "Wall_East_North",
+      "rect": [10.0, 10.2, 0.8, 7.7]
     },
     {
-      "id": "Wall_Notch_North_East",
-      "rect": [7.8, 10.2, -2.2, -2.0]
+      "id": "Wall_Notch_North",
+      "rect": [4.2, 10.0, -2.2, -2.0]
     },
     {
       "id": "Wall_Notch_West",
@@ -196,31 +196,31 @@
     },
     {
       "id": "Stairwell_Wall_North",
-      "rect": [7.8, 8.0, -11.0, -2.2]
+      "rect": [10.2, 19.0, 0.8, 1.0]
     },
     {
       "id": "Stairwell_Wall_South",
-      "rect": [6.0, 6.2, -11.0, -2.2]
+      "rect": [10.2, 19.0, -1.0, -0.8]
     },
     {
       "id": "Room_Wall_North",
-      "rect": [11.0, 11.2, -19.2, -11.0]
+      "rect": [19.0, 27.2, 4.0, 4.2]
     },
     {
       "id": "Room_Wall_South",
-      "rect": [2.8, 3.0, -19.2, -11.0]
+      "rect": [19.0, 27.2, -4.2, -4.0]
     },
     {
       "id": "Room_Wall_East",
-      "rect": [3.0, 11.0, -19.2, -19.0]
+      "rect": [27.0, 27.2, -4.0, 4.0]
     },
     {
       "id": "Room_Wall_West_North",
-      "rect": [7.8, 11.0, -11.2, -11.0]
+      "rect": [19.0, 19.2, 0.8, 4.0]
     },
     {
       "id": "Room_Wall_West_South",
-      "rect": [3.0, 6.2, -11.2, -11.0]
+      "rect": [19.0, 19.2, -4.0, -0.8]
     }
   ],
   "openings": [
@@ -271,7 +271,7 @@
     },
     {
       "id": "Basement_Door",
-      "rect": [6.2, 7.8, -2.2, -2.0],
+      "rect": [10.0, 10.2, -0.8, 0.8],
       "width": 1.6
     }
   ],
@@ -449,25 +449,25 @@
     {
       "id": "Entrance_Statue",
       "section": "rear",
-      "rect": [5.15, 5.85, -1.85, -1.15],
+      "rect": [9.15, 9.85, -1.85, -1.15],
       "note": "existing"
     },
     {
       "id": "Basement_Throne",
       "section": "basement",
-      "rect": [6.38, 7.62, -18.65, -17.85],
+      "rect": [25.85, 26.65, -0.62, 0.62],
       "note": "existing"
     },
     {
       "id": "Basement_Candle_Stand",
       "section": "basement",
-      "rect": [9.3, 9.9, -17.1, -16.5],
+      "rect": [24.5, 25.1, 2.3, 2.9],
       "note": "existing"
     },
     {
       "id": "Basement_Radio",
       "section": "basement",
-      "rect": [3.12, 3.52, -18.86, -18.34],
+      "rect": [26.34, 26.86, -3.88, -3.48],
       "note": "existing"
     }
   ],
@@ -475,19 +475,19 @@
     {
       "id": "Poster_Kittelsen_Lur",
       "wall": "Room_Wall_North",
-      "span": [-15.18, -13.42],
+      "span": [21.42, 23.18],
       "note": "existing poster; not a frame slot"
     },
     {
       "id": "Poster_Dore_Pale_Horse",
       "wall": "Room_Wall_South",
-      "span": [-16.11, -14.69],
+      "span": [22.69, 24.11],
       "note": "existing poster; not a frame slot"
     },
     {
       "id": "Graffiti_Black_Metal",
       "wall": "Room_Wall_East",
-      "span": [3.7, 6.0],
+      "span": [-3.3, -1.0],
       "note": "existing"
     }
   ],
@@ -600,22 +600,22 @@
     {
       "slot": "Exhibit_16",
       "section": "basement",
-      "at": [10.98, -12.3],
-      "gaze": "E",
+      "at": [20.3, 3.98],
+      "gaze": "N",
       "wall": "Room_Wall_North"
     },
     {
       "slot": "Exhibit_17",
       "section": "basement",
-      "at": [10.98, -18.1],
-      "gaze": "E",
+      "at": [26.1, 3.98],
+      "gaze": "N",
       "wall": "Room_Wall_North"
     },
     {
       "slot": "Exhibit_18",
       "section": "basement",
-      "at": [3.02, -17.3],
-      "gaze": "W",
+      "at": [25.3, -3.98],
+      "gaze": "S",
       "wall": "Room_Wall_South"
     }
   ],
@@ -707,28 +707,28 @@
     {
       "id": "Stairs",
       "kind": "stair",
-      "rect": [6.2, 7.8, -11.6, -0.6],
+      "rect": [10.0, 19.6, -0.8, 0.8],
       "note": "existing 1.6 m stairwell"
     },
     {
       "id": "Basement_Floor",
       "kind": "secondary",
-      "rect": [6.0, 8.0, -17.6, -11.2]
+      "rect": [19.2, 25.6, -1.0, 1.0]
     },
     {
       "id": "Basement_North_West",
       "kind": "secondary",
-      "rect": [7.0, 9.5, -13.0, -11.6]
+      "rect": [19.6, 21.0, 0.0, 2.5]
     },
     {
       "id": "Basement_North_East",
       "kind": "secondary",
-      "rect": [7.7, 9.5, -18.8, -17.3]
+      "rect": [25.3, 26.8, 0.7, 2.5]
     },
     {
       "id": "Basement_South_East",
       "kind": "secondary",
-      "rect": [4.5, 7.0, -17.8, -16.3]
+      "rect": [24.3, 25.8, -2.5, 0.0]
     }
   ]
 }

@@ -19,7 +19,7 @@ async function parseModel(name: 'gallery' | 'frame' | 'basement') {
   return (await new GLTFLoader().parseAsync(buffer, '')).scene;
 }
 
-const outside = new Vector3(7, 0, 0);
+const outside = new Vector3(8, 0, 0);
 
 async function setup(load: () => Promise<Object3D>) {
   const hung: string[][] = [];

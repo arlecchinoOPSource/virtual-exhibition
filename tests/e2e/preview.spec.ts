@@ -366,8 +366,8 @@ test('offers the PDF file when the essay fails to load', async ({ page }) => {
   ).toBeVisible();
 });
 
-// Put the test visitor on the door axis in the rear landing, facing south
-// into the cut-away corner's doorway. Separate unit tests walk the gallery.
+// Put the test visitor on the door axis in the rear landing, facing east
+// into the stairwell. Separate unit tests walk the gallery.
 async function walkToBasementDoor(page: Page) {
   await spawnAtBasementDoor(page);
   await page.goto('/');
@@ -425,11 +425,11 @@ test('hangs the basement frames once it loads and opens their details', async ({
   await page.keyboard.press('e');
   await expect(prompt).toBeEmpty({ timeout: 10000 });
   // Straight down the stairs and across the room until the throne stops
-  // the visitor, beside Exhibit_17 on the room's east wall.
+  // the visitor, beside Exhibit_17 on the room's north wall.
   await page.keyboard.down('w');
   await page.waitForTimeout(8000);
   await page.keyboard.up('w');
-  // Facing south, a quarter turn left faces east, toward the frame.
+  // Facing east, a quarter turn left faces north, toward the frame.
   await page.evaluate(() =>
     document.dispatchEvent(
       new MouseEvent('mousemove', { movementX: (-Math.PI / 2) * 500 }),

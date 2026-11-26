@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { Vector3 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -24,18 +23,8 @@ const FPS = 120;
 const SPEED = 3.2; // m/s, the visitor's walking speed
 const BASEMENT_FLOOR = -3.06;
 
-// Plan points in Blender (x, y). Upstairs legs stay at floor level. The
-// basement legs are written in the basement's original frame (stairs running
-// east from x 12 to 18) and placed by the plan's basement_transform.
+// Plan points in Blender (x, y). Upstairs legs stay at floor level.
 type Leg = [label: string, x: number, y: number, openDoor?: string];
-const { basement_transform: place } = JSON.parse(
-  readFileSync('assets-source/layout/redesign.json', 'utf8'),
-) as { basement_transform: { translate: number[]; rotate_z_deg: number } };
-if (place.rotate_z_deg !== -90)
-  throw new Error('These legs assume a quarter turn clockwise.');
-const [tx = 0, ty = 0] = place.translate;
-const placed = (legs: Leg[]): Leg[] =>
-  legs.map(([label, x, y]) => [label, y + tx, ty - x]);
 
 const northLoop: Leg[] = [
   ['out of the elevator', -13.0, 4.05],
@@ -70,13 +59,13 @@ const northLoop: Leg[] = [
   ['street east wall', 9.7, 4.6],
   ['street side of the rear doors', 7.0, 3.55, 'Street_Rear'],
   ['through the street doors to the rear landing', 7.0, 1.2],
-  ['rear landing south-east corner', 9.7, -1.7],
+  ['rear landing north-east corner', 9.7, 1.55],
   ['rear landing west side', 4.3, -0.4],
   ['rear landing south-west corner', 4.3, -1.7],
   ['past the statue', 4.3, -0.4],
-  ['basement door landing', 7.0, -0.9],
+  ['basement door landing', 8.9, 0],
 ];
-const basementLoop: Leg[] = placed([
+const basementLoop: Leg[] = [
   ['top of the stairs', 10.6, 0],
   ['foot of the stairs', 18.5, 0],
   ['basement north-west corner', 19.5, 3.7],
@@ -89,7 +78,7 @@ const basementLoop: Leg[] = placed([
   ['foot of the stairs, going up', 18.5, 0],
   ['top of the stairs, going up', 10.6, 0],
   ['back through the door', 9.0, 0],
-]);
+];
 const reading: Leg[] = [
   ['reading east end', 3.7, 0],
   ['reading north-east corner', 3.7, 1.7],
@@ -176,8 +165,8 @@ describe('walking the accepted layout', () => {
           // Outside the stairwell (x 6 to 8, south of the doorway) and the
           // basement room, the floor never gives way.
           const below =
-            (body.feet.x > 6 && body.feet.x < 8 && body.feet.z > 2.2) ||
-            body.feet.z > 11;
+            (body.feet.x > 10.2 && Math.abs(body.feet.z) < 0.8) ||
+            body.feet.x > 19;
           if (!below) expect(body.feet.y, label).toBeCloseTo(0, 3);
         }
         const reached = Math.hypot(

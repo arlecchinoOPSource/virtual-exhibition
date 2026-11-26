@@ -219,9 +219,8 @@ FOOT_X0, FOOT_X1, FOOT_Y0, FOOT_Y1 = -14 - WALL, 10 + WALL, -9 - WALL, 7.5 + WAL
 # The south-east corner outside the building: no parquet is laid there.
 NOTCH = (4 + WALL, 10 + WALL, -9 - WALL, -2 - WALL)
 
-# Floor and ceiling, each in two parts that leave out the cut-away corner,
-# where the basement stairs now descend under their own ceiling. Nothing can
-# reach the ceiling, so it needs no proxy.
+# Floor and ceiling, each in two parts that leave out the cut-away corner.
+# Nothing can reach the ceiling, so it needs no proxy.
 for z0, z1, mat, name in ((-WALL, 0, FLOOR, "Floor"), (HEIGHT, HEIGHT + WALL, CEILING, "Ceiling")):
     box(f"{name}_North", FOOT_X0, FOOT_X1, NOTCH[3], FOOT_Y1, z0, z1, mat, collide=name == "Floor")
     box(f"{name}_South", FOOT_X0, NOTCH[0], FOOT_Y0, NOTCH[3], z0, z1, mat, collide=name == "Floor")
@@ -258,7 +257,7 @@ for wall in PLAN["walls"]:
 facade = next(item for item in PLAN["furniture"] if item["id"] == "Street_Facades")
 box("Street_Facade_Base", *facade["rect"], 0, HEIGHT, WALLS)
 bx0, bx1, by0, by1 = PLAN["basement_door"]["opening"]
-box("Wall_Notch_Lintel", bx0, bx1, by0, by1, 2.4, HEIGHT, WALLS)
+box("Wall_Basement_Lintel", bx0, bx1, by0, by1, 2.4, HEIGHT, WALLS)
 box("Wall_West_Lintel", -14 - WALL, -14, door_y0, door_y1, DOOR_HEIGHT, HEIGHT, WALLS)
 
 # Trim the enclosed room passages using the measured opening rectangles.
@@ -738,8 +737,7 @@ for index in range(1, int((sx1 - sx0) // pitch)):
 # and a statue. The door collider is a separate proxy the engine toggles.
 # The basement and its entrance are modelled in their original frame (door in
 # an east wall at x = 10, stairs running east) and then placed by the plan's
-# basement_transform: a quarter turn and a move that put the door in the cut-
-# away corner's north wall with the stairs running south.
+# basement_transform, which keeps them facing east from the rear landing.
 turn = PLAN["basement_transform"]
 PLACE = (Matrix.Translation(Vector(turn["translate"]))
          @ Matrix.Rotation(math.radians(turn["rotate_z_deg"]), 4, "Z"))
@@ -808,7 +806,7 @@ proxy = bpy.data.objects.new("COL_Statue", box_mesh("COL_Statue", (0.7, 0.7, 2.4
 proxy.location = (sx, sy, 1.2)
 proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
-# Place the entrance. The hinge sits on a turned mount so the door module's
+# Place the entrance. The hinge sits on a mount so the door module's
 # local swing about Y still starts from zero.
 entrance = [bpy.data.objects[name] for name in set(bpy.data.objects.keys()) - entrance_before]
 mount = bpy.data.objects.new("Door_Basement_Mount", None)
@@ -1108,7 +1106,7 @@ hang_poster(collections["Basement_Render"], "Poster_Dore_Pale_Horse",
             # The engraved plate only: no scanned page edge or printed caption.
             crop=(8, 12, 760, 961))
 
-# Turn and move the finished basement into place (see PLACE above).
+# Place the finished basement with the same transform as the entrance.
 place(list(collections["Basement_Render"].objects) + list(collections["Basement_Collision"].objects))
 # The basement's three frame slots (#88), already in world coordinates in the
 # plan, so they are added after the move. They export with basement.glb and
