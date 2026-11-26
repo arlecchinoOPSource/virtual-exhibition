@@ -7,7 +7,7 @@ const plan = JSON.parse(
   readFileSync(new URL('./redesign.json', import.meta.url), 'utf8'),
 );
 const S = 40; // pixels per metre
-const [X0, X1, Y0, Y1] = [-15.5, 28, -10.5, 9];
+const [X0, X1, Y0, Y1] = [-17.5, 12.5, -20, 9];
 const W = (X1 - X0) * S;
 const H = (Y1 - Y0) * S + 120;
 const px = (x) => ((x - X0) * S).toFixed(1);
@@ -20,7 +20,8 @@ const size = ([x0, x1, y0, y1]) =>
   `${(x1 - x0).toFixed(1)} × ${(y1 - y0).toFixed(1)} m`;
 
 const tint = {
-  arrival: '#efe9dc',
+  elevator: '#d9dde2',
+  catalogue: '#efe9dc',
   studio: '#e3ead4',
   street: '#dce6ee',
   reading: '#f1dccd',
@@ -91,28 +92,35 @@ for (const f of plan.furniture)
   );
 for (const w of plan.walls) out.push(rect(w.rect, 'fill="#333"'));
 out.push(rect(plan.lectern.rect, 'fill="#6b4a2b"'));
-const [ex0, ex1, ey0, ey1] = plan.elevator_cue.rect;
+const [ex0, ex1, ey0, ey1] = plan.elevator.doors;
 out.push(rect([ex0 - 0.15, ex1, ey0, ey1], 'fill="#999"'));
 
-// Existing posters and graffiti: grey bars on the room side of their walls.
+// Existing posters and graffiti: grey bars on the basement-side face of
+// their walls, labelled just inside the room.
+const [bx0, bx1, by0, by1] = plan.sections.find(
+  (s) => s.id === 'basement',
+).rect;
+const [bcx, bcy] = [(bx0 + bx1) / 2, (by0 + by1) / 2];
 for (const d of plan.decor) {
   const [x0, x1, y0, y1] = plan.walls.find((w) => w.id === d.wall).rect;
   const [a, b] = d.span;
   const across = x1 - x0 > y1 - y0;
-  const face = across ? (y0 > 0 ? y0 : y1) : x0 > 20 ? x0 : x1;
+  const face = across ? (bcy < y0 ? y0 : y1) : bcx < x0 ? x0 : x1;
+  const inward = across ? Math.sign(bcy - face) : Math.sign(bcx - face);
   const bar = across
     ? [a, b, face - 0.08, face + 0.08]
     : [face - 0.08, face + 0.08, a, b];
   out.push(rect(bar, 'fill="#8a8a8a"'));
   const [lx, ly] = across
-    ? [(a + b) / 2, face + (y0 > 0 ? 0.5 : -0.6)]
-    : [face - 0.2, (a + b) / 2];
+    ? [(a + b) / 2, face + inward * (inward > 0 ? 0.45 : 0.6)]
+    : [face + inward * 0.25, (a + b) / 2];
+  const anchor = across ? 'middle' : inward > 0 ? 'start' : 'end';
   out.push(
     text(
       lx,
       ly,
       d.id.startsWith('Poster') ? 'poster' : 'graffiti',
-      `class="note" text-anchor="${across ? 'middle' : 'end'}"`,
+      `class="note" text-anchor="${anchor}"`,
     ),
   );
 }
@@ -140,14 +148,30 @@ const [sx, sy] = plan.spawn.at;
 out.push(
   `<path d="M${px(sx - 0.4)},${py(sy + 0.35)} L${px(sx + 0.45)},${py(sy)} L${px(sx - 0.4)},${py(sy - 0.35)} Z" fill="#1d5fa0"/>`,
 );
-out.push(text(sx, sy - 0.9, 'Spawn', 'class="note" text-anchor="middle"'));
-out.push(text(-13.8, 1.0, 'Elevator cue', 'class="note"'));
+out.push(text(sx - 1.0, sy - 0.1, 'Spawn', 'class="note" text-anchor="end"'));
 out.push(text(-8.7, -1.45, 'Catalogue', 'class="note"'));
+// The basement door: closed across its opening, swinging 90° into the
+// stairwell, away from the gallery side.
 const [hx, hy] = plan.basement_door.hinge;
+const [ox0, ox1, oy0, oy1] = plan.basement_door.opening;
+const [lx0, ly0, lx1, ly1] = plan.basement_door.landing_clear;
+const closed =
+  ox1 - ox0 > oy1 - oy0
+    ? [Math.abs(hx - ox0) < 0.01 ? ox1 : ox0, hy]
+    : [hx, Math.abs(hy - oy0) < 0.01 ? oy1 : oy0];
+const away =
+  ox1 - ox0 > oy1 - oy0
+    ? [0, Math.sign(hy - (ly0 + ly1) / 2) * 1.6]
+    : [Math.sign(hx - (lx0 + lx1) / 2) * 1.6, 0];
+const swung = [hx + away[0], hy + away[1]];
+// Sweep direction in SVG space (y down) from the closed to the open leaf.
+const v1 = [closed[0] - hx, hy - closed[1]];
+const v2 = [swung[0] - hx, hy - swung[1]];
+const sweep = v1[0] * v2[1] - v1[1] * v2[0] > 0 ? 1 : 0;
 out.push(
-  `<path d="M${px(hx)},${py(hy)} L${px(hx + 1.6)},${py(hy)} A${1.6 * S},${1.6 * S} 0 0 1 ${px(hx)},${py(hy - 1.6)}" fill="none" stroke="#b23" stroke-width="1.2"/>`,
+  `<path d="M${px(hx)},${py(hy)} L${px(closed[0])},${py(closed[1])} A${1.6 * S},${1.6 * S} 0 0 ${sweep} ${px(swung[0])},${py(swung[1])}" fill="none" stroke="#b23" stroke-width="1.2"/>`,
 );
-out.push(text(12.6, 1.4, 'Stairs down (existing, 1.6 m)', 'class="note"'));
+out.push(text(8.3, -6.0, 'Stairs down, south (1.6 m)', 'class="note"'));
 for (const s of plan.sections) {
   const [x0, x1, , y1] = s.rect;
   out.push(
@@ -158,20 +182,21 @@ for (const s of plan.sections) {
       'class="room" text-anchor="middle"',
     ),
   );
-  out.push(
-    text(
-      (x0 + x1) / 2,
-      y1 - 0.95,
-      size(s.rect),
-      'class="note" text-anchor="middle"',
-    ),
-  );
+  if (y1 - s.rect[2] >= 3)
+    out.push(
+      text(
+        (x0 + x1) / 2,
+        y1 - 0.95,
+        size(s.rect),
+        'class="note" text-anchor="middle"',
+      ),
+    );
 }
 out.push(
   text(
-    23.1,
-    -4.9,
-    'Floor z −3.06 m; assembly kept in place',
+    7.0,
+    -19.7,
+    'Basement, floor z −3.06 m, turned a quarter turn to run south',
     'class="note" text-anchor="middle"',
   ),
 );
@@ -186,8 +211,8 @@ out.push(
     '24.4 m outside, 24.0 m inside',
     'class="dim" text-anchor="middle"',
   ),
-  `<line x1="${px(-14.9)}" y1="${py(-9.2)}" x2="${px(-14.9)}" y2="${py(7.7)}" ${tick}/>`,
-  `<text class="dim" transform="translate(${px(-15.1)},${py(-0.75)}) rotate(-90)" text-anchor="middle">16.9 m outside, 16.5 m inside</text>`,
+  `<line x1="${px(-16.9)}" y1="${py(-9.2)}" x2="${px(-16.9)}" y2="${py(7.7)}" ${tick}/>`,
+  `<text class="dim" transform="translate(${px(-17.1)},${py(-0.75)}) rotate(-90)" text-anchor="middle">16.9 m outside, 16.5 m inside</text>`,
 );
 
 const legend = [
