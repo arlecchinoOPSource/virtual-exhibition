@@ -3,6 +3,26 @@ import { moveSpawn } from './spawn';
 import type { Page } from '@playwright/test';
 import { spawnAtBasementDoor } from './basement';
 
+test('closes gallery doors with E and reopens them with a click', async ({
+  page,
+}) => {
+  // Face the right leaf close to its studio jamb, clear of the swing.
+  const yaw = Math.atan2(-0.925, -1.36);
+  await moveSpawn(
+    page,
+    [-11, 0, -3.55],
+    [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)],
+  );
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Start walk' }).click();
+  const prompt = page.locator('#interaction');
+  await expect(prompt).toHaveText('E / Click · Close the doors');
+  await page.keyboard.press('e');
+  await expect(prompt).toHaveText('E / Click · Open the doors');
+  await page.mouse.click(50, 50);
+  await expect(prompt).toHaveText('E / Click · Close the doors');
+});
+
 test('draws the preview in WebGL and resizes the canvas', async ({ page }) => {
   const pageErrors: Error[] = [];
   page.on('pageerror', (error) => pageErrors.push(error));

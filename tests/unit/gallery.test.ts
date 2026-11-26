@@ -53,6 +53,82 @@ const gazes: Record<string, [number, number]> = {
 };
 
 describe('gallery blockout', () => {
+  it('swings both leaves from either handle and clears or blocks each passage', async () => {
+    const world = await loadWorld();
+    for (const id of [
+      'Studio_Door',
+      'Living_Door',
+      'Theater_Door',
+      'Studio_Street',
+      'Living_Theater',
+    ]) {
+      const [x0, x1, y0, y1] = plan.openings.find(
+        (opening) => opening.id === id,
+      )!.rect;
+      const center = new Vector3((x0 + x1) / 2, 0, -(y0 + y1) / 2);
+      const alongX = x1 - x0 > y1 - y0;
+      const toward = alongX ? new Vector3(0, 0, -1) : new Vector3(1, 0, 0);
+      const feet = center.clone().addScaledVector(toward, 1.5);
+      const left = world.scene.getObjectByName(`Room_Door_${id}_Left`)!;
+      const right = world.scene.getObjectByName(`Room_Door_${id}_Right`)!;
+      const leftPull = left.getObjectByName(`${left.name}_Pull`);
+      const rightLeaf = right.getObjectByName(`${right.name}_Leaf`);
+      expect(leftPull).toBeDefined();
+      expect(rightLeaf).toBeDefined();
+      const inDoorway = world.actionAt(leftPull, center)!;
+      expect(inDoorway.label).toBe('Step back to clear the doors');
+      inDoorway.run();
+      world.update(1);
+      expect(left.rotation.y).toBe(0);
+
+      const close = world.actionAt(leftPull, feet)!;
+      expect(close.label).toContain('Close the doors');
+      close.run();
+      world.update(0.4);
+      expect(Math.abs(left.rotation.y)).toBeCloseTo(Math.PI / 4);
+      expect(left.rotation.y).toBeCloseTo(-right.rotation.y);
+      world.update(0.4);
+      world.scene.updateMatrixWorld(true);
+      const leftLeaf = left.getObjectByName(`${left.name}_Leaf`)!;
+      const leftBounds = new Box3().setFromObject(leftLeaf);
+      const rightBounds = new Box3().setFromObject(rightLeaf!);
+      expect(
+        alongX
+          ? rightBounds.min.x - leftBounds.max.x
+          : leftBounds.min.z - rightBounds.max.z,
+        id,
+      ).toBeCloseTo(0.02, 3);
+      const body = {
+        feet: center.clone().addScaledVector(toward, -0.5),
+        grounded: true,
+        fallSpeed: 0,
+      };
+      const walk = () => {
+        for (let step = 0; step < 50; step++)
+          stepBody(
+            body,
+            toward.x * 0.02,
+            toward.z * 0.02,
+            1 / 120,
+            world.solids,
+          );
+      };
+      walk();
+      expect(body.feet.clone().sub(center).dot(toward), id).toBeLessThan(-0.2);
+      const open = world.actionAt(rightLeaf, feet)!;
+      expect(open.label).toContain('Open the doors');
+      open.run();
+      world.update(1);
+      expect(left.rotation.y).toBeCloseTo(0);
+      expect(right.rotation.y).toBeCloseTo(0);
+      walk();
+      expect(body.feet.clone().sub(center).dot(toward), id).toBeGreaterThan(
+        0.5,
+      );
+    }
+    world.dispose();
+  });
+
   it('keeps the walnut jamb faces proud of the wall ends at all five openings', async () => {
     const model = await parseModel('gallery');
     model.updateMatrixWorld(true);
@@ -743,8 +819,8 @@ describe('gallery export budget', () => {
     // for the theater (#94): its joined props and its burgundy paint. The
     // street (#95) fits within the same cap: its props join into one draw and
     // the truck's glass shares Prop_Glass.
-    // The room casings, open leaves, and brass pulls share one draw each.
-    expect(drawCalls).toBeLessThanOrEqual(70);
+    // The casings share one draw, while each moving leaf and its pull have two.
+    expect(drawCalls).toBeLessThanOrEqual(88);
     world.dispose();
   });
 

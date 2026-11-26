@@ -12,7 +12,7 @@ import {
 import type { BufferGeometry, Material, Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { hangExhibits } from '../exhibition/displays';
-import { createDoor } from './door';
+import { createDoor, createRoomDoor } from './door';
 import { createElevator } from './elevator';
 import { paintExhibit } from '../exhibition/placeholder';
 import type { Exhibit, ExhibitAnchor } from '../types/exhibit';
@@ -116,6 +116,20 @@ export function createGallery(
   const doorCollider = colliders.get('COL_Door_Basement');
   if (!hinge || !doorMesh || !doorCollider)
     throw new Error('The gallery is missing the basement door.');
+  const roomHinges = new Map<string, Object3D[]>();
+  root.traverse((node) => {
+    const name: unknown = node.userData.roomDoor;
+    if (typeof name !== 'string') return;
+    const pair = roomHinges.get(name) ?? [];
+    pair.push(node);
+    roomHinges.set(name, pair);
+  });
+  const roomDoors = new Map<Object3D, ReturnType<typeof createRoomDoor>>();
+  const doorPairs = [...roomHinges.values()].map((pair) => {
+    const roomDoor = createRoomDoor(pair, colliders, solids);
+    for (const pivot of pair) roomDoors.set(pivot, roomDoor);
+    return roomDoor;
+  });
   const leaves = ['Elevator_Door_South', 'Elevator_Door_North'].map((name) =>
     root.getObjectByName(name),
   );
@@ -212,13 +226,21 @@ export function createGallery(
       );
     },
     actionAt(object: Object3D | undefined, feet: Vector3) {
-      for (let node = object; node; node = node.parent ?? undefined)
+      for (let node = object; node; node = node.parent ?? undefined) {
         if (node === doorMesh)
           return { label: door.label(feet), run: () => void door.toggle(feet) };
+        const roomDoor = roomDoors.get(node);
+        if (roomDoor)
+          return {
+            label: roomDoor.label(feet),
+            run: () => roomDoor.toggle(feet),
+          };
+      }
       return undefined;
     },
     update(seconds: number, feet?: Vector3) {
       door.update(seconds);
+      for (const roomDoor of doorPairs) roomDoor.update(seconds);
       elevator.update(seconds);
       if (!feet) return;
       const depth = Math.min(1, Math.max(0, (-feet.y - 0.3) / 2.1));

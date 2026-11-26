@@ -207,6 +207,7 @@ def join(name, prefixes, collection):
     joined = bpy.context.view_layer.objects.active
     joined.name = name
     joined.data.name = name
+    return joined
 
 
 # The measured shell from the accepted plan (docs/DESIGN.md, issue #86).
@@ -267,8 +268,7 @@ DOOR = material("Door_Basement", (0.05, 0.045, 0.04), 0.7)
 PULL = material("Gallery door aged brass", (0.32, 0.22, 0.10), 0.45)
 PULL.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.4
 DOOR_THICKNESS = 0.06
-# Park a pair of leaves at 90 degrees so the wide openings stay passable
-# and the leaves project less than a metre into the receiving room.
+# Export the paired leaves open so the wide openings start passable.
 ROOM_DOORS = {
     "Studio_Door": 1,
     "Living_Door": -1,
@@ -305,27 +305,39 @@ for opening in PLAN["openings"]:
               depth0, depth1, HEADER_TOP, HEIGHT, WALLS)
 
     hinge_depth = (depth0 + depth1) / 2
-    leaf_width = (high - low) / 2 - JAMB_REVEAL - 0.01
+    leaf_width = (high - low - DOOR_THICKNESS) / 2 - JAMB_REVEAL - 0.01
     open_side = ROOM_DOORS[name]
     free_edge = hinge_depth + open_side * leaf_width
-    leaf_start, leaf_end = sorted((hinge_depth, free_edge))
-    for side, edge in (("Left", low + JAMB_REVEAL),
-                       ("Right", high - JAMB_REVEAL - DOOR_THICKNESS)):
+    leaf_start, leaf_end = sorted((hinge_depth - open_side * DOOR_THICKNESS / 2, free_edge))
+    for side, edge, direction in (("Left", low + JAMB_REVEAL, -1),
+                                  ("Right", high - JAMB_REVEAL - DOOR_THICKNESS, 1)):
+        leaf_name = f"Room_Door_{name}_{side}"
+        hinge = bpy.data.objects.new(leaf_name, None)
+        hinge.location = ((edge + DOOR_THICKNESS / 2, hinge_depth, 0) if along_x
+                          else (hinge_depth, edge + DOOR_THICKNESS / 2, 0))
+        hinge["closesBy"] = direction * open_side * (1 if along_x else -1) * math.pi / 2
+        hinge["roomDoor"] = name
+        collections["Gallery_Markers"].objects.link(hinge)
         leaf_rect = ((edge, edge + DOOR_THICKNESS, leaf_start, leaf_end) if along_x
                      else (leaf_start, leaf_end, edge, edge + DOOR_THICKNESS))
-        box(f"Room_Door_Leaf_{name}_{side}", *leaf_rect, 0.018, HEAD - 0.015, DOOR)
+        leaf = box(f"{leaf_name}_Leaf", *leaf_rect, 0.018, HEAD - 0.015, DOOR)
         pull_depth = free_edge - open_side * 0.095
+        pull_prefix = f"{leaf_name}_Pull"
         for face, surface, projection in (("A", edge, -1), ("B", edge + DOOR_THICKNESS, 1)):
             pull_edge = surface + projection * 0.04
-            prefix = f"Room_Door_Pull_{name}_{side}_{face}"
             for label, start, end, z0, z1 in (
                 ("Grip", pull_edge - 0.008, pull_edge + 0.008, 0.90, 1.11),
                 ("Lower", surface, pull_edge, 0.91, 0.928),
                 ("Upper", surface, pull_edge, 1.082, 1.10),
             ):
                 a, b = sorted((start, end))
-                door_part(f"{prefix}_{label}", a, b, pull_depth - 0.009, pull_depth + 0.009,
+                door_part(f"{pull_prefix}_{face}_{label}", a, b, pull_depth - 0.009, pull_depth + 0.009,
                           z0, z1, PULL)
+        pull = join(pull_prefix, (pull_prefix,), "Gallery_Render")
+        proxy = bpy.data.objects[f"COL_{leaf.name}"]
+        for part in (leaf, pull, proxy):
+            part.parent = hinge
+            part.location -= hinge.location
 
 box("Elevator_Floor", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, -WALL, 0, CAR_FLOOR)
 box("Elevator_Ceiling", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, CAR_HEIGHT,
@@ -1020,8 +1032,6 @@ join("Elevator_Car", ("Elevator_Wall_", "Elevator_Floor", "Elevator_Ceiling",
      "Gallery_Render")
 join("Lectern_Woodwork", ("Lectern_",), "Gallery_Render")
 join("Gallery_Door_Casing", ("Portal_Trim_",), "Gallery_Render")
-join("Gallery_Door_Leaves", ("Room_Door_Leaf_",), "Gallery_Render")
-join("Gallery_Door_Pulls", ("Room_Door_Pull_",), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
 

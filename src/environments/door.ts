@@ -1,10 +1,9 @@
-import { Vector3 } from 'three';
-import type { Box3, Object3D } from 'three';
+import { Box3, Vector3 } from 'three';
+import type { Object3D } from 'three';
+import { PLAYER_RADIUS } from '../player/collision';
 
 const OPEN_ANGLE = Math.PI / 2;
 const SWING_SECONDS = 0.8;
-// Matches the player radius so a visitor in the doorway counts as blocking it.
-const CLEARANCE = 0.24;
 
 export type DoorState = 'closed' | 'loading' | 'opening' | 'open' | 'closing';
 
@@ -18,7 +17,7 @@ export function createDoor(
 ) {
   let state: DoorState = 'closed';
   let failed = false;
-  const doorway = collider.clone().expandByScalar(CLEARANCE);
+  const doorway = collider.clone().expandByScalar(PLAYER_RADIUS);
   const probe = new Vector3();
 
   function setSolid(solid: boolean) {
@@ -76,6 +75,72 @@ export function createDoor(
         hinge.rotation.y = Math.max(0, hinge.rotation.y - step);
         if (hinge.rotation.y === 0) state = 'closed';
       }
+    },
+  };
+}
+
+// The exported leaves start open. The jamb pivots rotate in opposite
+// directions and share one interaction, so the pair always moves together.
+export function createRoomDoor(
+  hinges: Object3D[],
+  colliders: ReadonlyMap<string, Box3>,
+  solids: Box3[],
+) {
+  const sweep = new Box3();
+  const leaves = hinges.map((hinge) => {
+    const name = `COL_${hinge.name}_Leaf`;
+    const proxy = hinge.getObjectByName(name);
+    const solid = colliders.get(name);
+    const angle: unknown = hinge.userData.closesBy;
+    if (!proxy || !solid || typeof angle !== 'number')
+      throw new Error(`Invalid room door hinge: ${hinge.name}.`);
+
+    const open = solid.clone();
+    hinge.rotation.y = angle;
+    hinge.updateMatrixWorld(true);
+    const closed = new Box3().setFromObject(proxy);
+    hinge.rotation.y = 0;
+    hinge.updateMatrixWorld(true);
+    sweep.union(open).union(closed);
+    return { hinge, angle, solid, open, closed };
+  });
+  // Allow for the edge of a leaf extending slightly beyond the two end
+  // poses mid-swing. Reserve the footprint only while the leaves are moving.
+  sweep.expandByScalar(0.01);
+  const clearance = sweep.clone().expandByScalar(PLAYER_RADIUS);
+  const probe = new Vector3();
+  const blocked = (feet: Vector3) =>
+    clearance.containsPoint(probe.copy(feet).setY(feet.y + 1));
+
+  let position = 0;
+  let target = 0;
+  return {
+    label(feet: Vector3) {
+      if (position !== target) return '';
+      if (blocked(feet)) return 'Step back to clear the doors';
+      return position === 0
+        ? 'E / Click · Close the doors'
+        : 'E / Click · Open the doors';
+    },
+    toggle(feet: Vector3) {
+      if (position !== target || blocked(feet)) return;
+      target = position === 0 ? 1 : 0;
+      solids.push(sweep);
+    },
+    update(seconds: number) {
+      if (position === target) return;
+      const step = seconds / SWING_SECONDS;
+      const remaining = target - position;
+      position =
+        Math.abs(remaining) <= step
+          ? target
+          : position + Math.sign(remaining) * step;
+      for (const { hinge, angle } of leaves)
+        hinge.rotation.y = angle * position;
+      if (position !== target) return;
+      for (const { solid, open, closed } of leaves)
+        solid.copy(position === 0 ? open : closed);
+      solids.splice(solids.indexOf(sweep), 1);
     },
   };
 }

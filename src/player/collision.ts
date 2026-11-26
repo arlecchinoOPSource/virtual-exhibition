@@ -1,6 +1,6 @@
 import type { Box3, Vector3 } from 'three';
 
-const RADIUS = 0.24;
+export const PLAYER_RADIUS = 0.24;
 const HEIGHT = 1.78;
 const MAX_STEP = 0.22;
 const GRAVITY = 9.81;
@@ -13,10 +13,10 @@ export interface PlayerBody {
 
 function overlapsFootprint(box: Box3, x: number, z: number) {
   return (
-    x + RADIUS > box.min.x &&
-    x - RADIUS < box.max.x &&
-    z + RADIUS > box.min.z &&
-    z - RADIUS < box.max.z
+    x + PLAYER_RADIUS > box.min.x &&
+    x - PLAYER_RADIUS < box.max.x &&
+    z + PLAYER_RADIUS > box.min.z &&
+    z - PLAYER_RADIUS < box.max.z
   );
 }
 
