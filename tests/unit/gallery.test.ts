@@ -6,6 +6,7 @@ import {
   Group,
   Mesh,
   MeshStandardMaterial,
+  PointLight,
   Quaternion,
   PerspectiveCamera,
   Raycaster,
@@ -821,7 +822,8 @@ describe('gallery export budget', () => {
     // street (#95) fits within the same cap: its props join into one draw and
     // the truck's glass shares Prop_Glass.
     // The casings share one draw, while each moving leaf and its pull have two.
-    expect(drawCalls).toBeLessThanOrEqual(92);
+    // The entrance plaster, torch ironwork, and flames add one each.
+    expect(drawCalls).toBeLessThanOrEqual(95);
     world.dispose();
   });
 
@@ -842,6 +844,37 @@ describe('gallery export budget', () => {
 });
 
 describe('basement entrance', () => {
+  it('lights the charcoal entrance with two torches opposite the statue and extends the library plaster', async () => {
+    const world = await loadWorld();
+    const statue = world.scene.getObjectByName('COL_Statue')!;
+    const statueBounds = new Box3().setFromObject(statue);
+    for (const index of [1, 2]) {
+      const light = world.scene.getObjectByName(
+        `Light_Entrance_Torch_${index}`,
+      );
+      expect(light).toBeInstanceOf(PointLight);
+      expect(light?.getWorldPosition(new Vector3()).z).toBeLessThan(-0.95);
+      expect(statueBounds.min.z).toBeGreaterThan(0.95);
+      expect((light as PointLight).distance).toBeCloseTo(2.2);
+    }
+    expect(world.scene.getObjectByName('Entrance_Torch_Flames')).toBeInstanceOf(
+      Mesh,
+    );
+    const oldWall = new Raycaster(
+      new Vector3(7, 1.5, 0),
+      new Vector3(0, 0, 1),
+      0,
+      2.1,
+    );
+    expect(oldWall.intersectObjects(world.surfaces)[0]?.object.name).toBe(
+      'Reading_Terracotta',
+    );
+    expect(world.scene.getObjectByName('Entrance_Charcoal')).toBeInstanceOf(
+      Mesh,
+    );
+    world.dispose();
+  });
+
   it('hangs the door on its hinge with a separate collider over the opening', async () => {
     const root = await parseModel('gallery');
     root.updateMatrixWorld(true);

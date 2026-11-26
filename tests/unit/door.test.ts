@@ -167,9 +167,14 @@ describe('basement room', () => {
     });
     // The basement draws in its own pass, so its bulbs never join the
     // gallery's light set (which would rebuild every gallery shader).
+    const galleryPoints: string[] = [];
     world.scene.traverse((node) => {
-      expect(node instanceof PointLight, node.name).toBe(false);
+      if (node instanceof PointLight) galleryPoints.push(node.name);
     });
+    expect(galleryPoints.sort()).toEqual([
+      'Light_Entrance_Torch_1',
+      'Light_Entrance_Torch_2',
+    ]);
     expect(lights.sort()).toEqual([
       'Light_Basement_Bulb_Room',
       'Light_Basement_Bulb_Stairs',
@@ -375,10 +380,11 @@ describe('basement room', () => {
     expect(skies).toHaveLength(2);
     for (let t = 0; t < 4; t += 1 / 60)
       world.update(1 / 60, new Vector3(22, -3.06, 0));
-    for (const sky of skies) expect(sky.intensity).toBeLessThan(0.3);
+    expect(skies[0]?.intensity).toBeLessThan(0.05);
+    expect(skies[1]?.intensity).toBeLessThan(0.025);
     for (let t = 0; t < 4; t += 1 / 60) world.update(1 / 60, outside);
     expect(skies[0]?.intensity).toBeCloseTo(0.42, 2);
-    expect(skies[1]?.intensity).toBeCloseTo(1.4, 2);
+    expect(skies[1]?.intensity).toBeCloseTo(0.2, 2);
     world.dispose();
   });
 });

@@ -164,9 +164,9 @@ export function createGallery(
   const downstairs = new Scene();
   const downstairsKey = keyLight.clone();
   const downstairsSky = skyLight.clone();
-  // Keep the existing cellar and stair fill independent of the upper gallery.
-  const basementKeyIntensity = 2.1;
-  const basementFillIntensity = 1.4;
+  // Leave only a trace of gallery spill before the bulbs and picture lights.
+  const basementKeyIntensity = 0.16;
+  const basementFillIntensity = 0.2;
   downstairsKey.intensity = basementKeyIntensity;
   downstairsSky.intensity = basementFillIntensity;
   downstairs.add(downstairsKey, downstairsSky);

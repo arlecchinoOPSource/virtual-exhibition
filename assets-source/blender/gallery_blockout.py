@@ -87,6 +87,27 @@ def material(name, rgb, roughness=0.85):
     return mat
 
 
+def glow(name, rgb, strength):
+    mat = material(name, rgb, 0.4)
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Emission Color"].default_value = (*rgb, 1.0)
+    bsdf.inputs["Emission Strength"].default_value = strength
+    return mat
+
+
+def point_light(name, x, y, z, energy, rgb, collection="Basement_Render", reach=None):
+    data = bpy.data.lights.new(name, "POINT")
+    data.energy = energy
+    data.color = rgb
+    data.shadow_soft_size = 0.05
+    if reach is not None:
+        data.use_custom_distance = True
+        data.cutoff_distance = reach
+    light = bpy.data.objects.new(name, data)
+    light.location = (x, y, z)
+    collections[collection].objects.link(light)
+
+
 FLOOR = material("Lacquered oak parquet", (0.45, 0.27, 0.12), 0.2)
 WALLS = material("Warm white mineral paint", (0.79, 0.77, 0.73), 0.91)
 paint_finish(WALLS)
@@ -500,6 +521,7 @@ for index, (x0, x1, y0, y1, z0) in enumerate((
     (4.0, 6.0, 1.99, 2.0, 0),     # rear landing face of the street partition
     (6.0, 8.0, 1.99, 2.0, HEADER_TOP),
     (8.0, 10.0, 1.99, 2.0, 0),
+    (4.0, 10.0, -2.0, -1.99, 0),  # the sealed former basement wall
 )):
     box(f"Reading_Terracotta_{index:02}", x0, x1, y0, y1, z0, HEIGHT, TERRACOTTA, collide=False)
 
@@ -765,6 +787,36 @@ CLOTH = material("Statue_Robe", (0.015, 0.015, 0.018), 0.9)
 BLADE = material("Statue_Blade", (0.55, 0.56, 0.58), 0.3)
 WOOD = material("Statue_Staff", (0.12, 0.08, 0.05), 0.8)
 
+# Charcoal plaster at the entrance and under its ceiling absorbs the gallery
+# fill. The wood floor and the two library-coloured side walls carry through.
+ALCOVE = material("Basement entrance charcoal plaster", (0.065, 0.054, 0.049))
+for label, y0, y1, bottom in (
+    ("South", -1.99, -0.8, 0),
+    ("North", 0.8, 1.99, 0),
+    ("Head", -0.8, 0.8, 2.4),
+):
+    box(f"Entrance_Charcoal_{label}", 9.99, 10, y0, y1, bottom, HEIGHT, ALCOVE, collide=False)
+box("Entrance_Charcoal_Ceiling", 4.0, 10.0, -2.0, 2.0, HEIGHT - 0.012,
+    HEIGHT, ALCOVE, collide=False)
+
+# Two wrought-iron wall torches on the north jamb, opposite the statue.
+torch_metal, torch_flames = Sculpture(), Sculpture()
+for index, y in enumerate((1.19, 1.67), start=1):
+    x, z = 9.79, 1.92
+    torch_metal.tube([(9.985, y, 1.585), (9.89, y, 1.60), (x, y, 1.75),
+                      (x, y, z)], [0.035, 0.020, 0.022, 0.033], 8)
+    torch_metal.tube([(x, y, z - 0.04), (x, y, z + 0.03)],
+                     [0.037, 0.069], 10)
+    torch_flames.tube([(x, y, z + 0.015), (x - 0.006, y, z + 0.095),
+                       (x + 0.012, y - 0.016, z + 0.17),
+                       (x + 0.028, y - 0.028, z + 0.24)],
+                      [0.039, 0.049, 0.025, 0.002], 9, pleats=3)
+    point_light(f"Light_Entrance_Torch_{index}", x - 0.10, y, z + 0.12, 1.35,
+                (1.0, 0.43, 0.14), collection="Gallery_Lights", reach=2.2)
+torch_metal.object("Entrance_Torch_Brackets", IRON, collections["Gallery_Render"])
+torch_flames.object("Entrance_Torch_Flames", glow("Torch fire", (1.0, 0.31, 0.055), 4.0),
+                    collections["Gallery_Render"])
+
 hinge = bpy.data.objects.new("Door_Basement_Hinge", None)
 hinge.empty_display_type = "PLAIN_AXES"
 hinge.location = (10 + WALL / 2, 0.8, 0)
@@ -905,14 +957,6 @@ OAK = material("Throne_Wood", (0.13, 0.06, 0.025), 0.75)
 WAX = material("Candle_Wax", (0.5, 0.42, 0.3), 0.7)
 
 
-def glow(name, rgb, strength):
-    mat = material(name, rgb, 0.4)
-    bsdf = mat.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs["Emission Color"].default_value = (*rgb, 1.0)
-    bsdf.inputs["Emission Strength"].default_value = strength
-    return mat
-
-
 FLAME = glow("Candle_Flame", (1.0, 0.55, 0.15), 6)
 FILAMENT = glow("Bulb_Filament", (1.0, 0.78, 0.45), 12)
 # Clear, slightly smoky glass that glows faintly; the filament shows through.
@@ -920,16 +964,6 @@ GLASS = glow("Bulb_Glass", (1.0, 0.8, 0.55), 0.9)
 GLASS.node_tree.nodes["Principled BSDF"].inputs["Alpha"].default_value = 0.45
 GLASS.surface_render_method = "BLENDED"
 BAKELITE = material("Bulb_Socket", (0.025, 0.018, 0.014), 0.5)
-
-
-def point_light(name, x, y, z, energy, rgb):
-    data = bpy.data.lights.new(name, "POINT")
-    data.energy = energy
-    data.color = rgb
-    data.shadow_soft_size = 0.05
-    light = bpy.data.objects.new(name, data)
-    light.location = (x, y, z)
-    collections["Basement_Render"].objects.link(light)
 
 
 def prop(name, x0, x1, y0, y1, z0, z1, mat):
@@ -990,8 +1024,8 @@ solid("COL_Radio_Table", *radio_box)
 # the throne for a little fill there, and one high over the stairs so the
 # steps read in both directions. Both are weak and warm.
 for name, x, y, ceiling, drop, energy in (
-    ("Room", 23.4, 0.0, TOP, 0.75, 3.0),
-    ("Stairs", STAIR_X + 2.4, 0.0, HEIGHT, 1.2, 2.6),
+    ("Room", 23.4, 0.0, TOP, 0.75, 0.85),
+    ("Stairs", STAIR_X + 2.4, 0.0, HEIGHT, 1.2, 1.1),
 ):
     bulb_z = ceiling - drop
     cord, socket, glass, filament = Sculpture(), Sculpture(), Sculpture(), Sculpture()
@@ -1036,6 +1070,7 @@ join("Lectern_Woodwork", ("Lectern_",), "Gallery_Render")
 join("Gallery_Door_Casing", ("Portal_Trim_",), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
+join("Entrance_Charcoal", ("Entrance_Charcoal_",), "Gallery_Render")
 
 def export(path, collection_names, image_format="AUTO"):
     bpy.ops.object.select_all(action="DESELECT")
@@ -1123,7 +1158,7 @@ for frame in PLAN["frames"]:
         aim = Vector((x, y, BOTTOM + ANCHOR_HEIGHT)) - position
         data = bpy.data.lights.new(f"Light_Basement_{frame['slot']}", "SPOT")
         data.energy = 3.0
-        data.spot_size = math.radians(70)
+        data.spot_size = math.radians(56)
         data.spot_blend = 0.7
         data.color = (1.0, 0.8, 0.55)
         light = bpy.data.objects.new(data.name, data)
