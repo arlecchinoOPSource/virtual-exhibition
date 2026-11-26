@@ -4,7 +4,16 @@
 
 The gallery follows the accepted redesign plan below (#86), built as an undecorated shell in #87. It replaced the original 20 × 10 m blockout with recessed bays, two freestanding islands and a central lectern; that history stays in git and `docs/ROADMAP.md`. Keep the routes, viewing zones and the basement approach clear.
 
-The shell is 24.0 × 16.5 m inside with the south-east corner cut away and a 3.6 m ceiling. Full-height partitions divide it into the catalogue end of the central band, studio, street, reading area, living room, theater and rear landing, as planned. A 0.4 m furring wall along the street's north wall stands in for the facades #95 will dress. The catalogue lectern stands beside the arrival axis with its reader on the north side. The visitor arrives in an enclosed elevator car behind the studio's west wall, 2.0 × 2.0 m inside with a 2.6 m lit ceiling, facing east through its doors into the studio. The 1.6 × 2.4 m basement doorway opens south from the rear landing into the cut-away corner. When the walk starts the car's two steel leaves slide 0.9 m apart into the wall over 1.8 s, after a 0.6 s beat, and stay open; with reduced motion they are simply open. `COL_Elevator_Doors` keeps the visitor in the car until the gap is half open. Each display has a test frame with a red top-left mark and its own track spot light. `assets-source/blender/gallery_blockout.py` builds the walls, partitions, spawn, lectern placement and anchors from `assets-source/layout/redesign.json`, so the plan and the export cannot drift apart. No furniture is placed yet; the furniture envelopes in the plan wait for #91–#95.
+The shell is 24.0 × 16.5 m inside with the south-east corner cut away and a 3.6 m ceiling. Full-height partitions divide it into the catalogue end of the central band, studio, street, reading area, living room, theater and rear landing, as planned. A 0.4 m furring wall along the street's north wall stands in for the facades #95 will dress. The catalogue lectern stands beside the arrival axis with its reader on the north side. The visitor arrives in an enclosed elevator car behind the studio's west wall, 2.0 × 2.0 m inside with a 2.6 m lit ceiling, facing east through its doors into the studio. The 1.6 × 2.4 m basement doorway opens south from the rear landing into the cut-away corner. When the walk starts the car's two steel leaves slide 0.9 m apart into the wall over 1.8 s, after a 0.6 s beat, and stay open; with reduced motion they are simply open. `COL_Elevator_Doors` keeps the visitor in the car until the gap is half open. Each display has a test frame with a red top-left mark and its own track spot light. `assets-source/blender/gallery_blockout.py` builds the walls, partitions, spawn, lectern placement and anchors from `assets-source/layout/redesign.json`, so the plan and the export cannot drift apart. The studio is furnished (#91) as the reference room for the others:
+
+- original bamboo panelling on its walls, drawn by `gallery_finishes.bamboo_finish`;
+- warmer spotlights (about 2700 K) on its three frames;
+- the drafting table as its central worktable;
+- the easel;
+- the watercolours on an original supply cabinet;
+- the horse statue in the corner beside the elevator.
+
+Its props are one vertex-coloured draw. The furniture envelopes for the other rooms wait for #92–#95.
 
 ![Top-down render of the exported shell, ceiling hidden](renders/shell/overview.jpg)
 

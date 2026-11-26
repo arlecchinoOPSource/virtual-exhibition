@@ -361,39 +361,58 @@ describe('display frames and gallery lights', () => {
 });
 
 describe('third-party props', () => {
-  it('places the CC0 easel inside its envelope as one solid, vertex-coloured draw', async () => {
+  it('furnishes the studio in one vertex-coloured draw inside the planned envelopes', async () => {
     const world = await loadWorld();
-    const easel = world.scene.getObjectByName('Studio_Easel');
-    if (!(easel instanceof Mesh)) throw new Error('Missing Studio_Easel.');
-    const material = easel.material as MeshStandardMaterial;
-    expect(Array.isArray(easel.material)).toBe(false);
-    expect(material.vertexColors).toBe(true);
-    expect(easel.geometry.getAttribute('color')).toBeDefined();
-    const [x0, x1, y0, y1] = plan.furniture.find(
-      (item) => item.id === 'Studio_Easel',
-    )!.rect as [number, number, number, number];
-    const bounds = new Box3().setFromObject(easel);
-    expect(bounds.min.x).toBeGreaterThanOrEqual(x0 - 1e-3);
-    expect(bounds.max.x).toBeLessThanOrEqual(x1 + 1e-3);
-    expect(bounds.min.z).toBeGreaterThanOrEqual(-y1 - 1e-3);
-    expect(bounds.max.z).toBeLessThanOrEqual(-y0 + 1e-3);
-    expect(bounds.min.y).toBeCloseTo(0, 3);
-    expect(bounds.max.y).toBeCloseTo(1.85, 2);
-    // Walking north into it from the studio stops in front of it.
+    const props = world.scene.getObjectByName('Studio_Props');
+    if (!(props instanceof Mesh)) throw new Error('Missing Studio_Props.');
+    expect(Array.isArray(props.material)).toBe(false);
+    expect((props.material as MeshStandardMaterial).vertexColors).toBe(true);
+    expect(props.geometry.getAttribute('color')).toBeDefined();
+    expect(props.geometry.getAttribute('uv')).toBeUndefined();
+    const envelope = (id: string) =>
+      plan.furniture.find((item) => item.id === id)!.rect as [
+        number,
+        number,
+        number,
+        number,
+      ];
+    // Each prop's collision box sits inside its plan envelope, on the floor.
+    for (const id of [
+      'Studio_Easel',
+      'Studio_Worktable',
+      'Studio_Statue',
+      'Studio_Supplies',
+    ]) {
+      const proxy = world.scene.getObjectByName(`COL_${id}`);
+      if (!proxy) throw new Error(`Missing COL_${id}.`);
+      const bounds = new Box3().setFromObject(proxy);
+      const [x0, x1, y0, y1] = envelope(id);
+      expect(bounds.min.x, id).toBeGreaterThanOrEqual(x0 - 1e-3);
+      expect(bounds.max.x, id).toBeLessThanOrEqual(x1 + 1e-3);
+      expect(bounds.min.z, id).toBeGreaterThanOrEqual(-y1 - 1e-3);
+      expect(bounds.max.z, id).toBeLessThanOrEqual(-y0 + 1e-3);
+      expect(bounds.min.y, id).toBeCloseTo(0, 3);
+    }
+    // Walking north into the easel stops in front of it.
     const body = {
-      feet: new Vector3(-10.5, 0, -5.5),
+      feet: new Vector3(-10.5, 0, -6.6),
       grounded: true,
       fallSpeed: 0,
     };
     for (let i = 0; i < 200; i++)
       stepBody(body, 0, -0.025, 1 / 120, world.solids);
-    expect(body.feet.z).toBeGreaterThan(bounds.max.z);
-    // It does not stand between Exhibit_02 and its viewing zone.
-    const camera = new PerspectiveCamera();
-    camera.position.set(-8, 1.6, -6);
-    camera.lookAt(-8, 1.5, -7.48);
-    const pick = createSurfacePicker(camera, world.surfaces, 3);
-    expect(pick()?.name).not.toBe('Studio_Easel');
+    expect(body.feet.z).toBeGreaterThan(-6.82 + 0.2);
+    // No prop or panel stands between a studio frame and its viewing zone.
+    for (const slot of ['Exhibit_01', 'Exhibit_02', 'Exhibit_03']) {
+      const frame = plan.frames.find((f) => f.slot === slot)!;
+      const [gx, gz] = gazes[frame.gaze]!;
+      const target = new Vector3(frame.at[0], 1.5, -frame.at[1]);
+      const camera = new PerspectiveCamera();
+      camera.position.copy(target).add(new Vector3(-gx * 1.5, 0.1, -gz * 1.5));
+      camera.lookAt(target);
+      const pick = createSurfacePicker(camera, world.surfaces, 3);
+      expect(pick()?.name, slot).toBe('Frame_Canvas');
+    }
     world.dispose();
   });
 });
@@ -421,9 +440,10 @@ describe('gallery export budget', () => {
         expect(Math.max(width, height)).toBeLessThanOrEqual(2048);
       }
     });
-    // 52 for the shell, lectern, statue and fifteen frames, plus three for
-    // the arrival elevator: its two sliding leaves must stay separate meshes.
-    expect(drawCalls).toBeLessThanOrEqual(56);
+    // 52 for the shell, lectern, statue and fifteen frames, three for the
+    // arrival elevator (its sliding leaves stay separate), and two for the
+    // studio (#91): its joined props and its bamboo panelling.
+    expect(drawCalls).toBeLessThanOrEqual(58);
     world.dispose();
   });
 

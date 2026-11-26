@@ -18,13 +18,13 @@ Every external asset the exhibition considers is listed here, whether it is used
 
 ## Studio (#91)
 
-| ID                                               | Page title       | Creator         | Licence   | Board label              | Status    | Notes                                                                                                                                                  |
-| ------------------------------------------------ | ---------------- | --------------- | --------- | ------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [2ZP3o8hyPA](https://poly.pizza/m/2ZP3o8hyPA)    | Art Easel Set Up | reyshapes       | CC0       | Easel                    | Selected  | Representative import for this process (#90), then the studio's easel (#91).                                                                           |
-| [7Ma1NdvyAZn](https://poly.pizza/m/7Ma1NdvyAZn)  | TIME HOTEL 4.31  | S. Paul Michael | CC BY 3.0 | (unlabelled studio link) | Deferred  | Unretrievable during the 2026-11-26 audit; it now loads, but the title does not match a studio prop. The owner should confirm what it was meant to be. |
-| [cAmECzmVE2\_](https://poly.pizza/m/cAmECzmVE2_) | Watercolor Set   | Don Carson      | CC BY 3.0 | Watercolor Paint         | Candidate |                                                                                                                                                        |
-| [AK9CmjFnL6](https://poly.pizza/m/AK9CmjFnL6)    | Horse Statue     | Quaternius      | CC0       | Statue                   | Candidate | A horse statue, not a figure. Confirm it suits the studio.                                                                                             |
-| [8Z4yYj39NWS](https://poly.pizza/m/8Z4yYj39NWS)  | Drafting Table   | Joshua Johanson | CC BY 3.0 | Drafting Table           | Candidate | Fits the 3.0 × 2.1 m worktable envelope only if measured within it.                                                                                    |
+| ID                                               | Page title       | Creator         | Licence   | Board label              | Status   | Notes                                                                                                                                                  |
+| ------------------------------------------------ | ---------------- | --------------- | --------- | ------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [2ZP3o8hyPA](https://poly.pizza/m/2ZP3o8hyPA)    | Art Easel Set Up | reyshapes       | CC0       | Easel                    | Imported | The representative import (#90); part of `Studio_Props` since #91. See below.                                                                          |
+| [7Ma1NdvyAZn](https://poly.pizza/m/7Ma1NdvyAZn)  | TIME HOTEL 4.31  | S. Paul Michael | CC BY 3.0 | (unlabelled studio link) | Deferred | Unretrievable during the 2026-11-26 audit; it now loads, but the title does not match a studio prop. The owner should confirm what it was meant to be. |
+| [cAmECzmVE2\_](https://poly.pizza/m/cAmECzmVE2_) | Watercolor Set   | Don Carson      | CC BY 3.0 | Watercolor Paint         | Imported | Studio (#91). See below.                                                                                                                               |
+| [AK9CmjFnL6](https://poly.pizza/m/AK9CmjFnL6)    | Horse Statue     | Quaternius      | CC0       | Statue                   | Imported | Studio (#91). See below.                                                                                                                               |
+| [8Z4yYj39NWS](https://poly.pizza/m/8Z4yYj39NWS)  | Drafting Table   | Joshua Johanson | CC BY 3.0 | Drafting Table           | Imported | Studio (#91). See below.                                                                                                                               |
 
 ## Reading area (#92)
 
@@ -97,3 +97,31 @@ Each imported asset gets a full record here: download date, original file name a
 | Validation              | Three.js `GLTFLoader` unit test: one vertex-coloured material, inside the envelope, on the floor, solid to walk into, not blocking Exhibit_02. The route walk is updated to go round it. The Khronos glTF Validator 2.0.0-dev.3.10 (`npm run validate:models`, also in CI) reports 0 errors and 0 warnings on the original, and 0 errors on the new `gallery.glb`. Its 2 warnings there, tangent space on the floor and walls, predate the easel. |
 | Browser                 | Firefox at 100% and 50% resolution: `docs/renders/shell/easel-100.jpg`, `easel-50.jpg`.                                                                                                                                                                                                                                                                                                                                                           |
 | Limits                  | Its pale wood and paint jars are the creator's palette, not yet harmonized with the studio's (#91). The original's `TEXCOORD_0` is kept although no texture uses it.                                                                                                                                                                                                                                                                              |
+
+### Studio (#91): Drafting Table, Watercolor Set, Horse Statue
+
+All three follow the easel's steps above. Since #91 the studio's props share one vertex-colour material and join into `Studio_Props`, which is one draw. Each original material's colour is baked into vertex colours, UVs are dropped, and each prop gets an axis-aligned `COL_` box.
+
+| Asset                                                    | Original (downloaded 2026-11-26)         | Measured original                                                                                 | Placed                                                                                                                                                  |
+| -------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Drafting Table (8Z4yYj39NWS), Joshua Johanson, CC BY 3.0 | 781,752 B, SHA-256 `b717fecc…`, obj2gltf | 39 meshes, 13 materials, no textures; 10,389 triangles, 20,265 vertices; 5.69 × 5.75 × 4.72 units | Scaled ×0.286 to 1.35 m tall (1.63 × 1.64 m); centred in the worktable envelope, turned to face the elevator; lamp, pencil cup, T-square and stool kept |
+| Watercolor Set (cAmECzmVE2\_), Don Carson, CC BY 3.0     | 254,252 B, SHA-256 `8d661f01…`, obj2gltf | 1 mesh, 25 materials, no textures; 3,218 triangles, 6,440 vertices                                | Scaled ×0.152 to 0.2 m (0.58 × 0.36 m), on an original 1.1 × 0.4 × 0.8 m supply cabinet against the north wall                                          |
+| Horse Statue (AK9CmjFnL6), Quaternius, CC0               | 119,712 B, SHA-256 `e9d22843…`, FBX2glTF | 2 meshes, 2 materials, vertex colours; 1,849 triangles, 3,461 vertices                            | Scaled ×0.222 to 1.3 m (0.39 × 0.75 m), in the south-west corner beside the elevator                                                                    |
+
+**Validation:** the Khronos glTF Validator reports 0 errors and 0 warnings on all three originals, and 0 errors on `gallery.glb`. Unit tests check:
+
+- one vertex-coloured draw with no UVs;
+- every collision box inside its plan envelope;
+- the easel solid to walk into;
+- clear sightlines to all three studio frames.
+
+The route walk goes round the statue and the easel.
+
+**Cost (Firefox, M5, against the #89 baseline):**
+
+- Studio view: draws 14 → 16 and triangles 34.6k → 53.4k.
+- Elevator view: draws 51 → 53.
+- Median frame time: unchanged at 16.7 ms.
+- `gallery.glb`: 2.91 → 4.57 MB across #90 and #91, which takes the cold load to 5.32 MB.
+
+**Limit:** at this rate four more furnished rooms won't fit the 5 MB gallery budget. Geometry compression (meshopt with its small decoder), or simplifying the heaviest props, is needed before #92–#95.

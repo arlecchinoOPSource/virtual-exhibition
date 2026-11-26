@@ -268,3 +268,42 @@ def frame_profile(collection, mat, w, h, d, border):
     mesh.from_pydata(verts, [], faces)
     mesh.materials.append(mat)
     collection.objects.link(bpy.data.objects.new("Frame_Moulding", mesh))
+
+
+def bamboo_finish(mat):
+    """Original split-bamboo panelling, tiled every metre: 16 vertical culms
+    per metre, each with its own straw tone, rounded shading across its width,
+    two darker nodes at its own heights, and dark seams between culms. Drawn
+    here from numbers, so no outside texture is involved (#91)."""
+    size, culms = 512, 16
+    rng = np.random.default_rng(91)
+    width = size // culms
+    y, x = np.mgrid[:size, :size]
+    column = x // width
+    across = (x % width + 0.5) / width
+    tone = rng.uniform(0.85, 1.1, culms)[column]
+    hue = rng.uniform(-0.04, 0.04, culms)[column]
+    base = np.stack([0.78 + hue, 0.64 + hue * 0.5, 0.36 - hue], axis=-1) * tone[..., None]
+    shade = 0.72 + 0.28 * np.sin(np.pi * across)
+    rgb = base * shade[..., None]
+    for offset in (rng.uniform(0, 1, culms), rng.uniform(0, 1, culms)):
+        node_row = (offset[column] * size).astype(int)
+        near = np.minimum(np.abs(y - node_row), size - np.abs(y - node_row))
+        ring = np.exp(-(near / 3.0) ** 2)
+        rgb *= (1 - 0.35 * ring)[..., None]
+    grain = _tileable(rng, size, 40, 120, stretch=0.1)
+    rgb *= (1 + 0.06 * grain)[..., None]
+    seam = (x % width) < 2
+    rgb[seam] *= 0.35
+
+    rgba = np.ones((size, size, 4), dtype=np.float32)
+    # The image is an sRGB colour image, so these values are stored as they are.
+    rgba[..., :3] = np.clip(rgb, 0, 1)
+    img = bpy.data.images.new("Bamboo panelling - colour", size, size, alpha=False)
+    img.pixels.foreach_set(rgba.ravel())
+    img.pack()
+    node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+    node.image = img
+    shader = mat.node_tree.nodes["Principled BSDF"]
+    mat.node_tree.links.new(node.outputs["Color"], shader.inputs["Base Color"])
+    shader.inputs["Roughness"].default_value = 0.55
