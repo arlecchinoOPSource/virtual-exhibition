@@ -372,27 +372,47 @@
     {
       "id": "Theater_Bench_West",
       "section": "theater",
-      "rect": [-2.0, -0.3, -7.2, -6.75]
+      "rect": [-2.0, -0.3, -7.3, -6.7],
+      "note": "Bench (Quaternius, CC0) at 0.48 m: 1.02 x 0.57 m, beside the stage aisle (#94)"
     },
     {
       "id": "Theater_Bench_East",
       "section": "theater",
-      "rect": [1.3, 3.0, -7.2, -6.75]
+      "rect": [1.3, 3.0, -7.3, -6.7]
     },
     {
       "id": "Theater_Castle_West",
       "section": "theater",
-      "rect": [-2.9, -2.3, -9.0, -8.6]
+      "rect": [-2.9, -1.6, -9.0, -8.6],
+      "note": "Stone Tower (Quaternius, CC0) as a 1.8 m relief flattened to 0.33 m deep, in the stage corner (#94)"
     },
     {
       "id": "Theater_Castle_East",
       "section": "theater",
-      "rect": [3.4, 4.0, -9.0, -8.6]
+      "rect": [2.7, 4.0, -9.0, -8.6]
     },
     {
       "id": "Theater_Vase",
       "section": "theater",
-      "rect": [3.5, 3.9, -2.9, -2.5]
+      "rect": [3.5, 3.9, -2.9, -2.5],
+      "note": "Flower Pot (Zsky, CC BY 3.0) at 0.7 m (#94)"
+    },
+    {
+      "id": "Theater_Banner_West",
+      "section": "theater",
+      "rect": [-2.9, -2.6, -8.5, -6.6],
+      "note": "Banner Wall (Quaternius, CC0) at 2.2 m, hung 1.0 m up, flattened to a shallow relief (#94)"
+    },
+    {
+      "id": "Theater_Banner_East",
+      "section": "theater",
+      "rect": [3.7, 4.0, -8.5, -6.6]
+    },
+    {
+      "id": "Theater_Window",
+      "section": "theater",
+      "rect": [-2.4, -0.6, -2.45, -2.2],
+      "note": "Window Bars (Quaternius, CC0) as a 1.6 m relief, 0.8 m up the north wall (#94)"
     },
     {
       "id": "Entrance_Statue",
