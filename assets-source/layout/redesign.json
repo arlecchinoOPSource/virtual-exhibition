@@ -1,5 +1,5 @@
 {
-  "about": "Proposed exhibition redesign plan for issue #86. Blender metres: +X east toward the basement, +Y north, +Z up; three.js position = (x, z, -y). Rectangles are [x0, x1, y0, y1] in plan. Wall rectangles include their thickness. Furniture envelopes are planning sizes, not measured models. Frame 'gaze' is the direction a visitor looks to see the frame, as in gallery_blockout.py marker().",
+  "about": "Exhibition redesign plan for issue #86, accepted by the owner on 2026-11-26. Blender metres: +X east toward the basement, +Y north, +Z up; three.js position = (x, z, -y). Rectangles are [x0, x1, y0, y1] in plan. Wall rectangles include their thickness. Furniture envelopes are planning sizes, not measured models. Frame 'gaze' is the direction a visitor looks to see the frame, as in gallery_blockout.py marker().",
   "levels": {
     "upstairs": { "floor_z": 0, "ceiling_z": 3.6 },
     "basement": { "floor_z": -3.06, "ceiling_z": -0.26 }

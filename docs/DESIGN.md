@@ -18,11 +18,11 @@ A metal-band-inspired “BASEMENT OF DOOM” sign and a Grim Reaper statue mark 
 
 The room draws on the Helvete record shop basement. Its planned elements include handwritten “BLACK METAL” graffiti, a wooden throne, a metal candle stand, and a bare overhead bulb. The blockout builds all of them from primitives and sheared Blender-font lettering: a weathered concrete and plaster room with exposed brick and floor stains, the graffiti above a high-backed throne on the east wall, a five-candle iron stand, and bare bulbs over the room and the stairs. Point lights at each bulb and the candles carry the light, and gallery daylight fades below ground. Every basement mesh, letter, and colour is original, so there are no external asset rights to record. Create original meshes, lettering, and texture work and review attribution and permissions for any external assets. Environmental audio is optional. Keep the entrance and staircase outside the primary academic route and fetch basement-specific assets only when needed.
 
-## Exhibition redesign plan (proposed)
+## Exhibition redesign plan (accepted)
 
-This section is the measured plan for issue #86. It is a proposal: the sections above still describe what is built, and nothing here changes the scene until #87 builds the shell and #88 wires the frames. The machine-readable plan is `assets-source/layout/redesign.json`. `tests/unit/layout-plan.test.ts` checks it, and `node assets-source/layout/plan_svg.mjs docs/renders/layout/redesign-plan.svg` redraws the [plan diagram](renders/layout/redesign-plan.svg).
+This section is the measured plan for issue #86. The owner accepted the layout as drawn on 2026-11-26, including the five decisions below. The sections above still describe what is built, and nothing here changes the scene until #87 builds the shell and #88 wires the frames. The machine-readable plan is `assets-source/layout/redesign.json`. `tests/unit/layout-plan.test.ts` checks it, and `node assets-source/layout/plan_svg.mjs docs/renders/layout/redesign-plan.svg` redraws the [plan diagram](renders/layout/redesign-plan.svg).
 
-![Proposed redesign plan, north up](renders/layout/redesign-plan.svg)
+![Accepted redesign plan, north up](renders/layout/redesign-plan.svg)
 
 ### Sources and what is measured
 
@@ -95,7 +95,9 @@ Basement frames sit at z −1.56 (1.5 m above the basement floor). Their 2.8 m c
 
 Content stays bound to slot IDs, so nothing is lost when frames move. Exhibit_01 keeps the published Doraemon artwork and essay PDF and hangs on the studio's west wall, the first frame seen on entering. Exhibit_02–15 keep their placeholder entries and move to the positions above. #88 adds Exhibit_16–18 as basement placeholders and extends the manifest from 15 to 18 entries. Directory entries keep neutral names; section names stay out of artwork titles.
 
-### Decisions and open questions
+### Decisions
+
+Accepted with the layout on 2026-11-26. The far plane, jeepney and partition-height items are checks for the issues named, not open layout questions.
 
 - **Arrival.** The board sketches the elevator at the front-left corner. The plan puts arrival at the west end of the central band so the studio and living-room doors are equally close and the basement door is visible down the axis. Moving it to the studio corner would put the spawn inside a furnished room.
 - **Doraemon placement.** Exhibit_01 lands in the studio by walking order. The essay's subject also fits the living room; swapping two manifest entries in #88 moves it without changing geometry.
