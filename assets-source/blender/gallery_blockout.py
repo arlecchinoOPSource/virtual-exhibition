@@ -265,6 +265,7 @@ box("Wall_West_Lintel", -14 - WALL, -14, door_y0, door_y1, DOOR_HEIGHT, HEIGHT, 
 CASING = material("Gallery portal dark walnut", (0.13, 0.073, 0.038), 0.52)
 ROOM_DOORS = {"Studio_Door", "Living_Door", "Theater_Door", "Studio_Street", "Living_Theater"}
 HEAD = 2.55
+HEADER_TOP = HEAD + 0.10
 JAMB_REVEAL = 0.015
 for opening in PLAN["openings"]:
     name = opening["id"]
@@ -287,9 +288,9 @@ for opening in PLAN["openings"]:
     door_part(f"Portal_Trim_{name}_Right", high - JAMB_REVEAL, high + 0.085,
               depth0 - 0.037, depth1 + 0.037, 0, HEAD, CASING)
     door_part(f"Portal_Trim_{name}_Head", low - 0.085, high + 0.085,
-              depth0 - 0.037, depth1 + 0.037, HEAD, HEAD + 0.10, CASING)
+              depth0 - 0.037, depth1 + 0.037, HEAD, HEADER_TOP, CASING)
     door_part(f"Wall_Portal_{name}_Infill", low, high,
-              depth0, depth1, HEAD + 0.10, HEIGHT, WALLS)
+              depth0, depth1, HEADER_TOP, HEIGHT, WALLS)
 
 box("Elevator_Floor", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, -WALL, 0, CAR_FLOOR)
 box("Elevator_Ceiling", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, CAR_HEIGHT,
@@ -363,7 +364,7 @@ for name, file, rect, height, turn_deg, wall, decimate in STUDIO_PROPS:
 
 # Original bamboo panelling (gallery_finishes.bamboo_finish) on the studio's
 # side of its walls, 1 cm thick so the frames' anchors stay 1 cm proud of it,
-# leaving the doorways and the elevator surround clear.
+# leaving the doorways clear and continuing above their headers.
 from gallery_finishes import bamboo_finish
 BAMBOO = material("Studio bamboo panelling", (0.78, 0.64, 0.36), 0.55)
 bamboo_finish(BAMBOO)
@@ -374,8 +375,10 @@ for index, (x0, x1, y0, y1, z0) in enumerate((
     (-14.0, -13.99, 3.03, 5.07, 2.55),  # over the elevator surround
     (-14.0, -12.0, 2.2, 2.21, 0),       # spine, west of the studio door
     (-10.0, -6.7, 2.2, 2.21, 0),        # spine, east of the studio door
+    (-12.0, -10.0, 2.2, 2.21, HEADER_TOP),
     (-6.71, -6.7, 2.2, 4.5, 0),         # partition, south of the street opening
     (-6.71, -6.7, 6.5, 7.5, 0),         # partition, north of the street opening
+    (-6.71, -6.7, 4.5, 6.5, HEADER_TOP),
 )):
     panel = box(f"Studio_Bamboo_{index:02}", x0, x1, y0, y1, z0, HEIGHT, BAMBOO, collide=False)
     paint_uv(panel)
@@ -435,15 +438,15 @@ for index, (rect, turn_deg, base_z) in enumerate((
     print("THIRD_PARTY Reading_Scroll", measures)
 
 # Original terracotta finish on the reading side of the spine and the south
-# partitions, 1 cm thick like the studio's bamboo, leaving the theater door clear.
-# It runs on to the studio and living-room door jambs so the band reads as one.
+# partitions, 1 cm thick like the studio's bamboo, including above the theater door.
 TERRACOTTA = material("Reading terracotta plaster", (0.46, 0.17, 0.09), 0.85)
-for index, (x0, x1, y0, y1) in enumerate((
-    (-10.0, 4.0, 1.99, 2.0),    # spine
-    (-10.0, 1.4, -2.0, -1.99),   # south partition, west of the theater door
-    (3.4, 4.0, -2.0, -1.99),    # south partition, east of the theater door
+for index, (x0, x1, y0, y1, z0) in enumerate((
+    (-10.0, 4.0, 1.99, 2.0, 0),    # spine
+    (-10.0, 1.4, -2.0, -1.99, 0),  # south partition, west of the theater door
+    (3.4, 4.0, -2.0, -1.99, 0),    # south partition, east of the theater door
+    (1.4, 3.4, -2.0, -1.99, HEADER_TOP),
 )):
-    box(f"Reading_Terracotta_{index:02}", x0, x1, y0, y1, 0, HEIGHT, TERRACOTTA, collide=False)
+    box(f"Reading_Terracotta_{index:02}", x0, x1, y0, y1, z0, HEIGHT, TERRACOTTA, collide=False)
 
 # Living room (#93). One old TV on an original cabinet, an original coffee
 # table carrying the bowl of fruit, the couch facing the TV, the display case,
@@ -500,15 +503,17 @@ for file, name, rect, height, turn_deg, wall, options in (
 
 # Original teal paint on the living room's side of its walls, 1 cm thick.
 TEAL = material("Living teal paint", (0.07, 0.25, 0.24), 0.8)
-for index, (x0, x1, y0, y1) in enumerate((
-    (-14.0, -13.99, -9.0, -2.2),    # west wall
-    (-14.0, -3.1, -9.0, -8.99),     # south wall
-    (-14.0, -12.0, -2.21, -2.2),    # north, west of the living door
-    (-10.0, -3.1, -2.21, -2.2),     # north, east of the living door
-    (-3.11, -3.1, -9.0, -6.5),      # east partition, south of the theater opening
-    (-3.11, -3.1, -4.5, -2.2),      # east partition, north of the theater opening
+for index, (x0, x1, y0, y1, z0) in enumerate((
+    (-14.0, -13.99, -9.0, -2.2, 0),    # west wall
+    (-14.0, -3.1, -9.0, -8.99, 0),     # south wall
+    (-14.0, -12.0, -2.21, -2.2, 0),    # north, west of the living door
+    (-10.0, -3.1, -2.21, -2.2, 0),     # north, east of the living door
+    (-12.0, -10.0, -2.21, -2.2, HEADER_TOP),
+    (-3.11, -3.1, -9.0, -6.5, 0),      # east partition, south of the theater opening
+    (-3.11, -3.1, -4.5, -2.2, 0),      # east partition, north of the theater opening
+    (-3.11, -3.1, -6.5, -4.5, HEADER_TOP),
 )):
-    box(f"Living_Teal_{index:02}", x0, x1, y0, y1, 0, HEIGHT, TEAL, collide=False)
+    box(f"Living_Teal_{index:02}", x0, x1, y0, y1, z0, HEIGHT, TEAL, collide=False)
 
 # Theater (#94). An original stone proscenium with static drapes frames
 # Exhibit_13 on the stage wall. Components of the castle set become shallow
@@ -562,15 +567,17 @@ theater_prop("Kgt363WkKd/flower-pot.glb", "Flower_Pot", envelope["Theater_Vase"]
 
 # Original deep burgundy paint on the theater's side of its walls, 1 cm thick.
 BURGUNDY = material("Theater burgundy paint", (0.13, 0.025, 0.03), 0.8)
-for index, (x0, x1, y0, y1) in enumerate((
-    (-2.9, 4.0, -9.0, -8.99),      # stage wall
-    (3.99, 4.0, -9.0, -2.2),       # east wall
-    (-2.9, -2.89, -9.0, -6.5),     # west partition, south of the opening
-    (-2.9, -2.89, -4.5, -2.2),     # west partition, north of the opening
-    (-2.9, 1.4, -2.21, -2.2),      # north, west of the theater door
-    (3.4, 4.0, -2.21, -2.2),       # north, east of the theater door
+for index, (x0, x1, y0, y1, z0) in enumerate((
+    (-2.9, 4.0, -9.0, -8.99, 0),      # stage wall
+    (3.99, 4.0, -9.0, -2.2, 0),       # east wall
+    (-2.9, -2.89, -9.0, -6.5, 0),     # west partition, south of the opening
+    (-2.9, -2.89, -4.5, -2.2, 0),     # west partition, north of the opening
+    (-2.9, -2.89, -6.5, -4.5, HEADER_TOP),
+    (-2.9, 1.4, -2.21, -2.2, 0),      # north, west of the theater door
+    (3.4, 4.0, -2.21, -2.2, 0),       # north, east of the theater door
+    (1.4, 3.4, -2.21, -2.2, HEADER_TOP),
 )):
-    box(f"Theater_Burgundy_{index:02}", x0, x1, y0, y1, 0, HEIGHT, BURGUNDY, collide=False)
+    box(f"Theater_Burgundy_{index:02}", x0, x1, y0, y1, z0, HEIGHT, BURGUNDY, collide=False)
 
 # Street (#95). Shallow facades on the street wall between the frames: two
 # stock buildings used only as bases, flattened to 15 cm reliefs, and an

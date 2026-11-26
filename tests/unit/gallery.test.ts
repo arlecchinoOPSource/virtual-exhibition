@@ -89,6 +89,49 @@ describe('gallery blockout', () => {
     }
   });
 
+  it('continues each adjoining room finish over the door header', async () => {
+    const model = await parseModel('gallery');
+    model.updateMatrixWorld(true);
+    const finishes = [
+      'Gallery_Walls',
+      'Studio_Bamboo',
+      'Reading_Terracotta',
+      'Living_Teal',
+      'Theater_Burgundy',
+    ].map((name) => model.getObjectByName(name)!);
+    const byOpening = [
+      ['Studio_Door', 'Gallery_Walls', 'Studio_Bamboo'],
+      ['Living_Door', 'Living_Teal', 'Gallery_Walls'],
+      ['Theater_Door', 'Theater_Burgundy', 'Reading_Terracotta'],
+      ['Studio_Street', 'Studio_Bamboo', 'Gallery_Walls'],
+      ['Living_Theater', 'Living_Teal', 'Theater_Burgundy'],
+    ] as const;
+
+    for (const [id, lowFinish, highFinish] of byOpening) {
+      const [x0, x1, y0, y1] = plan.openings.find(
+        (opening) => opening.id === id,
+      )!.rect;
+      const center = new Vector3((x0 + x1) / 2, 3.15, -(y0 + y1) / 2);
+      const depth =
+        x1 - x0 > y1 - y0 ? new Vector3(0, 0, -1) : new Vector3(1, 0, 0);
+      for (const [side, expected] of [
+        [-1, lowFinish],
+        [1, highFinish],
+      ] as const) {
+        const origin = center.clone().addScaledVector(depth, side * 0.3);
+        const ray = new Raycaster(
+          origin,
+          depth.clone().multiplyScalar(-side),
+          0,
+          0.4,
+        );
+        expect(ray.intersectObjects(finishes)[0]?.object.name, id).toBe(
+          expected,
+        );
+      }
+    }
+  });
+
   it('spawns inside the arrival elevator facing its doors and the basement door', async () => {
     const world = await loadWorld();
     const [x, y] = plan.spawn.at;
