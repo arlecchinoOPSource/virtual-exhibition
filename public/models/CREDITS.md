@@ -43,7 +43,7 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
 - **File:** `assets-source/third-party/8Z4yYj39NWS/drafting-table.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/46576848-ecb9-4203-b4d3-7d4be9f375d7.glb>. It is 781,752 bytes, SHA-256 `b717fecca098e859e04010cedbe9f905b94b29faf63ea0b26ab71f494ea1ccc8`.
 - **In the model:** part of `Studio_Props` (the studio's worktable, with its lamp, pencil cup, T-square and stool, and `COL_Studio_Worktable`).
-- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.35 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is kept whole, stool included, and stands against the north wall facing the room. Geometry is otherwise unchanged.
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.35 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is kept whole, stool included, and stands against the north wall facing the room. Since #92 it is simplified to 35% of its triangles.
 
 ## Studio_Props: Watercolor Set
 
@@ -51,7 +51,7 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
 - **File:** `assets-source/third-party/cAmECzmVE2_/watercolor-set.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/971bbe97-7b60-4b34-ad2c-8a6a3463ac0c.glb>. It is 254,252 bytes, SHA-256 `8d661f01448bf81dac06b3b36ecd2994ab088129180d90f8631e0b88459838cb`.
 - **In the model:** part of `Studio_Props` (standing on an original supply cabinet in the north-west corner).
-- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.2 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Geometry is otherwise unchanged.
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.2 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Since #92 it is simplified to 30% of its triangles.
 
 ## Studio_Props: Horse Statue
 
@@ -60,6 +60,38 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **File:** `assets-source/third-party/AK9CmjFnL6/horse-statue.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/55b0aa03-543c-439d-a7d7-f0ac4c23578f.glb>. It is 119,712 bytes, SHA-256 `e9d22843b9bef1a6a943b8d59bcee99e5a3702904150fba4a4e4ba1af53448c2`.
 - **In the model:** part of `Studio_Props` (in the studio's south-west corner, with `COL_Studio_Statue`).
 - **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.3 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Geometry is otherwise unchanged.
+
+## Reading_Shelf: Bookcase with Books
+
+- **Work:** "Bookcase with Books" by Quaternius, from [Poly Pizza](https://poly.pizza/m/tACDGJ4CGW).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/tACDGJ4CGW/bookcase-with-books.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/7d59d0aa-6447-4bbb-afc7-0452e9a34353.glb>. It is 589,464 bytes, SHA-256 `d2e2cd56498bec39dae1d8cf0b776bbfaaf25694a2abb845633515a248b0e5de`.
+- **In the model:** the mesh `Reading_Shelf`, drawn twice as the reading area's two shelves (`Reading_Shelf_West`, `Reading_Shelf_East`, with `COL_` boxes).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.75 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 35% of its triangles.
+
+## Reading_Props: Desk
+
+- **Work:** "Desk" by Quaternius, from [Poly Pizza](https://poly.pizza/m/V86Go2rlnq).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/V86Go2rlnq/desk.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/91c2bf8d-0876-4801-abd3-8dd5d017ecbd.glb>. It is 135,916 bytes, SHA-256 `3878f6d93d946d77f3e1be55919627a81435696252137ae33c22391c0411f3ce`.
+- **In the model:** part of `Reading_Props` (the reading desk against the south partition, with `COL_Reading_Desk`).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.76 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 50% of its triangles.
+
+## Reading_Props: Quill and parchment
+
+- **Work:** "Quill and parchment" by Bruno Oliveira, from [Poly Pizza](https://poly.pizza/m/9RjoPxajS8Z).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/9RjoPxajS8Z/quill-and-parchment.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/e530ed57-848a-41d6-b9da-46a77d49f33a.glb>. It is 28,276 bytes, SHA-256 `2897862754df75e8c246224855306ed01c9455639efdd9917b7acf0b97d919bb`.
+- **In the model:** part of `Reading_Props` (on the reading desk).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.22 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Geometry is otherwise unchanged.
+
+## Reading_Props: Scroll
+
+- **Work:** "Scroll" by Justin Randall, from [Poly Pizza](https://poly.pizza/m/9ylwwjAp8KM).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/9ylwwjAp8KM/scroll.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/ea03c1f7-b7dc-42de-a870-a2d0114ca5b0.glb>. It is 117,104 bytes, SHA-256 `ca6f93461bd898c833eeb90619e66c18bc604991c4144bb79a96d27c90f643e6`.
+- **In the model:** part of `Reading_Props` (three copies by the reading area's south partition; no collider).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.12 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 25% of its triangles, and used three times.
 
 ## Replacing a print
 

@@ -415,6 +415,64 @@ describe('third-party props', () => {
     }
     world.dispose();
   });
+
+  it('furnishes the reading area with one shared shelf mesh, one prop draw and clear frames', async () => {
+    const world = await loadWorld();
+    const props = world.scene.getObjectByName('Reading_Props');
+    if (!(props instanceof Mesh)) throw new Error('Missing Reading_Props.');
+    expect((props.material as MeshStandardMaterial).vertexColors).toBe(true);
+    expect(props.geometry.getAttribute('uv')).toBeUndefined();
+    // Both shelves draw the same stored bookcase.
+    const west = world.scene.getObjectByName('Reading_Shelf_West');
+    const east = world.scene.getObjectByName('Reading_Shelf_East');
+    if (!(west instanceof Mesh) || !(east instanceof Mesh))
+      throw new Error('Missing a reading shelf.');
+    expect(east.geometry).toBe(west.geometry);
+    const envelope = (id: string) =>
+      plan.furniture.find((item) => item.id === id)!.rect as [
+        number,
+        number,
+        number,
+        number,
+      ];
+    for (const id of [
+      'Reading_Shelf_West',
+      'Reading_Shelf_East',
+      'Reading_Desk',
+    ]) {
+      const proxy = world.scene.getObjectByName(`COL_${id}`);
+      if (!proxy) throw new Error(`Missing COL_${id}.`);
+      const bounds = new Box3().setFromObject(proxy);
+      const [x0, x1, y0, y1] = envelope(id);
+      expect(bounds.min.x, id).toBeGreaterThanOrEqual(x0 - 1e-3);
+      expect(bounds.max.x, id).toBeLessThanOrEqual(x1 + 1e-3);
+      expect(bounds.min.z, id).toBeGreaterThanOrEqual(-y1 - 1e-3);
+      expect(bounds.max.z, id).toBeLessThanOrEqual(-y0 + 1e-3);
+    }
+    // The scrolls are decoration: no collider.
+    expect(world.scene.getObjectByName('COL_Reading_Scrolls')).toBeUndefined();
+    // Walking south into the desk stops in front of it, clear of the axis.
+    const body = {
+      feet: new Vector3(-6.2, 0, 0.2),
+      grounded: true,
+      fallSpeed: 0,
+    };
+    for (let i = 0; i < 200; i++)
+      stepBody(body, 0, 0.025, 1 / 120, world.solids);
+    expect(body.feet.z).toBeLessThan(1.25 - 0.2);
+    expect(body.feet.z).toBeGreaterThan(0.6);
+    for (const slot of ['Exhibit_07', 'Exhibit_08', 'Exhibit_09']) {
+      const frame = plan.frames.find((f) => f.slot === slot)!;
+      const [gx, gz] = gazes[frame.gaze]!;
+      const target = new Vector3(frame.at[0], 1.5, -frame.at[1]);
+      const camera = new PerspectiveCamera();
+      camera.position.copy(target).add(new Vector3(-gx * 1.5, 0.1, -gz * 1.5));
+      camera.lookAt(target);
+      const pick = createSurfacePicker(camera, world.surfaces, 3);
+      expect(pick()?.name, slot).toBe('Frame_Canvas');
+    }
+    world.dispose();
+  });
 });
 
 describe('gallery export budget', () => {
@@ -442,8 +500,10 @@ describe('gallery export budget', () => {
     });
     // 52 for the shell, lectern, statue and fifteen frames, three for the
     // arrival elevator (its sliding leaves stay separate), and two for the
-    // studio (#91): its joined props and its bamboo panelling.
-    expect(drawCalls).toBeLessThanOrEqual(58);
+    // studio (#91): its joined props and its bamboo panelling; four for the
+    // reading area (#92): its joined props, the shelf drawn twice and its
+    // terracotta finish.
+    expect(drawCalls).toBeLessThanOrEqual(62);
     world.dispose();
   });
 

@@ -67,7 +67,7 @@ def vertex_colour_material(name, roughness=0.8):
 
 
 def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", gap=0.05,
-                base_z=0.0, material=None):
+                base_z=0.0, material=None, decimate=1.0):
     """Import, normalize and place a prop. Returns the object and its measures.
 
     envelope is the plan rectangle [x0, x1, y0, y1] in Blender metres; the prop
@@ -75,6 +75,8 @@ def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", ga
     or centred in it for wall "C". base_z lifts it onto a surface. A shared
     material lets a room's props be joined into one draw.
     turn_deg turns the model about Z so its front faces into the room.
+    decimate below 1 collapses the mesh to that share of its triangles, for
+    props whose detail costs more transfer than it shows at visiting distance.
     """
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=path)
@@ -105,6 +107,10 @@ def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", ga
         bpy.ops.object.join()
     prop = bpy.context.view_layer.objects.active
     prop.name = prop.data.name = name
+    if decimate < 1.0:
+        modifier = prop.modifiers.new("Decimate", "DECIMATE")
+        modifier.ratio = decimate
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
     for coll in list(prop.users_collection):
         coll.objects.unlink(prop)
     collection.objects.link(prop)
@@ -143,6 +149,7 @@ def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", ga
     return prop, {
         **source,
         "scale": scale,
+        "triangles_out": sum(len(p.vertices) - 2 for p in mesh.polygons),
         "size_m": tuple(round(v, 3) for v in size),
         "bounds": tuple(round(v, 3) for v in bounds),
     }

@@ -318,15 +318,15 @@ def prop_proxy(name, bounds, z1, z0=0.0):
 
 
 STUDIO_PROPS = (
-    # name, file, envelope, height (m), turn (deg), wall
-    ("Studio_Easel", "2ZP3o8hyPA/art-easel-set-up.glb", "Studio_Easel", 1.85, 90, "N"),
-    ("Studio_Worktable", "8Z4yYj39NWS/drafting-table.glb", "Studio_Worktable", 1.35, 180, "N"),
-    ("Studio_Statue", "AK9CmjFnL6/horse-statue.glb", "Studio_Statue", 1.3, 0, "C"),
+    # name, file, envelope, height (m), turn (deg), wall, share of triangles kept
+    ("Studio_Easel", "2ZP3o8hyPA/art-easel-set-up.glb", "Studio_Easel", 1.85, 90, "N", 1.0),
+    ("Studio_Worktable", "8Z4yYj39NWS/drafting-table.glb", "Studio_Worktable", 1.35, 180, "N", 0.35),
+    ("Studio_Statue", "AK9CmjFnL6/horse-statue.glb", "Studio_Statue", 1.3, 0, "C", 1.0),
 )
-for name, file, rect, height, turn_deg, wall in STUDIO_PROPS:
+for name, file, rect, height, turn_deg, wall, decimate in STUDIO_PROPS:
     prop, measures = import_prop(os.path.join(THIRD_PARTY, file), f"Studio_Prop_{name[7:]}",
                                  collections["Gallery_Render"], envelope[rect], height, turn_deg,
-                                 wall, material=PROP_PAINT)
+                                 wall, material=PROP_PAINT, decimate=decimate)
     print("THIRD_PARTY", name, measures)
     prop_proxy(name, measures["bounds"], height)
 
@@ -357,8 +357,62 @@ colour_block("Studio_Prop_Cabinet", collections["Gallery_Render"], cabinet, 0, 0
 prop_proxy("Studio_Supplies", cabinet, 0.8)
 prop, measures = import_prop(os.path.join(THIRD_PARTY, "cAmECzmVE2_/watercolor-set.glb"),
                              "Studio_Prop_Watercolors", collections["Gallery_Render"], cabinet,
-                             0.2, 90, "C", base_z=0.8, material=PROP_PAINT)
+                             0.2, 90, "C", base_z=0.8, material=PROP_PAINT,
+                             decimate=0.3)
 print("THIRD_PARTY Studio_Watercolors", measures)
+
+# Reading area (#92), to the same standard. The two shelves are one bookcase
+# mesh used twice, so it is stored once; the desk, the quill and parchment on it
+# and the scrolls join into Reading_Props. The scrolls are floor decoration by
+# the wall and have no collider.
+READING_PAINT = vertex_colour_material("Reading_Prop_Paint")
+shelf, measures = import_prop(os.path.join(THIRD_PARTY, "tACDGJ4CGW/bookcase-with-books.glb"),
+                              "Reading_Shelf_West", collections["Gallery_Render"],
+                              envelope["Reading_Shelf_West"], 1.75, 0, "N",
+                              material=READING_PAINT, decimate=0.35)
+shelf.data.name = "Reading_Shelf"
+print("THIRD_PARTY Reading_Shelf", measures)
+prop_proxy("Reading_Shelf_West", measures["bounds"], 1.75)
+bx0, bx1, by0, by1 = measures["bounds"]
+ex0, ex1, ey0, ey1 = envelope["Reading_Shelf_East"]
+east = bpy.data.objects.new("Reading_Shelf_East", shelf.data)
+east.location = ((ex0 + ex1) / 2, shelf.location.y, 0)
+collections["Gallery_Render"].objects.link(east)
+prop_proxy("Reading_Shelf_East", (east.location.x - (bx1 - bx0) / 2,
+                                  east.location.x + (bx1 - bx0) / 2, by0, by1), 1.75)
+
+prop, desk = import_prop(os.path.join(THIRD_PARTY, "V86Go2rlnq/desk.glb"), "Reading_Prop_Desk",
+                         collections["Gallery_Render"], envelope["Reading_Desk"], 0.76, 180, "S",
+                         material=READING_PAINT, decimate=0.5)
+print("THIRD_PARTY Reading_Desk", desk)
+prop_proxy("Reading_Desk", desk["bounds"], 0.76)
+prop, measures = import_prop(os.path.join(THIRD_PARTY, "9RjoPxajS8Z/quill-and-parchment.glb"),
+                             "Reading_Prop_Quill", collections["Gallery_Render"], desk["bounds"],
+                             0.22, 180, "C", base_z=0.76, material=READING_PAINT)
+print("THIRD_PARTY Reading_Quill", measures)
+
+rx0, rx1, ry0, ry1 = envelope["Reading_Scrolls"]
+for index, (rect, turn_deg, base_z) in enumerate((
+    ((rx0, (rx0 + rx1) / 2, ry0, ry1), 0, 0.0),
+    (((rx0 + rx1) / 2, rx1, ry0, ry1), 180, 0.0),
+    ((rx0, rx1, ry0, ry0 + 0.3), 6, 0.12),  # resting on the other two
+)):
+    prop, measures = import_prop(os.path.join(THIRD_PARTY, "9ylwwjAp8KM/scroll.glb"),
+                                 f"Reading_Prop_Scroll_{index}", collections["Gallery_Render"],
+                                 rect, 0.12, turn_deg, "S", base_z=base_z, material=READING_PAINT,
+                                 decimate=0.25)
+    print("THIRD_PARTY Reading_Scroll", measures)
+
+# Original terracotta finish on the reading side of the spine and the south
+# partitions, 1 cm thick like the studio's bamboo, leaving the theater door clear.
+# It runs on to the studio and living-room door jambs so the band reads as one.
+TERRACOTTA = material("Reading terracotta plaster", (0.46, 0.17, 0.09), 0.85)
+for index, (x0, x1, y0, y1) in enumerate((
+    (-10.0, 4.0, 1.99, 2.0),    # spine
+    (-10.0, 1.4, -2.0, -1.99),   # south partition, west of the theater door
+    (3.4, 4.0, -2.0, -1.99),    # south partition, east of the theater door
+)):
+    box(f"Reading_Terracotta_{index:02}", x0, x1, y0, y1, 0, HEIGHT, TERRACOTTA, collide=False)
 
 # Basement entrance in the right end wall: a hinged door, its frame, a sign,
 # and a statue. The door collider is a separate proxy the engine toggles.
@@ -647,6 +701,8 @@ join("Gallery_Walls", ("Wall_", "Partition_", "Street_Facade_"), "Gallery_Render
 # The leaves stay separate so they can slide; the rest of the car is one mesh.
 join("Studio_Props", ("Studio_Prop_",), "Gallery_Render")
 join("Studio_Bamboo", ("Studio_Bamboo_",), "Gallery_Render")
+join("Reading_Props", ("Reading_Prop_",), "Gallery_Render")
+join("Reading_Terracotta", ("Reading_Terracotta_",), "Gallery_Render")
 join("Elevator_Car", ("Elevator_Wall_", "Elevator_Floor", "Elevator_Ceiling",
                       "Elevator_Handrail", "Elevator_Surround_", "Elevator_Front_",
                       "Elevator_Panel", "Elevator_Button_", "Elevator_Indicator"),

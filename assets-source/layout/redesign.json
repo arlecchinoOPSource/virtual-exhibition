@@ -316,23 +316,25 @@
     {
       "id": "Reading_Shelf_West",
       "section": "reading",
-      "rect": [-7.6, -6.6, 1.65, 2.0]
+      "rect": [-7.6, -6.6, 1.6, 2.0],
+      "note": "Bookcase with Books (Quaternius, CC0) at 1.75 m: 0.96 x 0.34 m, the same mesh as the east shelf (#92)"
     },
     {
       "id": "Reading_Shelf_East",
       "section": "reading",
-      "rect": [-2.6, -1.6, 1.65, 2.0]
+      "rect": [-2.6, -1.6, 1.6, 2.0]
     },
     {
       "id": "Reading_Desk",
       "section": "reading",
-      "rect": [-6.6, -5.4, -2.0, -0.7],
-      "note": "1.2 x 0.6 m desk plus chair space"
+      "rect": [-7.0, -5.4, -2.0, -0.7],
+      "note": "Desk (Quaternius, CC0) at 0.76 m: 1.50 x 0.70 m against the south wall, chair space in front; quill and parchment on it (#92)"
     },
     {
       "id": "Reading_Scrolls",
       "section": "reading",
-      "rect": [-5.3, -4.3, -2.0, -1.4]
+      "rect": [-5.3, -4.3, -2.0, -1.4],
+      "note": "Scrolls (Justin Randall, CC BY 3.0) on the floor by the wall; decoration without a collider (#92)"
     },
     {
       "id": "Living_TV",
