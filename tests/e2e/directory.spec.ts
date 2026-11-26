@@ -1,3 +1,4 @@
+import { unlockGallery } from './gallery-entry';
 import { expect, test } from '@playwright/test';
 import { moveSpawn } from './spawn';
 
@@ -65,8 +66,11 @@ test('keeps the keyboard fallback and fills the gallery viewport', async ({
     return (box.width * box.height) / (innerWidth * innerHeight);
   });
   expect(size).toBeGreaterThanOrEqual(0.9);
+  const entry = page.getByRole('dialog', { name: 'Gallery entry' });
+  await expect(entry.getByLabel('Password')).toBeFocused();
   await page.keyboard.press('Tab');
-  const fallback = page.getByRole('link', {
+  await page.keyboard.press('Tab');
+  const fallback = entry.getByRole('link', {
     name: 'Browse exhibits without 3D',
   });
   await expect(fallback).toBeFocused();
@@ -87,6 +91,7 @@ test('opens the catalogue with E and click and restores the view', async ({
   await moveSpawn(page, [-9.2, 0, -0.35]);
 
   await page.goto('/');
+  await unlockGallery(page);
   await page.bringToFront();
   await page.getByRole('button', { name: 'Start walk' }).press('Enter');
   await expect(page.locator('#crosshair')).toBeVisible();

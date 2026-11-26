@@ -1,3 +1,4 @@
+import { unlockGallery } from './gallery-entry';
 import { expect, test } from '@playwright/test';
 import { moveSpawn } from './spawn';
 import type { Page } from '@playwright/test';
@@ -14,6 +15,7 @@ test('opens initially closed gallery doors with E and closes them with a click',
     [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)],
   );
   await page.goto('/');
+  await unlockGallery(page);
   await page.getByRole('button', { name: 'Start walk' }).click();
   const prompt = page.locator('#interaction');
   await expect(prompt).toHaveText('E / Click · Open the doors');
@@ -28,6 +30,7 @@ test('draws the preview in WebGL and resizes the canvas', async ({ page }) => {
   page.on('pageerror', (error) => pageErrors.push(error));
 
   await page.goto('/');
+  await unlockGallery(page);
   const canvas = page.getByRole('img', {
     name: 'Eye-level view inside the exhibition',
   });
@@ -102,6 +105,7 @@ test('pauses frame rendering while hidden and preserves the view on resume', asy
     };
   });
   await page.goto('/');
+  await unlockGallery(page);
   const canvas = page.getByRole('img', {
     name: 'Eye-level view inside the exhibition',
   });
@@ -371,6 +375,7 @@ test('offers the PDF file when the essay fails to load', async ({ page }) => {
 async function walkToBasementDoor(page: Page) {
   await spawnAtBasementDoor(page);
   await page.goto('/');
+  await unlockGallery(page);
   await page.bringToFront();
   await page.getByRole('button', { name: 'Start walk' }).click();
   await expect(page.locator('#crosshair')).toBeVisible();
@@ -409,6 +414,7 @@ test('makes no basement requests until the visitor opens the door', async ({
     if (/basement/.test(request.url())) basementRequests.push(request.url());
   });
   await page.goto('/');
+  await unlockGallery(page);
   await page.getByRole('button', { name: 'Start walk' }).click();
   await page.keyboard.down('w');
   await page.waitForTimeout(1500);

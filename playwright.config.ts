@@ -1,4 +1,6 @@
 import { defineConfig } from '@playwright/test';
+import { createHash } from 'node:crypto';
+import { testGalleryPassword } from './tests/e2e/gallery-entry';
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -21,5 +23,10 @@ export default defineConfig({
     command: 'npm run dev -- --port 4173 --strictPort',
     url: 'http://localhost:4173',
     reuseExistingServer: false,
+    env: {
+      VITE_GALLERY_PASSWORD_DIGEST: createHash('sha256')
+        .update(testGalleryPassword)
+        .digest('hex'),
+    },
   },
 });

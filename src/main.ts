@@ -11,6 +11,7 @@ import type { RadioState } from './audio/radio';
 import { RADIO_TRACK } from './audio/tracks';
 import { renderDirectory } from './ui/directory-list';
 import { createDetails } from './ui/details';
+import { requireGalleryPassword } from './ui/gallery-entry';
 import { createViewer } from './ui/viewer';
 import { loadSettings, saveSettings } from './ui/settings';
 
@@ -26,6 +27,7 @@ async function start() {
   const label = document.querySelector<HTMLElement>('#exhibit-label');
   const dialog = document.querySelector<HTMLDialogElement>('#exhibit-details');
   const viewer = document.querySelector<HTMLDialogElement>('#essay-viewer');
+  const entry = document.querySelector<HTMLDialogElement>('#gallery-entry');
 
   const catalogue = document.querySelector<HTMLDialogElement>('#catalogue');
   const catalogueList = catalogue?.querySelector<HTMLOListElement>('ol');
@@ -41,6 +43,7 @@ async function start() {
     !label ||
     !dialog ||
     !viewer ||
+    !entry ||
     !catalogue ||
     !catalogueList
   )
@@ -260,6 +263,7 @@ async function start() {
     });
     canvas.dataset.exhibitCount = String(exhibits.length);
     status.hidden = true;
+    if (gallery) requireGalleryPassword(entry, startButton);
   } catch (error) {
     console.error('Virtual Exhibition could not start.', error);
     const fallback = document.createElement('a');

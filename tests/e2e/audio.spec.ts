@@ -1,3 +1,4 @@
+import { unlockGallery } from './gallery-entry';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { spawnAtBasementDoor } from './basement';
@@ -35,6 +36,7 @@ const masterGain = (page: Page) =>
 
 async function openAudioSettings(page: Page) {
   await page.goto('/');
+  await unlockGallery(page);
   await expect(page.locator('#scene')).toHaveAttribute(
     'data-environment',
     'gallery',

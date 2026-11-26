@@ -80,7 +80,43 @@ header p {
   text-align: center;
 }
 
-#start-walk {
+#gallery-entry {
+  box-sizing: border-box;
+  width: min(26rem, calc(100% - 2rem));
+}
+
+#gallery-entry::backdrop {
+  background: rgb(42 27 19 / 50%);
+}
+
+#gallery-entry form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+#gallery-entry input {
+  padding: 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.25rem;
+  background: var(--ivory);
+  color: var(--ink);
+  font: inherit;
+}
+
+#entry-status {
+  min-height: 1.3em;
+  margin: 0;
+  color: #7d2921;
+}
+
+#gallery-entry a {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--muted);
+}
+
+#start-walk,
+#gallery-entry button {
   padding: 0.6rem 1rem;
   border: 0;
   border-radius: 0.25rem;

@@ -1,3 +1,4 @@
+import { unlockGallery } from './gallery-entry';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { moveSpawn } from './spawn';
@@ -7,6 +8,7 @@ async function openSettings(page: Page) {
   // real spawn is inside the closed elevator car.
   await moveSpawn(page, [-12.5, 0, 0]);
   await page.goto('/');
+  await unlockGallery(page);
   const canvas = page.locator('#scene');
   await expect(canvas).toHaveAttribute('data-environment', 'gallery');
   await page.locator('#settings summary').click();

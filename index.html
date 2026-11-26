@@ -113,6 +113,27 @@
         </section>
         <p id="status" role="status">Loading the 3D preview…</p>
       </section>
+      <dialog
+        id="gallery-entry"
+        class="control-panel"
+        aria-labelledby="entry-title"
+      >
+        <h2 id="entry-title">Gallery entry</h2>
+        <p>Enter the password to unlock the gallery.</p>
+        <form method="dialog" autocomplete="off">
+          <label for="gallery-password">Password</label>
+          <input
+            id="gallery-password"
+            type="password"
+            required
+            autofocus
+            aria-describedby="entry-status"
+          />
+          <p id="entry-status" role="alert"></p>
+          <button type="submit">Unlock gallery</button>
+        </form>
+        <a href="./directory.html">Browse exhibits without 3D</a>
+      </dialog>
       <dialog id="catalogue" aria-labelledby="catalogue-title">
         <header class="catalogue-bar">
           <h2 id="catalogue-title">Exhibition Directory</h2>

@@ -1,3 +1,4 @@
+import { unlockGallery } from './gallery-entry';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -36,6 +37,7 @@ const facing = {
 
 async function startWalk(page: Page) {
   await page.goto('/');
+  await unlockGallery(page);
   await page.bringToFront();
   // Keyboard only: Enter starts the walk, E opens, Escape closes.
   await page.getByRole('button', { name: 'Start walk' }).press('Enter');
