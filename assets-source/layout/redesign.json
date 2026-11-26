@@ -71,7 +71,7 @@
     {
       "id": "street",
       "level": "upstairs",
-      "rect": [-6.5, 4.0, 2.2, 7.5],
+      "rect": [-6.5, 10.0, 2.2, 7.5],
       "frames": true
     },
     {
@@ -95,7 +95,7 @@
     {
       "id": "rear",
       "level": "upstairs",
-      "rect": [4.0, 10.0, -2.0, 7.5],
+      "rect": [4.0, 10.0, -2.0, 2.0],
       "frames": false
     },
     {
@@ -179,12 +179,12 @@
       "rect": [-6.7, -6.5, 6.5, 7.5]
     },
     {
-      "id": "Partition_Street_Rear_South",
-      "rect": [4.0, 4.2, 2.2, 3.6]
+      "id": "Partition_Street_Rear_West",
+      "rect": [4.0, 6.0, 2.0, 2.2]
     },
     {
-      "id": "Partition_Street_Rear_North",
-      "rect": [4.0, 4.2, 5.6, 7.1]
+      "id": "Partition_Street_Rear_East",
+      "rect": [8.0, 10.0, 2.0, 2.2]
     },
     {
       "id": "Partition_Living_South",
@@ -266,7 +266,7 @@
     },
     {
       "id": "Street_Rear",
-      "rect": [4.0, 4.2, 3.6, 5.6],
+      "rect": [6.0, 8.0, 2.0, 2.2],
       "width": 2.0
     },
     {
@@ -307,7 +307,7 @@
     },
     {
       "id": "Street_Jeepney",
-      "section": "rear",
+      "section": "street",
       "rect": [4.6, 7.8, 5.7, 7.1],
       "note": "Old Truck (Don Carson, CC BY 3.0) at 1.75 m: 2.9 x 1.3 m. A generic truck, honestly labelled; not presented as a jeepney (#95)"
     },
@@ -331,8 +331,8 @@
     },
     {
       "id": "Street_House",
-      "section": "rear",
-      "rect": [4.2, 8.0, 6.75, 7.1],
+      "section": "street",
+      "rect": [4.0, 8.0, 6.75, 7.1],
       "note": "original two-storey house front behind the truck (#95)"
     },
     {
@@ -661,13 +661,18 @@
     {
       "id": "Street",
       "kind": "main",
-      "rect": [-6.5, 10.0, 3.6, 5.6],
+      "rect": [-6.5, 10.0, 3.6, 5.6]
+    },
+    {
+      "id": "Street_Rear_Link",
+      "kind": "main",
+      "rect": [6.0, 8.0, 1.4, 3.6],
       "note": "through the Street_Rear door when open"
     },
     {
       "id": "Rear",
       "kind": "main",
-      "rect": [8.0, 10.0, -0.6, 5.6]
+      "rect": [8.0, 10.0, -0.6, 2.0]
     },
     {
       "id": "Living_Link",

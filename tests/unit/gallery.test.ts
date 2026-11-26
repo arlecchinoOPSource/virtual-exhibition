@@ -179,7 +179,7 @@ describe('gallery blockout', () => {
       ['Theater_Door', 'Theater_Burgundy', 'Reading_Terracotta'],
       ['Studio_Street', 'Studio_Bamboo', 'Gallery_Walls'],
       ['Living_Theater', 'Living_Teal', 'Theater_Burgundy'],
-      ['Street_Rear', 'Gallery_Walls', 'Reading_Terracotta'],
+      ['Street_Rear', 'Reading_Terracotta', 'Gallery_Walls'],
     ] as const;
 
     const endWall = new Raycaster(

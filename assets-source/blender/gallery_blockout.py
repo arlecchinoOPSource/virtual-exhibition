@@ -274,7 +274,7 @@ ROOM_DOORS = {
     "Living_Door": -1,
     "Theater_Door": 1,
     "Studio_Street": 1,
-    "Street_Rear": -1,
+    "Street_Rear": 1,
     "Living_Theater": 1,
 }
 HEAD = 2.55
@@ -498,9 +498,9 @@ for index, (x0, x1, y0, y1, z0) in enumerate((
     (-10.0, 1.4, -2.0, -1.99, 0),  # south partition, west of the theater door
     (3.4, 4.0, -2.0, -1.99, 0),    # south partition, east of the theater door
     (1.4, 3.4, -2.0, -1.99, HEADER_TOP),
-    (4.2, 4.21, 2.2, 3.6, 0),     # rear landing face of the street partition
-    (4.2, 4.21, 3.6, 5.6, HEADER_TOP),
-    (4.2, 4.21, 5.6, 7.1, 0),
+    (4.0, 6.0, 1.99, 2.0, 0),     # rear landing face of the street partition
+    (6.0, 8.0, 1.99, 2.0, HEADER_TOP),
+    (8.0, 10.0, 1.99, 2.0, 0),
 )):
     box(f"Reading_Terracotta_{index:02}", x0, x1, y0, y1, z0, HEIGHT, TERRACOTTA, collide=False)
 
