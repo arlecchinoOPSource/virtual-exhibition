@@ -100,11 +100,23 @@ def oak_floor(obj, mat, exclude=()):
                 d0, d1 = max(b0, ymin), min(b1, ymax)
                 if c0 >= c1 or d0 >= d1:
                     continue
-                # Skip fingers wholly inside an excluded [x0, x1, y0, y1] area,
-                # given in world coordinates (the slab's vertices are local).
-                ox, oy = obj.location.x, obj.location.y
-                if any(c0 + ox >= e[0] and c1 + ox <= e[1] and d0 + oy >= e[2] and d1 + oy <= e[3]
-                       for e in exclude):
+                # Cut each excluded [x0, x1, y0, y1] area, given in world
+                # coordinates (the slab's vertices are local), out of the finger.
+                pieces = [(c0, c1, d0, d1)]
+                for e in exclude:
+                    ex0, ex1 = e[0] - obj.location.x, e[1] - obj.location.x
+                    ey0, ey1 = e[2] - obj.location.y, e[3] - obj.location.y
+                    kept = []
+                    for p0, p1, q0, q1 in pieces:
+                        if p1 <= ex0 or p0 >= ex1 or q1 <= ey0 or q0 >= ey1:
+                            kept.append((p0, p1, q0, q1))
+                            continue
+                        kept += [r for r in ((p0, ex0, q0, q1), (ex1, p1, q0, q1),
+                                             (max(p0, ex0), min(p1, ex1), q0, ey0),
+                                             (max(p0, ex0), min(p1, ex1), ey1, q1))
+                                 if r[0] < r[1] and r[2] < r[3]]
+                    pieces = kept
+                if not pieces:
                     continue
                 k = int(rng.integers(count))
                 row, col = divmod(k, per_row)
@@ -120,11 +132,12 @@ def oak_floor(obj, mat, exclude=()):
                     else:
                         s, t = (py - b0) / (b1 - b0), (px - a0) / (a1 - a0)
                     return (pu0 + (pu1 - pu0) * s, pv0 + (pv1 - pv0) * t)
-                index = len(verts)
-                corners = [(c0, d0), (c1, d0), (c1, d1), (c0, d1)]
-                verts.extend([(px, py, z) for px, py in corners])
-                faces.append(tuple(range(index, index + 4)))
-                uvs.append([coord(px, py) for px, py in corners])
+                for p0, p1, q0, q1 in pieces:
+                    index = len(verts)
+                    corners = [(p0, q0), (p1, q0), (p1, q1), (p0, q1)]
+                    verts.extend([(px, py, z) for px, py in corners])
+                    faces.append(tuple(range(index, index + 4)))
+                    uvs.append([coord(px, py) for px, py in corners])
             ty += 1
         tx += 1
     surface = bpy.data.meshes.new("Oak parquet")

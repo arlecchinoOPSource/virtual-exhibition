@@ -196,6 +196,19 @@ def gallery_light(index, x, y, gaze):
         HEIGHT, FIXTURE, collide=False)
 
 
+def join(name, prefixes, collection):
+    """Merge same-material render boxes into one mesh to cut draw calls."""
+    objs = [o for o in collections[collection].objects if o.name.startswith(prefixes)]
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in objs:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = objs[0]
+    bpy.ops.object.join()
+    joined = bpy.context.view_layer.objects.active
+    joined.name = name
+    joined.data.name = name
+
+
 # The measured shell from the accepted plan (docs/DESIGN.md, issue #86).
 # Rectangles there are [x0, x1, y0, y1] in these same Blender coordinates.
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "layout",
@@ -205,11 +218,14 @@ FOOT_X0, FOOT_X1, FOOT_Y0, FOOT_Y1 = -14 - WALL, 10 + WALL, -9 - WALL, 7.5 + WAL
 # The south-east corner outside the building: no parquet is laid there.
 NOTCH = (4 + WALL, 10 + WALL, -9 - WALL, -2 - WALL)
 
-# Floor and ceiling. Nothing can reach the ceiling, so it needs no proxy.
-floor = box("Floor", FOOT_X0, FOOT_X1, FOOT_Y0, FOOT_Y1, -WALL, 0, FLOOR)
-oak_floor(floor, FLOOR, exclude=(NOTCH,))
-box("Ceiling", FOOT_X0, FOOT_X1, FOOT_Y0, FOOT_Y1, HEIGHT, HEIGHT + WALL, CEILING,
-    collide=False)
+# Floor and ceiling, each in two parts that leave out the cut-away corner,
+# where the basement stairs now descend under their own ceiling. Nothing can
+# reach the ceiling, so it needs no proxy.
+for z0, z1, mat, name in ((-WALL, 0, FLOOR, "Floor"), (HEIGHT, HEIGHT + WALL, CEILING, "Ceiling")):
+    box(f"{name}_North", FOOT_X0, FOOT_X1, NOTCH[3], FOOT_Y1, z0, z1, mat, collide=name == "Floor")
+    box(f"{name}_South", FOOT_X0, NOTCH[0], FOOT_Y0, NOTCH[3], z0, z1, mat, collide=name == "Floor")
+    join(name, (f"{name}_North", f"{name}_South"), "Gallery_Render")
+oak_floor(bpy.data.objects["Floor"], FLOOR, exclude=(NOTCH,))
 
 # The arrival elevator: an enclosed car behind the west wall where the visitor
 # spawns. Its walls, handrail, door surround and leaves share one satin steel
@@ -240,13 +256,16 @@ for wall in PLAN["walls"]:
         box(wall["id"], *wall["rect"], 0, HEIGHT, WALLS)
 facade = next(item for item in PLAN["furniture"] if item["id"] == "Street_Facades")
 box("Street_Facade_Base", *facade["rect"], 0, HEIGHT, WALLS)
-box("Wall_East_Lintel", 10, 10 + WALL, -0.8, 0.8, 2.4, HEIGHT, WALLS)
+bx0, bx1, by0, by1 = PLAN["basement_door"]["opening"]
+box("Wall_Notch_Lintel", bx0, bx1, by0, by1, 2.4, HEIGHT, WALLS)
 box("Wall_West_Lintel", -14 - WALL, -14, door_y0, door_y1, DOOR_HEIGHT, HEIGHT, WALLS)
 
 box("Elevator_Floor", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, -WALL, 0, CAR_FLOOR)
 box("Elevator_Ceiling", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, CAR_HEIGHT,
     CAR_HEIGHT + 0.1, CAR_LIGHT, collide=False)
-box("Elevator_Handrail", car_x0, car_x0 + 0.04, -0.75, 0.75, 0.88, 0.92, PANEL, collide=False)
+car_middle = (car_y0 + car_y1) / 2
+box("Elevator_Handrail", car_x0, car_x0 + 0.04, car_middle - 0.75, car_middle + 0.75, 0.88,
+    0.92, PANEL, collide=False)
 for name, y0, y1 in (("South", door_y0 - 0.12, door_y0), ("North", door_y1, door_y1 + 0.12)):
     box(f"Elevator_Surround_{name}", -14, -13.97, y0, y1, 0, DOOR_HEIGHT + 0.12, PANEL,
         collide=False)
@@ -264,7 +283,8 @@ box("Elevator_Panel", car_x1 - 0.5, car_x1 - 0.2, car_y1 - 0.025, car_y1, 1.0, 1
 for index, z in enumerate((1.12, 1.26)):
     box(f"Elevator_Button_{index}", car_x1 - 0.37, car_x1 - 0.33, car_y1 - 0.035,
         car_y1 - 0.025, z, z + 0.04, CAR_LIGHT, collide=False)
-box("Elevator_Indicator", car_x1 - 0.055, car_x1 - 0.04, -0.16, 0.16, DOOR_HEIGHT + 0.05,
+box("Elevator_Indicator", car_x1 - 0.055, car_x1 - 0.04, car_middle - 0.16, car_middle + 0.16,
+    DOOR_HEIGHT + 0.05,
     DOOR_HEIGHT + 0.12, CAR_LIGHT, collide=False)
 # Two leaves inside the wall's thickness, meeting on the axis. Each slides its
 # own width into the wall beside it (src/environments/elevator.ts), where the
@@ -279,6 +299,31 @@ proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
 # Basement entrance in the right end wall: a hinged door, its frame, a sign,
 # and a statue. The door collider is a separate proxy the engine toggles.
+# The basement and its entrance are modelled in their original frame (door in
+# an east wall at x = 10, stairs running east) and then placed by the plan's
+# basement_transform: a quarter turn and a move that put the door in the cut-
+# away corner's north wall with the stairs running south.
+turn = PLAN["basement_transform"]
+PLACE = (Matrix.Translation(Vector(turn["translate"]))
+         @ Matrix.Rotation(math.radians(turn["rotate_z_deg"]), 4, "Z"))
+
+
+def place(objects):
+    """Move top-level objects by PLACE. Collision proxies take the move in
+    their vertices instead, so they stay unrotated, axis-aligned boxes."""
+    # New objects' world matrices are stale until the view layer updates.
+    bpy.context.view_layer.update()
+    for obj in objects:
+        if obj.parent is not None:
+            continue
+        if obj.name.startswith("COL_"):
+            obj.data.transform(PLACE @ obj.matrix_world)
+            obj.matrix_world = Matrix.Identity(4)
+        else:
+            obj.matrix_world = PLACE @ obj.matrix_world
+
+
+entrance_before = set(bpy.data.objects.keys())
 DOOR = material("Door_Basement", (0.05, 0.045, 0.04), 0.7)
 IRON = material("Entrance_Iron", (0.06, 0.06, 0.065), 0.45)
 BONE = material("Sign_Lettering", (0.78, 0.74, 0.66), 0.6)
@@ -327,6 +372,14 @@ proxy = bpy.data.objects.new("COL_Statue", box_mesh("COL_Statue", (0.7, 0.7, 2.4
 proxy.location = (sx, sy, 1.2)
 proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
+# Place the entrance. The hinge sits on a turned mount so the door module's
+# local swing about Y still starts from zero.
+entrance = [bpy.data.objects[name] for name in set(bpy.data.objects.keys()) - entrance_before]
+mount = bpy.data.objects.new("Door_Basement_Mount", None)
+mount.matrix_world = PLACE
+collections["Gallery_Markers"].objects.link(mount)
+hinge.parent = mount
+place(obj for obj in entrance if obj is not hinge)
 
 # The catalogue stand beside the arrival axis. It is modelled at the origin
 # with its reader on the west side; a quarter turn puts the reader on the
@@ -522,17 +575,6 @@ for name, x, y, ceiling, drop, energy in (
     point_light(f"Light_Basement_Bulb_{name}", x, y, bulb_z - 0.02, energy, (1.0, 0.7, 0.4))
 
 
-def join(name, prefixes, collection):
-    """Merge same-material render boxes into one mesh to cut draw calls."""
-    objs = [o for o in collections[collection].objects if o.name.startswith(prefixes)]
-    bpy.ops.object.select_all(action="DESELECT")
-    for obj in objs:
-        obj.select_set(True)
-    bpy.context.view_layer.objects.active = objs[0]
-    bpy.ops.object.join()
-    joined = bpy.context.view_layer.objects.active
-    joined.name = name
-    joined.data.name = name
 
 
 # COL_ proxies stay separate: the engine needs one box per collider.
@@ -614,6 +656,9 @@ hang_poster(collections["Basement_Render"], "Poster_Dore_Pale_Horse",
             (23.4, -ROOM_Y, BOTTOM + 1.6), (0, 1), 1.64, margin=0.06, seed=2, curl_corner=(1, 1),
             # The engraved plate only: no scanned page edge or printed caption.
             crop=(8, 12, 760, 961))
+
+# Turn and move the finished basement into place (see PLACE above).
+place(list(collections["Basement_Render"].objects) + list(collections["Basement_Collision"].objects))
 
 export(os.path.join(output, "frame.glb"), ("Frame_Display",))
 export(

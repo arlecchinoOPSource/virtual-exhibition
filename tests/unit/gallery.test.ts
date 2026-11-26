@@ -38,6 +38,7 @@ const plan = JSON.parse(
 ) as {
   spawn: { at: [number, number] };
   sections: { id: string; level: string; rect: number[] }[];
+  basement_door: { hinge: [number, number]; opening: number[] };
   lectern: { rect: [number, number, number, number] };
   frames: { slot: string; at: [number, number]; gaze: string }[];
 };
@@ -172,10 +173,15 @@ describe('gallery blockout', () => {
     body.feet.set(-9, 0, -0.5);
     walk(0, 0.025);
     expect(body.feet.z).toBeCloseTo(0.71, 1);
-    // The band runs clear to the closed basement door.
+    // The band runs clear to the solid east wall.
     body.feet.set(-12.5, 0, 0);
     walk(0.025, 0);
-    expect(body.feet.x).toBeCloseTo(9.83, 1);
+    expect(body.feet.x).toBeCloseTo(9.76, 1);
+    // The closed basement door stops a visitor walking south into the
+    // cut-away corner's doorway.
+    body.feet.set(7, 0, 0.5);
+    walk(0, 0.025);
+    expect(body.feet.z).toBeCloseTo(1.83, 1);
     expect(body.feet.y).toBeCloseTo(0);
     world.dispose();
   });
@@ -200,6 +206,15 @@ describe('gallery blockout', () => {
           expect(hit?.point.y, `${section.id} at ${x}, ${y}`).toBeCloseTo(0, 3);
         }
     }
+    // None of it reaches over the cut-away corner, where the basement stairs
+    // start just south of the doorway (Blender y below -2.2).
+    for (let x = 6.25; x < 8; x += 0.25)
+      for (const y of [-2.25, -2.6, -3.5]) {
+        ray.set(new Vector3(x, 1, -y), down);
+        expect(ray.intersectObjects(floors, true), `${x}, ${y}`).toHaveLength(
+          0,
+        );
+      }
     world.dispose();
   });
 
@@ -243,10 +258,12 @@ describe('gallery blockout', () => {
 
   it('opens the elevator at once for reduced motion', async () => {
     const world = await loadWorld();
+    const leaf = world.scene.getObjectByName('Elevator_Door_South')!;
+    const closed = leaf.position.z;
     world.elevator.open(true);
     expect(world.elevator.state).toBe('open');
-    const leaf = world.scene.getObjectByName('Elevator_Door_South')!;
-    expect(leaf.position.z).toBeCloseTo(0.45 + 0.9, 3);
+    // The south leaf slid its full width south (Three.js +Z) at once.
+    expect(leaf.position.z - closed).toBeCloseTo(0.9, 3);
     world.dispose();
   });
 
@@ -386,11 +403,24 @@ describe('basement entrance', () => {
     const collider = root.getObjectByName('COL_Door_Basement');
     if (!collider) throw new Error('Missing COL_Door_Basement.');
     const bounds = new Box3().setFromObject(collider);
-    expect(bounds.min.z).toBeCloseTo(-0.8);
-    expect(bounds.max.z).toBeCloseTo(0.8);
+    // Across the opening in the cut-away corner's north wall (#87 revision).
+    const [x0, x1, y0, y1] = plan.basement_door.opening as [
+      number,
+      number,
+      number,
+      number,
+    ];
+    expect(bounds.min.x).toBeCloseTo(x0);
+    expect(bounds.max.x).toBeCloseTo(x1);
+    expect(bounds.min.z).toBeGreaterThan(-y1);
+    expect(bounds.max.z).toBeLessThan(-y0);
     expect(bounds.max.y).toBeCloseTo(2.4);
-    // The hinge sits on the opening's north jamb (Three.js -Z).
-    expect(hinge?.getWorldPosition(new Vector3()).z).toBeCloseTo(-0.8);
+    // The hinge sits on the opening's east jamb, where the plan puts it.
+    const at = hinge!.getWorldPosition(new Vector3());
+    expect(at.x).toBeCloseTo(plan.basement_door.hinge[0]);
+    expect(at.z).toBeCloseTo(-plan.basement_door.hinge[1]);
+    // Its own rotation stays zero, so the door module's swing starts closed.
+    expect(hinge!.rotation.y).toBeCloseTo(0);
   });
 
   it('labels the sign BASEMENT OF DOOM facing the gallery', async () => {
@@ -400,9 +430,10 @@ describe('basement entrance', () => {
     if (!sign) throw new Error('Missing Sign_Basement.');
     expect(sign.userData.text).toBe('BASEMENT OF DOOM');
     const bounds = new Box3().setFromObject(sign);
-    expect(bounds.max.x).toBeLessThanOrEqual(10);
+    // On the gallery side of the cut-away corner's wall, over the doorway.
+    expect(bounds.max.z).toBeLessThanOrEqual(2.0);
     expect(bounds.min.y).toBeGreaterThan(2.4);
-    expect(bounds.getCenter(new Vector3()).z).toBeCloseTo(0, 1);
+    expect(bounds.getCenter(new Vector3()).x).toBeCloseTo(7, 1);
   });
 
   it('keeps the statue beside the doorway, clear of the door and its approach', async () => {
@@ -410,9 +441,9 @@ describe('basement entrance', () => {
     const statue = world.scene.getObjectByName('COL_Statue');
     if (!statue) throw new Error('Missing COL_Statue.');
     const bounds = new Box3().setFromObject(statue);
-    // South of the door frame (z 0.95) and against the end wall.
-    expect(bounds.min.z).toBeGreaterThan(0.95);
-    expect(bounds.max.z).toBeLessThan(2);
+    // West of the door frame (x 6.05) and against the corner's wall.
+    expect(bounds.max.x).toBeLessThan(6.05);
+    expect(bounds.min.x).toBeGreaterThan(5);
     // The scythe stays in front of the end wall and the sign board.
     const render = new Box3();
     for (const name of ['Statue_Cloak', 'Statue_Blade', 'Statue_Staff']) {
@@ -420,16 +451,16 @@ describe('basement entrance', () => {
       if (!part) throw new Error(`Missing ${name}.`);
       render.union(new Box3().setFromObject(part));
     }
-    expect(render.max.x).toBeLessThan(9.94);
+    expect(render.max.z).toBeLessThan(1.94);
     const body = {
-      feet: new Vector3(8.4, 0, 1.75),
+      feet: new Vector3(5.25, 0, 0.4),
       grounded: true,
       fallSpeed: 0,
     };
-    // 1.75 m north past the statue, from inside the notch wall's line.
+    // 1.75 m east past the statue onto the door's axis.
     for (let count = 0; count < 70; count++)
-      stepBody(body, 0, -0.025, 1 / 120, world.solids);
-    expect(body.feet.z).toBeCloseTo(0, 1);
+      stepBody(body, 0.025, 0, 1 / 120, world.solids);
+    expect(body.feet.x).toBeCloseTo(7, 1);
     world.dispose();
   });
 });
