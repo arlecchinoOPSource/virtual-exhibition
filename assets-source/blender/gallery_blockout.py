@@ -265,6 +265,7 @@ box("Wall_West_Lintel", -14 - WALL, -14, door_y0, door_y1, DOOR_HEIGHT, HEIGHT, 
 CASING = material("Gallery portal dark walnut", (0.13, 0.073, 0.038), 0.52)
 ROOM_DOORS = {"Studio_Door", "Living_Door", "Theater_Door", "Studio_Street", "Living_Theater"}
 HEAD = 2.55
+JAMB_REVEAL = 0.015
 for opening in PLAN["openings"]:
     name = opening["id"]
     if name not in ROOM_DOORS:
@@ -279,10 +280,11 @@ for opening in PLAN["openings"]:
         if mat == CASING:
             soften(obj, 0.006)
 
-    # Jambs overlap the wall faces, leaving the planned opening width clear.
-    door_part(f"Portal_Trim_{name}_Left", low - 0.085, low,
+    # The walnut reveal sits inside the opening so its face and bevel clear
+    # the plaster and room finishes instead of sharing the wall's end plane.
+    door_part(f"Portal_Trim_{name}_Left", low - 0.085, low + JAMB_REVEAL,
               depth0 - 0.037, depth1 + 0.037, 0, HEAD, CASING)
-    door_part(f"Portal_Trim_{name}_Right", high, high + 0.085,
+    door_part(f"Portal_Trim_{name}_Right", high - JAMB_REVEAL, high + 0.085,
               depth0 - 0.037, depth1 + 0.037, 0, HEAD, CASING)
     door_part(f"Portal_Trim_{name}_Head", low - 0.085, high + 0.085,
               depth0 - 0.037, depth1 + 0.037, HEAD, HEAD + 0.10, CASING)

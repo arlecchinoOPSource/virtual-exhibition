@@ -39,6 +39,7 @@ const plan = JSON.parse(
 ) as {
   spawn: { at: [number, number] };
   sections: { id: string; level: string; rect: number[] }[];
+  openings: { id: string; rect: [number, number, number, number] }[];
   basement_door: { hinge: [number, number]; opening: number[] };
   furniture: { id: string; rect: number[] }[];
   lectern: { rect: [number, number, number, number] };
@@ -52,6 +53,42 @@ const gazes: Record<string, [number, number]> = {
 };
 
 describe('gallery blockout', () => {
+  it('keeps the walnut jamb faces proud of the wall ends at all five openings', async () => {
+    const model = await parseModel('gallery');
+    model.updateMatrixWorld(true);
+    const casing = model.getObjectByName('Gallery_Door_Casing')!;
+    const walls = model.getObjectByName('Gallery_Walls')!;
+    const openings = plan.openings.filter(({ id }) =>
+      [
+        'Studio_Door',
+        'Living_Door',
+        'Theater_Door',
+        'Studio_Street',
+        'Living_Theater',
+      ].includes(id),
+    );
+    expect(openings).toHaveLength(5);
+    for (const {
+      id,
+      rect: [x0, x1, y0, y1],
+    } of openings) {
+      const center = new Vector3((x0 + x1) / 2, 1.5, -(y0 + y1) / 2);
+      const alongX = x1 - x0 > y1 - y0;
+      for (const side of [-1, 1]) {
+        const direction = alongX
+          ? new Vector3(side, 0, 0)
+          : new Vector3(0, 0, side);
+        const ray = new Raycaster(center, direction);
+        const [trimHit] = ray.intersectObject(casing);
+        const [wallHit] = ray.intersectObject(walls);
+        expect(trimHit!.distance, id).toBeLessThan(wallHit!.distance - 0.01);
+        expect(trimHit!.distance, id).toBeGreaterThan(
+          wallHit!.distance - 0.025,
+        );
+      }
+    }
+  });
+
   it('spawns inside the arrival elevator facing its doors and the basement door', async () => {
     const world = await loadWorld();
     const [x, y] = plan.spawn.at;
