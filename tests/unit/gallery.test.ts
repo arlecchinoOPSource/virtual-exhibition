@@ -5,6 +5,7 @@ import {
   Euler,
   Group,
   Mesh,
+  MeshStandardMaterial,
   Quaternion,
   PerspectiveCamera,
   Raycaster,
@@ -39,6 +40,7 @@ const plan = JSON.parse(
   spawn: { at: [number, number] };
   sections: { id: string; level: string; rect: number[] }[];
   basement_door: { hinge: [number, number]; opening: number[] };
+  furniture: { id: string; rect: number[] }[];
   lectern: { rect: [number, number, number, number] };
   frames: { slot: string; at: [number, number]; gaze: string }[];
 };
@@ -354,6 +356,44 @@ describe('display frames and gallery lights', () => {
       });
       expect(aimed, anchor.name).toHaveLength(1);
     }
+    world.dispose();
+  });
+});
+
+describe('third-party props', () => {
+  it('places the CC0 easel inside its envelope as one solid, vertex-coloured draw', async () => {
+    const world = await loadWorld();
+    const easel = world.scene.getObjectByName('Studio_Easel');
+    if (!(easel instanceof Mesh)) throw new Error('Missing Studio_Easel.');
+    const material = easel.material as MeshStandardMaterial;
+    expect(Array.isArray(easel.material)).toBe(false);
+    expect(material.vertexColors).toBe(true);
+    expect(easel.geometry.getAttribute('color')).toBeDefined();
+    const [x0, x1, y0, y1] = plan.furniture.find(
+      (item) => item.id === 'Studio_Easel',
+    )!.rect as [number, number, number, number];
+    const bounds = new Box3().setFromObject(easel);
+    expect(bounds.min.x).toBeGreaterThanOrEqual(x0 - 1e-3);
+    expect(bounds.max.x).toBeLessThanOrEqual(x1 + 1e-3);
+    expect(bounds.min.z).toBeGreaterThanOrEqual(-y1 - 1e-3);
+    expect(bounds.max.z).toBeLessThanOrEqual(-y0 + 1e-3);
+    expect(bounds.min.y).toBeCloseTo(0, 3);
+    expect(bounds.max.y).toBeCloseTo(1.85, 2);
+    // Walking north into it from the studio stops in front of it.
+    const body = {
+      feet: new Vector3(-10.5, 0, -5.5),
+      grounded: true,
+      fallSpeed: 0,
+    };
+    for (let i = 0; i < 200; i++)
+      stepBody(body, 0, -0.025, 1 / 120, world.solids);
+    expect(body.feet.z).toBeGreaterThan(bounds.max.z);
+    // It does not stand between Exhibit_02 and its viewing zone.
+    const camera = new PerspectiveCamera();
+    camera.position.set(-8, 1.6, -6);
+    camera.lookAt(-8, 1.5, -7.48);
+    const pick = createSurfacePicker(camera, world.surfaces, 3);
+    expect(pick()?.name).not.toBe('Studio_Easel');
     world.dispose();
   });
 });

@@ -277,7 +277,8 @@
     {
       "id": "Studio_Easel",
       "section": "studio",
-      "rect": [-11.0, -10.0, 6.7, 7.5]
+      "rect": [-11.15, -9.85, 6.8, 7.5],
+      "note": "Art Easel Set Up (reyshapes, CC0), measured: 1.26 x 0.64 m at 1.85 m tall"
     },
     {
       "id": "Studio_Statue",
