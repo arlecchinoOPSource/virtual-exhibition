@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { Group, Mesh, Texture, Vector3 } from 'three';
+import { Group, Mesh, SpotLight, Texture, Vector3 } from 'three';
 import type { Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it, vi } from 'vitest';
@@ -144,6 +144,38 @@ describe('basement frames', () => {
     await opening;
     expect(hung).toEqual([]);
     expect(world.passes[0]!.getObjectByName('Exhibit_16')).toBeUndefined();
+  });
+
+  it('light each basement frame with its own warm picture light', async () => {
+    const basement = await parseModel('basement');
+    basement.updateMatrixWorld(true);
+    const spots: SpotLight[] = [];
+    basement.traverse((node) => {
+      if (node instanceof SpotLight) spots.push(node);
+    });
+    expect(spots).toHaveLength(3);
+    for (const slot of ['Exhibit_16', 'Exhibit_17', 'Exhibit_18']) {
+      const anchor = basement.getObjectByName(slot);
+      if (!anchor) throw new Error(`Missing ${slot}.`);
+      const target = anchor.getWorldPosition(new Vector3());
+      const aimed = spots.filter((spot) => {
+        const origin = spot.getWorldPosition(new Vector3());
+        const direction = spot.target
+          .getWorldPosition(new Vector3())
+          .sub(origin)
+          .normalize();
+        const offset = target.clone().sub(origin);
+        const along = offset.dot(direction);
+        return (
+          along > 0 &&
+          offset.addScaledVector(direction, -along).length() < 0.1 &&
+          origin.y > target.y
+        );
+      });
+      expect(aimed, slot).toHaveLength(1);
+      // Warm, like the bulbs: more red than blue.
+      expect(aimed[0]!.color.r).toBeGreaterThan(aimed[0]!.color.b);
+    }
   });
 
   it('look up basement exhibits alongside the gallery ones', async () => {

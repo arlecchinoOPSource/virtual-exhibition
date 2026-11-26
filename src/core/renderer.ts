@@ -173,11 +173,13 @@ export function startRenderer(
       resolution = scale;
       resize();
     },
-    // Spotlights are the main per-pixel lighting cost in the gallery.
+    // Spotlights are the main per-pixel lighting cost in the gallery. The
+    // basement pass has its own picture lights (#96), so it follows too.
     setSpotlights(on: boolean) {
-      world.scene.traverse((node) => {
-        if (node instanceof SpotLight) node.visible = on;
-      });
+      for (const root of [world.scene, ...(world.passes ?? [])])
+        root.traverse((node) => {
+          if (node instanceof SpotLight) node.visible = on;
+        });
     },
     dispose() {
       controls.dispose();

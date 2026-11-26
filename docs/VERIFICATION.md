@@ -117,8 +117,8 @@ Run on this branch:
 
 ## Known limits carried forward
 
-- **Basement frames** are lit only by the room's bulbs and read dimly. Lighting and their fit around the props belong to #96.
-- **Rooms** are undecorated. Furniture envelopes from the plan wait for #90–#95.
+- **Basement frames** were lit only by the room's bulbs and read dimly. Resolved in #96: see below.
+- **Rooms** were undecorated at #89. They are furnished in #91–#95; see `docs/ASSET_REGISTER.md`.
 - **Chromium pointer lock** and a deterministic runtime teleport remain #69.
 
 ## Decision
@@ -127,3 +127,50 @@ The owner accepted the walkable layout on 2026-11-26. Accepting records that the
 
 - Decision: accepted; furnishing may begin (#90–#95).
 - By / date: the owner, 2026-11-26, in review of PR #102.
+
+## Basement reconciliation (#96)
+
+Checked on 2026-11-26 against `main` at `32baae6` (#95), plus this change. The basement's existing work is reused, not rebuilt:
+
+- the radio model (#60, PR #84) and its playback (#61, PR #85, merged before this issue);
+- the posters (#59, PR #83);
+- the lighting (#58, PR #70);
+- the statue (#52, PR #63).
+
+**What changed:** each basement frame (Exhibit_16, 17 and 18) gets its own warm picture light, a spot 0.15 m under the low ceiling and 0.9 m out from the wall. It ships in `basement.glb`, so nothing loads before the door opens. The Display spotlights setting now reaches the basement's render pass as well as the gallery's. Nothing else in the basement moved.
+
+**Automated results:**
+
+| Requirement                                                                                                                    | Evidence                                                             | Result                       |
+| ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ---------------------------- |
+| Three frames work like the rest: click/E, label, details, Escape back to the walk                                              | `frames.spec.ts`, basement test                                      | Pass in Firefox and Chromium |
+| The frames appear in the directory and viewer                                                                                  | `directory.spec.ts`, `preview.spec.ts`; `basement-frames.test.ts`    | Pass                         |
+| One picture light per frame, aimed at it, warm                                                                                 | `basement-frames.test.ts` ("light each basement frame…")             | Pass                         |
+| The two posters stay independent decoration, not frame slots                                                                   | `redesign.json` `decor`; `layout-plan.test.ts` (18 unique slots)     | Pass                         |
+| Frames clear of the stairs, throne, graffiti, radio and candle stand                                                           | `layout-plan.test.ts`; `route.test.ts` (basement corners)            | Pass                         |
+| Door, stairs at 30/60/144 fps, exit and re-entry after the relocation                                                          | `door.test.ts`; `basement-frames.test.ts` (loads once, three frames) | Pass                         |
+| Radio emitter on the relocated model, with named parts bound                                                                   | `door.test.ts` ("models the radio…")                                 | Pass                         |
+| Sound off by default; no audio or basement request before opt-in and door                                                      | `audio.spec.ts`; `radio.test.ts`; `preview.spec.ts`                  | Pass in Firefox and Chromium |
+| Master volume and mute; ambience switch below ground                                                                           | `audio.spec.ts`                                                      | Pass                         |
+| One source through power and zone changes; hidden-tab fade; blocked-audio retry; failed-track retry; late track after disposal | `radio.test.ts`                                                      | Pass                         |
+| One radio loop, fetched only once the door opens                                                                               | `audio.spec.ts`                                                      | Pass in Firefox and Chromium |
+| Failed basement load keeps the gallery usable, then retries                                                                    | `preview.spec.ts`; `basement-frames.test.ts`                         | Pass                         |
+
+**Runs:**
+
+- `npm test`: 68/68.
+- `npx playwright test --project=firefox`: 43 passed, 1 skipped.
+- Chromium `audio.spec.ts` and `frames.spec.ts`: 20/20.
+
+**Screenshots:** in `docs/renders/shell/`, at 100% and 50% resolution:
+
+- `basement-frames-east`, showing Exhibit_16 and 17 with the Kittelsen poster between them;
+- `basement-frames-west`, showing Exhibit_18 and the Doré poster;
+- `basement-frames-south`, showing the room with the throne, graffiti, candle stand and radio.
+
+**Not automated: attended listening check.** Nobody has yet listened for near and far attenuation, the radio's character, or the hand-off from the gallery ambience. The automated tests prove there is one source, along with its gains and lifecycle, but not how it sounds. This stays open for the owner. Record it here with the date, browser and output device once done.
+
+**Limits:**
+
+- The picture lights have no visible fixture: the basement's bulbs are its only lamps.
+- With Display spotlights off, the basement frames fall back to the bulbs.
