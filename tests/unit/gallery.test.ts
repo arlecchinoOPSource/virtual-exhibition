@@ -788,16 +788,36 @@ describe('street', () => {
 });
 
 describe('gallery export budget', () => {
+  it('exports raised open-joint ceiling slats over the gallery and leaves the basement entry clear', async () => {
+    const model = await parseModel('gallery');
+    model.updateMatrixWorld(true);
+    const slats = model.getObjectByName('Gallery_Ceiling_Baffles')!;
+    const backing = model.getObjectByName('Ceiling')!;
+    const upward = new Vector3(0, 1, 0);
+    const fromReadingRoom = (z: number) =>
+      new Raycaster(new Vector3(-5.1, 2.5, z), upward);
+
+    // The underside of a slat is lower than the matte backing visible
+    // through the neighboring gap.
+    expect(
+      fromReadingRoom(-0.38).intersectObject(slats)[0]?.point.y,
+    ).toBeCloseTo(3.5);
+    const gap = fromReadingRoom(-0.475);
+    expect(gap.intersectObject(slats)).toHaveLength(0);
+    expect(gap.intersectObject(backing)[0]?.point.y).toBeCloseTo(3.6);
+    const atEntrance = new Raycaster(new Vector3(8, 2.5, 0), upward);
+    expect(atEntrance.intersectObject(slats)).toHaveLength(0);
+  });
+
   it('keeps both models within the gallery transfer budget', async () => {
     const sizes = await Promise.all(
       ['gallery', 'frame'].map(
         async (name) => (await stat(`public/models/${name}.glb`)).size,
       ),
     );
-    // Budget: 6 MB of the 10–20 MB initial target, leaving room for artwork.
-    // Raised from 5 MB in #94: with four rooms furnished, the shared shell
-    // (parquet, fixtures, signage) is most of it, and room props are simplified.
-    expect(sizes.reduce((sum, size) => sum + size, 0)).toBeLessThan(6e6);
+    // The shell and furnishings use a 6 MB budget, with 0.15 MB reserved for
+    // the modeled ceiling and track mounts. The initial target is 10–20 MB.
+    expect(sizes.reduce((sum, size) => sum + size, 0)).toBeLessThan(6.15e6);
   });
 
   it('keeps draw calls low and textures within 2048 px', async () => {
@@ -823,7 +843,8 @@ describe('gallery export budget', () => {
     // the truck's glass shares Prop_Glass.
     // The casings share one draw, while each moving leaf and its pull have two.
     // The entrance plaster, torch ironwork, and flames add one each.
-    expect(drawCalls).toBeLessThanOrEqual(95);
+    // The joined ceiling baffles and cross rails add one draw.
+    expect(drawCalls).toBeLessThanOrEqual(96);
     world.dispose();
   });
 

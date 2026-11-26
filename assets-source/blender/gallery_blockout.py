@@ -57,6 +57,7 @@ FRAME_BORDER = 0.06
 LIGHT_HEIGHT = 3.3
 LIGHT_THROW = 1.3
 LIGHT_INTENSITY = 20
+RAIL_TOP = HEIGHT - 0.12
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
@@ -111,11 +112,8 @@ def point_light(name, x, y, z, energy, rgb, collection="Basement_Render", reach=
 FLOOR = material("Lacquered oak parquet", (0.45, 0.27, 0.12), 0.2)
 WALLS = material("Warm white mineral paint", (0.79, 0.77, 0.73), 0.91)
 paint_finish(WALLS)
-CEILING = material("Ceiling white", (0.82, 0.81, 0.78), 0.94)
-# Approximate diffuse ceiling bounce where the realtime renderer has no GI.
-ceiling_shader = CEILING.node_tree.nodes["Principled BSDF"]
-ceiling_shader.inputs["Emission Color"].default_value = (0.26, 0.25, 0.23, 1)
-ceiling_shader.inputs["Emission Strength"].default_value = 0.18
+CEILING = material("Ceiling matte black backing", (0.02, 0.023, 0.028), 0.94)
+BAFFLES = material("Ceiling black powder-coated steel", (0.066, 0.071, 0.079), 0.67)
 FIXTURE = material("Fixture_Housing", (0.03, 0.03, 0.035), 0.5)
 FRAME = material("Frame_Moulding", (0.04, 0.035, 0.03), 0.6)
 FIXTURE.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.48
@@ -208,13 +206,15 @@ def gallery_light(index, x, y, gaze, colour=(1.0, 0.95, 0.88)):
     turned(prefix + "_Pivot", [(-0.068, 0.024), (0.076, 0.024)],
            mount, side, FIXTURE, render)
     box(prefix + "_Yoke", stem.x-0.013, stem.x+0.013, stem.y-0.013, stem.y+0.013,
-        stem.z, HEIGHT-0.048, FIXTURE, collide=False)
+        stem.z, RAIL_TOP-0.048, FIXTURE, collide=False)
     box(prefix + "_Adaptor", stem.x-0.048, stem.x+0.048, stem.y-0.048, stem.y+0.048,
-        HEIGHT-0.075, HEIGHT-0.027, FIXTURE, collide=False)
+        RAIL_TOP-0.075, RAIL_TOP-0.027, FIXTURE, collide=False)
     # A short length of ceiling track over each head, parallel to its wall.
     rx, ry = (0.024, 0.6) if gx else (0.6, 0.024)
-    box(prefix + "_Rail", stem.x-rx, stem.x+rx, stem.y-ry, stem.y+ry, HEIGHT-0.03,
-        HEIGHT, FIXTURE, collide=False)
+    box(prefix + "_Rail", stem.x-rx, stem.x+rx, stem.y-ry, stem.y+ry, RAIL_TOP-0.03,
+        RAIL_TOP, FIXTURE, collide=False)
+    box(prefix + "_Ceiling_Mount", stem.x-0.015, stem.x+0.015, stem.y-0.015, stem.y+0.015,
+        RAIL_TOP, HEIGHT, FIXTURE, collide=False)
 
 
 def join(name, prefixes, collection):
@@ -247,6 +247,25 @@ for z0, z1, mat, name in ((-WALL, 0, FLOOR, "Floor"), (HEIGHT, HEIGHT + WALL, CE
     box(f"{name}_South", FOOT_X0, NOTCH[0], FOOT_Y0, NOTCH[3], z0, z1, mat, collide=name == "Floor")
     join(name, (f"{name}_North", f"{name}_South"), "Gallery_Render")
 oak_floor(bpy.data.objects["Floor"], FLOOR, exclude=(NOTCH,))
+
+# Dark open-joint baffles follow the gallery's long axis. Cross rails tie
+# the slats together. Everything shares one material and draw call.
+for room in PLAN["sections"]:
+    if room["id"] in {"basement", "elevator", "rear"}:
+        continue
+    x0, x1, y0, y1 = room["rect"]
+    name = f"Ceiling_Grid_{room['id']}"
+    pitch = 0.19
+    for index in range(math.ceil((y0 + 0.055) / pitch), math.floor((y1 - 0.055) / pitch) + 1):
+        y = index * pitch
+        box(f"{name}_Baffle_{index}", x0 + 0.035, x1 - 0.035, y - 0.021, y + 0.021,
+            HEIGHT - 0.10, HEIGHT, BAFFLES, collide=False)
+    support_count = max(1, math.ceil((x1 - x0) / 3.0))
+    for index in range(support_count + 1):
+        x = x0 + 0.054 + (x1 - x0 - 0.108) * index / support_count
+        box(f"{name}_Support_{index}", x - 0.035, x + 0.035, y0 + 0.035, y1 - 0.035,
+            HEIGHT - 0.112, HEIGHT - 0.10, BAFFLES, collide=False)
+join("Gallery_Ceiling_Baffles", ("Ceiling_Grid_",), "Gallery_Render")
 
 # The arrival elevator: an enclosed car behind the west wall where the visitor
 # spawns. Its walls, handrail, door surround and leaves share one satin steel
