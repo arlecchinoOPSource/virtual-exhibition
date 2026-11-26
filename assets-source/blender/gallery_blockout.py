@@ -418,7 +418,8 @@ for index, (x0, x1, y0, y1) in enumerate((
 # table carrying the bowl of fruit, the couch facing the TV, the display case,
 # the dining set and one vase from the Eight Vases set. Opaque parts join into
 # Living_Props; the case's and the TV's alpha-blended glass moves to one shared
-# glass material (Living_Glass), since vertex colours carry no transparency.
+# glass material (Prop_Glass, shared with the street's truck since #95), since
+# vertex colours carry no transparency.
 LIVING_PAINT = vertex_colour_material("Living_Prop_Paint")
 LIVING_GLASS = material("Living glass", (0.75, 0.85, 0.85), 0.05)
 LIVING_GLASS.node_tree.nodes["Principled BSDF"].inputs["Alpha"].default_value = 0.3
@@ -429,7 +430,7 @@ WOOD_DARK = (0.12, 0.06, 0.03)
 def living_prop(file, name, rect, height, turn_deg, wall, **options):
     prop, measures = import_prop(os.path.join(THIRD_PARTY, file), f"Living_Prop_{name}",
                                  collections["Gallery_Render"], rect, height, turn_deg, wall,
-                                 material=LIVING_PAINT, glass=(f"Living_Glass_{name}", LIVING_GLASS),
+                                 material=LIVING_PAINT, glass=(f"Glass_{name}", LIVING_GLASS),
                                  **options)
     print("THIRD_PARTY Living_" + name, {k: v for k, v in measures.items() if k != "glass"})
     return measures
@@ -539,6 +540,105 @@ for index, (x0, x1, y0, y1) in enumerate((
     (3.4, 4.0, -2.21, -2.2),       # north, east of the theater door
 )):
     box(f"Theater_Burgundy_{index:02}", x0, x1, y0, y1, 0, HEIGHT, BURGUNDY, collide=False)
+
+# Street (#95). Shallow facades on the street wall between the frames: two
+# stock buildings used only as bases, flattened to 15 cm reliefs, and an
+# original sari-sari store and an original two-storey house front with
+# rooflines, shutters, signage and blue and bamboo accents. The Old Truck stays
+# a generic truck, honestly labelled; it is not presented as a jeepney. One
+# path family (Path Straight) makes a near-flush sidewalk at the facades' foot,
+# and aloes grow in two original blue planters. Everything joins into
+# Street_Props; the truck's glass joins Prop_Glass.
+STREET_PAINT = vertex_colour_material("Street_Prop_Paint")
+ROOF = (0.42, 0.11, 0.05)
+SHUTTER_BLUE = (0.04, 0.16, 0.42)
+BAMBOO_POLE = (0.55, 0.43, 0.18)
+CREAM = (0.78, 0.64, 0.38)
+MINT = (0.36, 0.6, 0.48)
+INTERIOR = (0.03, 0.025, 0.02)
+WOOD = (0.2, 0.1, 0.04)
+
+
+def street_prop(file, name, rect, height, turn_deg, wall, proxy=None, **options):
+    prop, measures = import_prop(os.path.join(THIRD_PARTY, file), f"Street_Prop_{name}",
+                                 collections["Gallery_Render"], rect, height, turn_deg, wall,
+                                 material=STREET_PAINT, glass=(f"Glass_{name}", LIVING_GLASS),
+                                 **options)
+    print("THIRD_PARTY Street_" + name, {k: v for k, v in measures.items() if k != "glass"})
+    if proxy:
+        prop_proxy(proxy, measures["bounds"], options.get("base_z", 0.0) + height)
+    return prop, measures
+
+
+def street_block(name, rect, z0, z1, rgb):
+    colour_block(f"Street_Prop_{name}", collections["Gallery_Render"], rect, z0, z1, rgb,
+                 STREET_PAINT)
+
+
+# Stock buildings as facade bases, 15 cm deep, between the street frames.
+street_prop("bbH2Bg73qM/building-b.glb", "Facade_West", envelope["Street_Facade_West"], 3.05, 0,
+            "N", gap=0.005, flatten=0.068, proxy="Street_Facade_West", decimate=0.5)
+street_prop("otRsYa6pan/building-a.glb", "Facade_Middle", envelope["Street_Facade_Middle"], 3.3, 0,
+            "N", gap=0.005, flatten=0.068, proxy="Street_Facade_Middle", decimate=0.5)
+
+# An original sari-sari store: cream front, a serving window with propped blue
+# shutters, a counter, a blue sign board, and a roofline eave on bamboo poles.
+x0, x1, _, _ = envelope["Street_Store"]
+for name, rect, z0, z1, rgb in (
+    ("Store_Front", (x0, x1, 7.05, 7.1), 0, 3.4, CREAM),
+    ("Store_Window", (x0 + 0.25, x1 - 0.25, 7.03, 7.05), 0.9, 2.0, INTERIOR),
+    ("Store_Shutter_West", (x0 + 0.05, x0 + 0.25, 6.98, 7.03), 0.9, 2.0, SHUTTER_BLUE),
+    ("Store_Shutter_East", (x1 - 0.25, x1 - 0.05, 6.98, 7.03), 0.9, 2.0, SHUTTER_BLUE),
+    ("Store_Counter", (x0 + 0.2, x1 - 0.2, 6.85, 7.03), 0.85, 0.9, WOOD),
+    ("Store_Sign", (x0 + 0.2, x1 - 0.2, 7.0, 7.03), 2.15, 2.5, SHUTTER_BLUE),
+    ("Store_Sign_Stripe", (x0 + 0.3, x1 - 0.3, 6.99, 7.0), 2.28, 2.37, (0.85, 0.82, 0.74)),
+    ("Store_Eave", (x0, x1, 6.6, 7.05), 2.6, 2.7, ROOF),
+    ("Store_Pole_West", (x0 + 0.05, x0 + 0.1, 6.6, 6.65), 0, 2.6, BAMBOO_POLE),
+    ("Store_Pole_East", (x1 - 0.1, x1 - 0.05, 6.6, 6.65), 0, 2.6, BAMBOO_POLE),
+):
+    street_block(name, rect, z0, z1, rgb)
+prop_proxy("Street_Store", (x0, x1, 6.6, 7.1), 2.7)
+
+# An original two-storey house front behind the truck: mint walls, an upper
+# floor of shuttered windows and a roofline eave.
+x0, x1, _, _ = envelope["Street_House"]
+street_block("House_Front", (x0, x1, 7.05, 7.1), 0, 3.4, MINT)
+street_block("House_Eave", (x0, x1, 6.75, 7.05), 3.0, 3.1, ROOF)
+street_block("House_Floor_Line", (x0, x1, 7.0, 7.05), 1.75, 1.85, WOOD)
+for index, wx in enumerate((x0 + 0.7, (x0 + x1) / 2, x1 - 0.7)):
+    street_block(f"House_Window_{index}", (wx - 0.35, wx + 0.35, 7.03, 7.05), 2.0, 2.8,
+                 (0.86, 0.8, 0.64))
+    street_block(f"House_Shutter_{index}", (wx - 0.55, wx - 0.35, 7.0, 7.05), 2.0, 2.8,
+                 SHUTTER_BLUE)
+
+# The truck: a generic old truck, not a jeepney.
+street_prop("bkSACPrC0Ej/old-truck.glb", "Truck", envelope["Street_Jeepney"], 1.75, 0, "N",
+            proxy="Street_Jeepney", decimate=0.3)
+
+# Original blue planters with an aloe in each.
+for side in ("West", "East"):
+    px0, px1, py0, py1 = envelope[f"Street_Planter_{side}"]
+    planter = (px0 + 0.05, px1 - 0.05, py0 + 0.05, py1 - 0.05)
+    street_block(f"Planter_{side}", planter, 0, 0.45, SHUTTER_BLUE)
+    street_block(f"Planter_Rim_{side}", (planter[0] - 0.02, planter[1] + 0.02, planter[2] - 0.02,
+                                        planter[3] + 0.02), 0.42, 0.47, BAMBOO_POLE)
+    prop_proxy(f"Street_Planter_{side}", planter, 0.47)
+    street_prop("6hYjnEpV-CC/aloe-plant.glb", f"Aloe_{side}", planter, 0.21, 0, "C", base_z=0.47,
+                decimate=0.4)
+
+# A near-flush sidewalk of Path Straight tiles along the facades' foot, one
+# tile imported and copied along; walkable, so no collider.
+# Walkable floor, not furniture, so it is not a plan envelope.
+sx0, sx1, sy0, sy1 = (-6.45, 2.2, 6.15, 6.9)
+tile, measures = street_prop("ZuRHRsKWoz/path-straight.glb", "Path_00",
+                             (sx0, sx0 + 0.4, sy0, sy1), 0.03, 0, "C", decimate=0.12)
+pitch = measures["size_m"][0] + 0.005
+for index in range(1, int((sx1 - sx0) // pitch)):
+    copy = tile.copy()
+    copy.data = tile.data.copy()
+    copy.name = f"Street_Prop_Path_{index:02}"
+    copy.location.x += index * pitch
+    collections["Gallery_Render"].objects.link(copy)
 
 # Basement entrance in the right end wall: a hinged door, its frame, a sign,
 # and a statue. The door collider is a separate proxy the engine toggles.
@@ -830,10 +930,11 @@ join("Studio_Bamboo", ("Studio_Bamboo_",), "Gallery_Render")
 join("Reading_Props", ("Reading_Prop_",), "Gallery_Render")
 join("Reading_Terracotta", ("Reading_Terracotta_",), "Gallery_Render")
 join("Living_Props", ("Living_Prop_",), "Gallery_Render")
-join("Living_Glass", ("Living_Glass_",), "Gallery_Render")
+join("Prop_Glass", ("Glass_",), "Gallery_Render")
 join("Living_Teal", ("Living_Teal_",), "Gallery_Render")
 join("Theater_Props", ("Theater_Prop_",), "Gallery_Render")
 join("Theater_Burgundy", ("Theater_Burgundy_",), "Gallery_Render")
+join("Street_Props", ("Street_Prop_",), "Gallery_Render")
 join("Elevator_Car", ("Elevator_Wall_", "Elevator_Floor", "Elevator_Ceiling",
                       "Elevator_Handrail", "Elevator_Surround_", "Elevator_Front_",
                       "Elevator_Panel", "Elevator_Button_", "Elevator_Indicator"),
