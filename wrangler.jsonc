@@ -2,7 +2,6 @@
   "name": "adt12b-exhibition-virtual",
   "compatibility_date": "2026-11-26",
   "assets": {
-    "directory": "./dist",
-    "html_handling": "none"
+    "directory": "./dist"
   }
 }
