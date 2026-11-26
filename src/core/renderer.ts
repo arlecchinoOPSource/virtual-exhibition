@@ -37,7 +37,7 @@ export function startRenderer(
   prompt: HTMLElement,
   label: HTMLElement,
   openExhibit: (exhibit: Exhibit) => void,
-  onFrame?: (feet: Vector3) => void,
+  onFrame?: (feet: Vector3, camera: PerspectiveCamera) => void,
 ) {
   const renderer = new WebGLRenderer({ canvas, antialias: true });
   const camera = new PerspectiveCamera(60, 1, 0.05, 40);
@@ -141,7 +141,7 @@ export function startRenderer(
       camera.position.y += EYE_HEIGHT;
       updatePrompt();
     }
-    onFrame?.(body.feet);
+    onFrame?.(body.feet, camera);
     renderer.render(world.scene, camera);
     renderer.autoClear = false;
     for (const pass of world.passes ?? []) renderer.render(pass, camera);

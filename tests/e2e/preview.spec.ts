@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { moveSpawn } from './spawn';
 import type { Page } from '@playwright/test';
+import { spawnAtBasementDoor } from './basement';
 
 test('draws the preview in WebGL and resizes the canvas', async ({ page }) => {
   const pageErrors: Error[] = [];
@@ -348,7 +349,7 @@ test('offers the PDF file when the essay fails to load', async ({ page }) => {
 // Put the test visitor on the door axis in the rear landing, facing south
 // into the cut-away corner's doorway. Separate unit tests walk the gallery.
 async function walkToBasementDoor(page: Page) {
-  await moveSpawn(page, [7, 0, 1.74], [0, 1, 0, 0]);
+  await spawnAtBasementDoor(page);
   await page.goto('/');
   await page.bringToFront();
   await page.getByRole('button', { name: 'Start walk' }).click();
