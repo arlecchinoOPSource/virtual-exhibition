@@ -62,19 +62,19 @@ Every external asset the exhibition considers is listed here, whether it is used
 
 ## Street (#95)
 
-| ID                                              | Page title            | Creator        | Licence   | Board label            | Status    | Notes                                                                                                  |
-| ----------------------------------------------- | --------------------- | -------------- | --------- | ---------------------- | --------- | ------------------------------------------------------------------------------------------------------ |
-| [bkSACPrC0Ej](https://poly.pizza/m/bkSACPrC0Ej) | Old Truck             | Don Carson     | CC BY 3.0 | truck (like a jeepney) | Candidate | An old truck, not a jeepney. It needs scaling or shortening to the 3.2 × 1.4 m envelope (#95 decides). |
-| [ZuRHRsKWoz](https://poly.pizza/m/ZuRHRsKWoz)   | Path Straight         | Quaternius     | CC0       | Path                   | Candidate |                                                                                                        |
-| [mWb3XxOctl](https://poly.pizza/m/mWb3XxOctl)   | Rock Path Round Wide  | Quaternius     | CC0       | Path                   | Candidate |                                                                                                        |
-| [HAux7BIMfm](https://poly.pizza/m/HAux7BIMfm)   | Rock Path Square Thin | Quaternius     | CC0       | Path                   | Candidate |                                                                                                        |
-| [s1OJ3bBzqc](https://poly.pizza/m/s1OJ3bBzqc)   | Rock Medium           | Quaternius     | CC0       | Path                   | Candidate | A rock, not a path piece.                                                                              |
-| [594-OTYPvsF](https://poly.pizza/m/594-OTYPvsF) | street                | john benton    | CC BY 3.0 | Street Buildings       | Candidate | Must fit the 0.4 m facade depth.                                                                       |
-| [otRsYa6pan](https://poly.pizza/m/otRsYa6pan)   | Building              | Kay Lousberg   | CC0       | Street Buildings       | Candidate | Must fit the 0.4 m facade depth.                                                                       |
-| [bbH2Bg73qM](https://poly.pizza/m/bbH2Bg73qM)   | Building              | Kay Lousberg   | CC0       | Street Buildings       | Candidate | Must fit the 0.4 m facade depth.                                                                       |
-| [2jffIS8PMjZ](https://poly.pizza/m/2jffIS8PMjZ) | Vines                 | Poly by Google | CC BY 3.0 | Foliage                | Candidate | Keep foliage clear of frames and ray targets.                                                          |
-| [6hYjnEpV-CC](https://poly.pizza/m/6hYjnEpV-CC) | Aloe plant            | Poly by Google | CC BY 3.0 | Foliage                | Candidate |                                                                                                        |
-| [cnimalnLIEA](https://poly.pizza/m/cnimalnLIEA) | Vines                 | Poly by Google | CC BY 3.0 | Foliage                | Candidate | A second, different "Vines" model.                                                                     |
+| ID                                              | Page title            | Creator        | Licence   | Board label            | Status   | Notes                                                                                                                                                     |
+| ----------------------------------------------- | --------------------- | -------------- | --------- | ---------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [bkSACPrC0Ej](https://poly.pizza/m/bkSACPrC0Ej) | Old Truck             | Don Carson     | CC BY 3.0 | truck (like a jeepney) | Imported | Street (#95). Decision: kept as a generic old truck, honestly labelled, and not presented as a jeepney; a custom jeepney is out of scope. See below.      |
+| [ZuRHRsKWoz](https://poly.pizza/m/ZuRHRsKWoz)   | Path Straight         | Quaternius     | CC0       | Path                   | Imported | Street (#95): the one path family, a near-flush sidewalk. See below.                                                                                      |
+| [mWb3XxOctl](https://poly.pizza/m/mWb3XxOctl)   | Rock Path Round Wide  | Quaternius     | CC0       | Path                   | Not used | #95 uses one path family (Path Straight). Not downloaded.                                                                                                 |
+| [HAux7BIMfm](https://poly.pizza/m/HAux7BIMfm)   | Rock Path Square Thin | Quaternius     | CC0       | Path                   | Not used | #95 uses one path family (Path Straight). Not downloaded.                                                                                                 |
+| [s1OJ3bBzqc](https://poly.pizza/m/s1OJ3bBzqc)   | Rock Medium           | Quaternius     | CC0       | Path                   | Not used | A rock, not a path piece. Not downloaded.                                                                                                                 |
+| [594-OTYPvsF](https://poly.pizza/m/594-OTYPvsF) | street                | john benton    | CC BY 3.0 | Street Buildings       | Not used | A whole street piece (1.3 × 2.9 × 1.6 units, alpha-blended glass); #95 avoids importing a complete town. Evaluated on 2026-11-26, not committed.          |
+| [otRsYa6pan](https://poly.pizza/m/otRsYa6pan)   | Building              | Kay Lousberg   | CC0       | Street Buildings       | Imported | Street (#95), a facade base flattened to 0.15 m. See below.                                                                                               |
+| [bbH2Bg73qM](https://poly.pizza/m/bbH2Bg73qM)   | Building              | Kay Lousberg   | CC0       | Street Buildings       | Imported | Street (#95), a facade base flattened to 0.14 m. See below.                                                                                               |
+| [2jffIS8PMjZ](https://poly.pizza/m/2jffIS8PMjZ) | Vines                 | Poly by Google | CC BY 3.0 | Foliage                | Not used | Its leaves need alpha cut-outs, and the only walls for vines carry frames. The aloes give the street its foliage. Evaluated on 2026-11-26, not committed. |
+| [6hYjnEpV-CC](https://poly.pizza/m/6hYjnEpV-CC) | Aloe plant            | Poly by Google | CC BY 3.0 | Foliage                | Imported | Street (#95), one in each planter. See below.                                                                                                             |
+| [cnimalnLIEA](https://poly.pizza/m/cnimalnLIEA) | Vines                 | Poly by Google | CC BY 3.0 | Foliage                | Not used | As for the other Vines. Not downloaded.                                                                                                                   |
 
 ## Textures
 
@@ -168,7 +168,7 @@ The route walk passes in front of both shelves, round the desk's chair space and
 
 These follow the same steps. Opaque parts share `Living_Prop_Paint` and join into `Living_Props`, which is one draw.
 
-**Glass:** the display case's glass and the TV screen are alpha-blended (alpha 0.4) in the originals. Vertex colours can't carry that. `import_prop(glass=…)` moves those faces into `Living_Glass`, a second draw with one shared 30%-opaque glass material. This is the cabinet alpha cost the issue asks about: one transparent draw of 244 vertices.
+**Glass:** the display case's glass and the TV screen are alpha-blended (alpha 0.4) in the originals. Vertex colours can't carry that. `import_prop(glass=…)` moves those faces into `Living_Glass` (since #95 `Prop_Glass`, shared with the street's truck), a second draw with one shared 30%-opaque glass material. This is the cabinet alpha cost the issue asks about: one transparent draw of 244 vertices.
 
 **Small table:** the board's "Small Table" link is a TV (see the table above). The room's small table is an original model instead: a 0.46 × 0.9 m coffee table, 0.45 m tall, carrying the Bowl of Fruit. The TV stands on an original 0.5 m cabinet.
 
@@ -193,7 +193,7 @@ These follow the same steps. Opaque parts share `Living_Prop_Paint` and join int
 **Validation:** the Khronos glTF Validator reports 0 errors and 0 warnings on all six originals, and 0 errors on `gallery.glb`. Unit tests check:
 
 - `Living_Props` is one vertex-coloured draw with no UVs;
-- `Living_Glass` is transparent;
+- the glass (`Prop_Glass` since #95) is transparent;
 - every collision box is inside its envelope;
 - clear sightlines to Exhibit_10, 11 and 12.
 
@@ -260,3 +260,54 @@ The route walk goes in front of both towers, inside the proscenium under Exhibit
 - Median frame time: unchanged at 16.7 ms.
 
 **Browser:** Firefox at 100% and 50% resolution: `docs/renders/shell/theater-100.jpg` and `theater-50.jpg`. Also `theater-north.jpg` and `theater-benches.jpg`.
+
+### Street (#95): Old Truck, Building ×2, Aloe plant, Path Straight
+
+These follow the same steps. Everything joins into `Street_Props` (one draw) under `Street_Prop_Paint`. The truck's alpha-blended glass joins the shared `Prop_Glass`, renamed from `Living_Glass`.
+
+**Facades:** these are shallow and Filipino-inspired rather than a complete town:
+
+- **Two stock buildings as bases:** the two Kay Lousberg buildings are flattened to 14–15 cm reliefs between the street frames, each clear of its frame's 1.7 m viewing zone. Their palette textures are sampled into vertex colours.
+- **Original sari-sari store:** a cream front with a serving window, propped blue shutters and a counter. It has a blue sign board, which carries a stripe and no text, and a terracotta roofline eave on bamboo poles.
+- **Original two-storey house front:** behind the truck, with mint walls, an eave, a floor line and three windows with blue shutters.
+- **Planters:** two original blue planters with bamboo rims, an aloe in each.
+
+**Vehicle decision:** the Old Truck is kept as a generic old truck and labelled as one in the plan, the register and the credits. It is not presented as a jeepney. A custom jeepney would be new authored work, outside this issue.
+
+**Path:** one family, Path Straight. 25 tiles, scaled to 3 cm, make a near-flush sidewalk along the facades' foot. One tile is imported and copied along. The sidewalk has no collider: a visitor walks onto it and stays on the floor (unit test).
+
+**Foliage cost:** two aloes at 285 triangles each, with no alpha and no texture after baking. The Vines are not used.
+
+| Asset                                               | Original (downloaded 2026-11-26)                | Measured original                                                                                                  | Placed                                                                                                                               |
+| --------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Old Truck (bkSACPrC0Ej), Don Carson, CC BY 3.0      | 488,904 B, SHA-256 `c750fa80…`, obj2gltf        | 95 meshes, 16 materials (2 blended glass), no textures; 4,944 triangles, 10,036 vertices; 1.02 × 0.47 × 0.61 units | Scaled ×2.86 to 1.75 m (2.91 × 1.34 m), kept to 30% (1,464 triangles); against the house front on the rear landing, side to the room |
+| Building (bbH2Bg73qM), Kay Lousberg, CC0            | 125,464 B, SHA-256 `35e81d0a…`, FBX2glTF v0.9.7 | 1 mesh, 1 material with a palette texture; 1,711 triangles, 2,912 vertices; 2.01 × 2.00 × 2.98 units               | Scaled ×1.025 to 3.05 m (2.06 m wide), flattened to 0.14 m and kept to 50% (855 triangles); west of Exhibit_04                       |
+| Building (otRsYa6pan), Kay Lousberg, CC0            | 139,504 B, SHA-256 `5ebaa835…`, FBX2glTF v0.9.7 | 1 mesh, 1 material with a palette texture; 1,885 triangles, 3,318 vertices; 2.01 × 2.00 × 3.05 units               | Scaled ×1.082 to 3.3 m (2.17 m wide), flattened to 0.15 m and kept to 50% (942 triangles); between Exhibit_04 and 05                 |
+| Aloe plant (6hYjnEpV-CC), Poly by Google, CC BY 3.0 | 307,564 B, SHA-256 `593fdaa9…`, obj2gltf        | 1 mesh, 1 material with a texture; 714 triangles, 1,784 vertices; 2.00 × 1.84 × 0.91 units                         | Scaled ×0.227 to 0.21 m (0.46 m wide), kept to 40% (285 triangles); one in each planter                                              |
+| Path Straight (ZuRHRsKWoz), Quaternius, CC0         | 38,356 B, SHA-256 `3145e764…`, FBX2glTF v0.9.7  | 1 mesh, 2 materials, no textures; 506 triangles, 1,006 vertices; 0.50 × 0.98 × 0.04 units                          | Scaled ×0.668 to 3 cm (0.33 × 0.65 m), kept to 12% (60 triangles); 25 tiles from x −6.45 to 2.2                                      |
+
+**Plan changes:**
+
+- The jeepney envelope's note now records the generic truck.
+- New envelopes: `Street_Facade_West`, `Street_Facade_Middle`, `Street_Store` and `Street_House`. Each is clear of the frames' viewing zones (layout-plan test).
+
+**Validation:** the Khronos glTF Validator reports 0 errors and 0 warnings on all five originals, and 0 errors on `gallery.glb`. Unit tests check:
+
+- `Street_Props` is one vertex-coloured draw, below the ceiling;
+- every collision box is inside its envelope;
+- the sidewalk can be walked onto;
+- clear sightlines to Exhibit_04, 05 and 06.
+
+The route walk goes along the sidewalk under Exhibit_04 and 05, to the store, round both planters, under Exhibit_06, and past the truck to the rear landing.
+
+**Cost (Firefox, M5, against #94):**
+
+- `gallery.glb`: 5.12 → 5.63 MB, inside the 6 MB budget. The cold load goes from 5.87 to 6.39 MB.
+- Unit-test draw count: within the cap of 67, since the truck's glass shares `Prop_Glass`.
+- Street view, looking east: 34 draws, 56.2k triangles.
+- Elevator view: 64 draws, 82.1k triangles.
+- Median frame time: unchanged at 16.7 ms.
+
+**Browser:** Firefox at 100% and 50% resolution: `docs/renders/shell/street-100.jpg` and `street-50.jpg`. Also `street-store.jpg`, `street-truck.jpg` and `street-west.jpg`.
+
+**Limits:** decimation leaves the sidewalk tiles uneven at their edges. The sign board carries no lettering.

@@ -98,7 +98,7 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **Work:** "old tv" by Justin Randall, from [Poly Pizza](https://poly.pizza/m/9y-mTmCyefL).
 - **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
 - **File:** `assets-source/third-party/9y-mTmCyefL/old-tv.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/eb7cdd7c-3cd6-4f56-91f1-b006816c9371.glb>. It is 235,456 bytes, SHA-256 `bbbff469f383523003c244d8ba3f7ed5007a4817d7359d7b49f24838b7fa36fa`.
-- **In the model:** part of `Living_Props` (on an original cabinet against the living room's west wall); its screen glass is in `Living_Glass`.
+- **In the model:** part of `Living_Props` (on an original cabinet against the living room's west wall); its screen glass is in `Prop_Glass`.
 - **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.5 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 35% of its triangles. Its screen glass uses a shared transparent material.
 
 ## Living_Props: Bowl of Fruit
@@ -122,7 +122,7 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **Work:** "Display Case" by CMHT Oculus, from [Poly Pizza](https://poly.pizza/m/cp6KFmnPnnn).
 - **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
 - **File:** `assets-source/third-party/cp6KFmnPnnn/display-case.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/5c1a22e7-b567-4ea4-b3c4-c2ede476b862.glb>. It is 36,764 bytes, SHA-256 `f03696c93efd3e31a88eeb36131fcfc059613f803627c97a813edee2adf6cde6`.
-- **In the model:** part of `Living_Props` (against the living room's south wall, with `COL_Living_Display_Case`); its glass is in `Living_Glass`.
+- **In the model:** part of `Living_Props` (against the living room's south wall, with `COL_Living_Display_Case`); its glass is in `Prop_Glass`.
 - **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.65 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Its glass uses a shared transparent material.
 
 ## Living_Props: Dining Set
@@ -180,6 +180,46 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **File:** `assets-source/third-party/Kgt363WkKd/flower-pot.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/fcbc720c-858e-4c35-ab6c-0797c71d6978.glb>. It is 56,460 bytes, SHA-256 `eaceb6b254efe758829450d90657b6d7cc6db658548c761fd88291cd460396a6`.
 - **In the model:** part of `Theater_Props` (beside the theater door).
 - **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.7 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 50% of its triangles.
+
+## Street_Props: Old Truck
+
+- **Work:** "Old Truck" by Don Carson, from [Poly Pizza](https://poly.pizza/m/bkSACPrC0Ej).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/bkSACPrC0Ej/old-truck.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/8762a4f0-9f25-4648-9ce8-f1dd09ab3466.glb>. It is 488,904 bytes, SHA-256 `c750fa80754bc18259c281e2dc4cceb0681c732e3af71f615223038b1c769edd`.
+- **In the model:** part of `Street_Props` (a generic old truck on the rear landing, with `COL_Street_Jeepney`; it is not presented as a jeepney); its glass is in `Prop_Glass`.
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.75 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 30% of its triangles. Its glass uses a shared transparent material.
+
+## Street_Props: Building (bbH2Bg73qM)
+
+- **Work:** "Building" by Kay Lousberg, from [Poly Pizza](https://poly.pizza/m/bbH2Bg73qM).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/bbH2Bg73qM/building-b.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/e09bc106-ce36-4f55-977d-16921d6f0002.glb>. It is 125,464 bytes, SHA-256 `35e81d0a0bd8907c7075bad9742d0fa587dc33682afaebb4ac825e3d0a191f3a`.
+- **In the model:** part of `Street_Props` (a facade relief west of Exhibit_04).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 3.05 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Its palette texture is sampled into the vertex colours. It is flattened to 0.14 m deep as a facade relief and simplified to 50% of its triangles.
+
+## Street_Props: Building (otRsYa6pan)
+
+- **Work:** "Building" by Kay Lousberg, from [Poly Pizza](https://poly.pizza/m/otRsYa6pan).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/otRsYa6pan/building-a.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/1c40976f-9fd1-4779-ba85-8105d523f3d8.glb>. It is 139,504 bytes, SHA-256 `5ebaa83522c99c877e28b9c482aa8629226d574fa398dc91ba71430d4e38e290`.
+- **In the model:** part of `Street_Props` (a facade relief between Exhibit_04 and 05).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 3.3 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Its palette texture is sampled into the vertex colours. It is flattened to 0.15 m deep as a facade relief and simplified to 50% of its triangles.
+
+## Street_Props: Aloe plant
+
+- **Work:** "Aloe plant" by Poly by Google, from [Poly Pizza](https://poly.pizza/m/6hYjnEpV-CC).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/6hYjnEpV-CC/aloe-plant.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/3e7a6f88-3a09-45b5-9c19-b2c003f40c12.glb>. It is 307,564 bytes, SHA-256 `593fdaa954ead2654c984efb57596723f5b7e8b3d32b2eab87c7fcbbfbbe6157`.
+- **In the model:** part of `Street_Props` (twice, in the street's original planters).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.21 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Its texture is sampled into the vertex colours. It is simplified to 40% of its triangles.
+
+## Street_Props: Path Straight
+
+- **Work:** "Path Straight" by Quaternius, from [Poly Pizza](https://poly.pizza/m/ZuRHRsKWoz).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/ZuRHRsKWoz/path-straight.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/7eb6f9bc-5995-413b-88c9-7809ebd16bf7.glb>. It is 38,356 bytes, SHA-256 `3145e764b5ae523268a83ef5fd50b3e0ba04aa43ebad52fc04f194da63693751`.
+- **In the model:** part of `Street_Props` (25 copies forming the sidewalk at the facades' foot).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.03 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 12% of its triangles and repeated 25 times.
 
 ## Replacing a print
 
