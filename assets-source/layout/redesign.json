@@ -271,14 +271,14 @@
     {
       "id": "Studio_Worktable",
       "section": "studio",
-      "rect": [-12.4, -9.4, 4.55, 6.65],
-      "note": "1.8 x 0.9 m table plus 0.6 m working space on every side"
+      "rect": [-12.45, -10.8, 5.75, 7.5],
+      "note": "Drafting Table (Joshua Johanson, CC BY 3.0), measured 1.63 x 1.64 m; against the north wall between the cabinet and the easel (owner review, #91)"
     },
     {
       "id": "Studio_Easel",
       "section": "studio",
-      "rect": [-11.15, -9.85, 6.8, 7.5],
-      "note": "Art Easel Set Up (reyshapes, CC0), measured: 1.26 x 0.64 m at 1.85 m tall"
+      "rect": [-10.55, -9.25, 6.8, 7.5],
+      "note": "Art Easel Set Up (reyshapes, CC0), measured: 1.26 x 0.63 m at 1.85 m tall; canvas facing the room (owner review, #91)"
     },
     {
       "id": "Studio_Statue",
@@ -288,7 +288,8 @@
     {
       "id": "Studio_Supplies",
       "section": "studio",
-      "rect": [-12.4, -11.2, 7.0, 7.5]
+      "rect": [-13.95, -12.75, 7.0, 7.5],
+      "note": "Original supply cabinet carrying the Watercolor Set, in the north-west corner (owner review, #91)"
     },
     {
       "id": "Street_Facades",
@@ -452,7 +453,7 @@
     {
       "slot": "Exhibit_03",
       "section": "studio",
-      "at": [-13.98, 6.3],
+      "at": [-13.98, 6.1],
       "gaze": "W",
       "wall": "Wall_West_North"
     },

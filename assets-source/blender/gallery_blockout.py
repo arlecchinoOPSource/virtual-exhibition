@@ -157,7 +157,7 @@ def marker(name, x, y, z, gaze, collection="Gallery_Markers"):
     collections[collection].objects.link(empty)
 
 
-def gallery_light(index, x, y, gaze):
+def gallery_light(index, x, y, gaze, colour=(1.0, 0.95, 0.88)):
     """Align the adjustable track head and its beam with the exhibit anchor."""
     gx, gy = GAZE[gaze]
     position = Vector((x - gx * LIGHT_THROW, y - gy * LIGHT_THROW, LIGHT_HEIGHT))
@@ -167,7 +167,7 @@ def gallery_light(index, x, y, gaze):
     data.energy = LIGHT_INTENSITY
     data.spot_size = math.radians(68)
     data.spot_blend = 0.72
-    data.color = (1.0, 0.95, 0.88)
+    data.color = colour
     light = bpy.data.objects.new(name, data)
     light.location = position
     light.rotation_euler = aim.to_track_quat("-Z", "Y").to_euler()
@@ -299,20 +299,67 @@ proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
 
 # Studio props from the asset register (docs/ASSET_REGISTER.md). Each comes
-# from its untouched original in assets-source/third-party/<id>/ and must fit
-# its plan envelope; third_party.py prints its measures for the register.
-from third_party import import_prop
-easel_rect = next(item["rect"] for item in PLAN["furniture"] if item["id"] == "Studio_Easel")
-easel, easel_measures = import_prop(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "third-party", "2ZP3o8hyPA",
-                 "art-easel-set-up.glb"),
-    "Studio_Easel", collections["Gallery_Render"], easel_rect, height=1.85, turn_deg=-90)
-print("THIRD_PARTY Studio_Easel", easel_measures)
-ex0, ex1, ey0, ey1 = easel_measures["bounds"]
-proxy = bpy.data.objects.new("COL_Studio_Easel", box_mesh("COL_Studio_Easel", (ex1 - ex0, ey1 - ey0, 1.85)))
-proxy.location = ((ex0 + ex1) / 2, (ey0 + ey1) / 2, 1.85 / 2)
-proxy.display_type = "WIRE"
-collections["Gallery_Collision"].objects.link(proxy)
+# from its untouched original in assets-source/third-party/<id>/, must fit its
+# plan envelope, and gets an axis-aligned COL_ proxy matching its footprint.
+# They share one vertex-colour material and join into Studio_Props, so the
+# whole room costs one draw (the standard the other rooms reuse).
+from third_party import colour_block, import_prop, vertex_colour_material
+THIRD_PARTY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "third-party")
+PROP_PAINT = vertex_colour_material("Studio_Prop_Paint")
+envelope = {item["id"]: item["rect"] for item in PLAN["furniture"]}
+
+
+def prop_proxy(name, bounds, z1, z0=0.0):
+    x0, x1, y0, y1 = bounds
+    proxy = bpy.data.objects.new(f"COL_{name}", box_mesh(f"COL_{name}", (x1 - x0, y1 - y0, z1 - z0)))
+    proxy.location = ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
+    proxy.display_type = "WIRE"
+    collections["Gallery_Collision"].objects.link(proxy)
+
+
+STUDIO_PROPS = (
+    # name, file, envelope, height (m), turn (deg), wall
+    ("Studio_Easel", "2ZP3o8hyPA/art-easel-set-up.glb", "Studio_Easel", 1.85, 90, "N"),
+    ("Studio_Worktable", "8Z4yYj39NWS/drafting-table.glb", "Studio_Worktable", 1.35, 180, "N"),
+    ("Studio_Statue", "AK9CmjFnL6/horse-statue.glb", "Studio_Statue", 1.3, 0, "C"),
+)
+for name, file, rect, height, turn_deg, wall in STUDIO_PROPS:
+    prop, measures = import_prop(os.path.join(THIRD_PARTY, file), f"Studio_Prop_{name[7:]}",
+                                 collections["Gallery_Render"], envelope[rect], height, turn_deg,
+                                 wall, material=PROP_PAINT)
+    print("THIRD_PARTY", name, measures)
+    prop_proxy(name, measures["bounds"], height)
+
+# Original bamboo panelling (gallery_finishes.bamboo_finish) on the studio's
+# side of its walls, 1 cm thick so the frames' anchors stay 1 cm proud of it,
+# leaving the doorways and the elevator surround clear.
+from gallery_finishes import bamboo_finish
+BAMBOO = material("Studio bamboo panelling", (0.78, 0.64, 0.36), 0.55)
+bamboo_finish(BAMBOO)
+for index, (x0, x1, y0, y1, z0) in enumerate((
+    (-14.0, -6.7, 7.49, 7.5, 0),        # north wall
+    (-14.0, -13.99, 2.2, 3.03, 0),      # west wall, south of the elevator
+    (-14.0, -13.99, 5.07, 7.5, 0),      # west wall, north of the elevator
+    (-14.0, -13.99, 3.03, 5.07, 2.55),  # over the elevator surround
+    (-14.0, -12.0, 2.2, 2.21, 0),       # spine, west of the studio door
+    (-10.0, -6.7, 2.2, 2.21, 0),        # spine, east of the studio door
+    (-6.71, -6.7, 2.2, 4.5, 0),         # partition, south of the street opening
+    (-6.71, -6.7, 6.5, 7.5, 0),         # partition, north of the street opening
+)):
+    panel = box(f"Studio_Bamboo_{index:02}", x0, x1, y0, y1, z0, HEIGHT, BAMBOO, collide=False)
+    paint_uv(panel)
+
+# An original supply cabinet against the north wall carries the watercolours.
+sx0, sx1, sy0, sy1 = envelope["Studio_Supplies"]
+cabinet = (sx0 + 0.05, sx1 - 0.05, sy0 + 0.05, sy1 - 0.05)
+colour_block("Studio_Prop_Cabinet", collections["Gallery_Render"], cabinet, 0, 0.8,
+             (0.18, 0.09, 0.04), PROP_PAINT)
+prop_proxy("Studio_Supplies", cabinet, 0.8)
+prop, measures = import_prop(os.path.join(THIRD_PARTY, "cAmECzmVE2_/watercolor-set.glb"),
+                             "Studio_Prop_Watercolors", collections["Gallery_Render"], cabinet,
+                             0.2, 90, "C", base_z=0.8, material=PROP_PAINT)
+print("THIRD_PARTY Studio_Watercolors", measures)
+
 # Basement entrance in the right end wall: a hinged door, its frame, a sign,
 # and a statue. The door collider is a separate proxy the engine toggles.
 # The basement and its entrance are modelled in their original frame (door in
@@ -424,7 +471,9 @@ for frame in PLAN["frames"]:
     index = int(frame["slot"].split("_")[1])
     x, y = frame["at"]
     marker(frame["slot"], x, y, ANCHOR_HEIGHT, frame["gaze"])
-    gallery_light(index, x, y, frame["gaze"])
+    # The studio is lit warmer, about 2700 K, as its room brief asks (#91).
+    warm = frame["section"] == "studio"
+    gallery_light(index, x, y, frame["gaze"], (1.0, 0.82, 0.6) if warm else (1.0, 0.95, 0.88))
 
 # Reusable frame: back at the origin, front facing -Y, centered on the anchor.
 w, h, d, b = FRAME_WIDTH / 2, FRAME_HEIGHT / 2, FRAME_DEPTH, FRAME_BORDER
@@ -596,6 +645,8 @@ for name, x, y, ceiling, drop, energy in (
 # COL_ proxies stay separate: the engine needs one box per collider.
 join("Gallery_Walls", ("Wall_", "Partition_", "Street_Facade_"), "Gallery_Render")
 # The leaves stay separate so they can slide; the rest of the car is one mesh.
+join("Studio_Props", ("Studio_Prop_",), "Gallery_Render")
+join("Studio_Bamboo", ("Studio_Bamboo_",), "Gallery_Render")
 join("Elevator_Car", ("Elevator_Wall_", "Elevator_Floor", "Elevator_Ceiling",
                       "Elevator_Handrail", "Elevator_Surround_", "Elevator_Front_",
                       "Elevator_Panel", "Elevator_Button_", "Elevator_Indicator"),

@@ -1,6 +1,6 @@
 # Third-party artwork in the models
 
-`basement.glb` contains two prints of historical artworks, pasted to the basement's side walls (#59). `gallery.glb` contains one third-party model, the studio easel (#90). Everything else in `gallery.glb`, `frame.glb`, and `basement.glb` is original to this project. The full register of candidate assets is `docs/ASSET_REGISTER.md`.
+`basement.glb` contains two prints of historical artworks, pasted to the basement's side walls (#59). `gallery.glb` contains four third-party models in the studio (#90, #91), joined into `Studio_Props`. Everything else in `gallery.glb`, `frame.glb`, and `basement.glb` is original to this project. The full register of candidate assets is `docs/ASSET_REGISTER.md`.
 
 The source files are kept unmodified in `assets-source/posters/`. `assets-source/blender/posters.py` builds both prints the same way. It adds a narrow paper margin around the image without resizing it (only the Doré scan is cropped, as noted below), and lightly tones the sheet: the margin yellows toward its edges and the paper has a faint uneven tone. The glTF export then re-encodes each sheet as a JPEG (quality 82) inside `basement.glb`. No logos, album artwork, typography, or later adaptations are included.
 
@@ -28,14 +28,38 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **Work:** "Art Easel Set Up" by reyshapes, from [Poly Pizza](https://poly.pizza/m/2ZP3o8hyPA). It is an H-frame studio easel with a brush, a palette, paint jars and a can.
 - **Licence:** Public Domain, [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Attribution isn't required; the creator is credited anyway.
 - **File:** `assets-source/third-party/2ZP3o8hyPA/art-easel-set-up.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/de6672ae-e7be-47eb-9836-f4894bbc82f2.glb>. It is 315,024 bytes, SHA-256 `077681f09cc23e190159d9f48c33bac5032dc6eaf6cf582297b6d1ed4aa32d84`, made by FBX2glTF.
-- **In the model:** `Studio_Easel` against the studio's north wall, using the single material `Studio_Easel_Paint`, with `COL_Studio_Easel` as its collision box.
+- **In the model:** part of `Studio_Props` (shared material `Studio_Prop_Paint`), against the studio's north wall, with `COL_Studio_Easel` as its collision box.
 - **Modifications:** `assets-source/blender/third_party.py` makes these changes at build time:
   - its one mesh is kept and the root empty is removed;
   - it is scaled from 12.5 units to 1.85 m tall (×0.148, after the original's 100× FBX scale);
   - it is turned to face into the room, with its origin at the centre of its base;
-  - its ten identical white materials are replaced by one vertex-colour material, keeping the original vertex colours.
+  - its ten identical white materials are replaced by one vertex-colour material, keeping the original vertex colours (baked to 8-bit), and its unused UVs are dropped.
 
   Geometry is otherwise unchanged: 3,266 triangles and 5,843 vertices.
+
+## Studio_Props: Drafting Table
+
+- **Work:** "Drafting Table" by Joshua Johanson, from [Poly Pizza](https://poly.pizza/m/8Z4yYj39NWS).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/8Z4yYj39NWS/drafting-table.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/46576848-ecb9-4203-b4d3-7d4be9f375d7.glb>. It is 781,752 bytes, SHA-256 `b717fecca098e859e04010cedbe9f905b94b29faf63ea0b26ab71f494ea1ccc8`.
+- **In the model:** part of `Studio_Props` (the studio's worktable, with its lamp, pencil cup, T-square and stool, and `COL_Studio_Worktable`).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.35 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is kept whole, stool included, and stands against the north wall facing the room. Geometry is otherwise unchanged.
+
+## Studio_Props: Watercolor Set
+
+- **Work:** "Watercolor Set" by Don Carson, from [Poly Pizza](https://poly.pizza/m/cAmECzmVE2_).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/cAmECzmVE2_/watercolor-set.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/971bbe97-7b60-4b34-ad2c-8a6a3463ac0c.glb>. It is 254,252 bytes, SHA-256 `8d661f01448bf81dac06b3b36ecd2994ab088129180d90f8631e0b88459838cb`.
+- **In the model:** part of `Studio_Props` (standing on an original supply cabinet in the north-west corner).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.2 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Geometry is otherwise unchanged.
+
+## Studio_Props: Horse Statue
+
+- **Work:** "Horse Statue" by Quaternius, from [Poly Pizza](https://poly.pizza/m/AK9CmjFnL6).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/AK9CmjFnL6/horse-statue.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/55b0aa03-543c-439d-a7d7-f0ac4c23578f.glb>. It is 119,712 bytes, SHA-256 `e9d22843b9bef1a6a943b8d59bcee99e5a3702904150fba4a4e4ba1af53448c2`.
+- **In the model:** part of `Studio_Props` (in the studio's south-west corner, with `COL_Studio_Statue`).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.3 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Geometry is otherwise unchanged.
 
 ## Replacing a print
 
