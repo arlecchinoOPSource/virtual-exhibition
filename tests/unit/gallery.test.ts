@@ -865,15 +865,20 @@ describe('gallery export budget', () => {
 });
 
 describe('basement entrance', () => {
-  it('places one torch opposite the statue and extends the library plaster', async () => {
+  it('places torches on both sides of the entrance and extends the library plaster', async () => {
     const world = await loadWorld();
     const statue = world.scene.getObjectByName('COL_Statue')!;
     const statueBounds = new Box3().setFromObject(statue);
-    const light = world.scene.getObjectByName('Light_Entrance_Torch');
-    expect(light).toBeInstanceOf(PointLight);
-    expect(light?.getWorldPosition(new Vector3()).z).toBeLessThan(-0.95);
+    const north = world.scene.getObjectByName('Light_Entrance_Torch_North');
+    const reaper = world.scene.getObjectByName('Light_Entrance_Torch_Reaper');
+    expect(north).toBeInstanceOf(PointLight);
+    expect(reaper).toBeInstanceOf(PointLight);
+    expect(north?.getWorldPosition(new Vector3()).z).toBeLessThan(-0.95);
+    const reaperLightPosition = reaper!.getWorldPosition(new Vector3());
+    expect(reaperLightPosition.z).toBeGreaterThan(0.95);
+    expect(reaperLightPosition.x).toBeLessThan(statueBounds.min.x);
     expect(statueBounds.min.z).toBeGreaterThan(0.95);
-    expect((light as PointLight).distance).toBeCloseTo(2.2);
+    expect((reaper as PointLight).distance).toBeLessThan(3.5);
     expect(world.scene.getObjectByName('Entrance_Torch_Flames')).toBeInstanceOf(
       Mesh,
     );

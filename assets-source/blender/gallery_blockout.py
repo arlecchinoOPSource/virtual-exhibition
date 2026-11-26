@@ -818,19 +818,30 @@ for label, y0, y1, bottom in (
 box("Entrance_Charcoal_Ceiling", 4.0, 10.0, -2.0, 2.0, HEIGHT - 0.012,
     HEIGHT, ALCOVE, collide=False)
 
-# A wrought-iron wall torch on the north jamb, opposite the statue.
+# The north torch lights the jamb. The torch on the south return sits in
+# front of the Reaper so its light reaches the face and raised lettering.
 torch_metal, torch_flames = Sculpture(), Sculpture()
-x, y, z = 9.79, 1.19, 1.92
-torch_metal.tube([(9.985, y, 1.585), (9.89, y, 1.60), (x, y, 1.75),
-                  (x, y, z)], [0.035, 0.020, 0.022, 0.033], 8)
-torch_metal.tube([(x, y, z - 0.04), (x, y, z + 0.03)],
-                 [0.037, 0.069], 10)
-torch_flames.tube([(x, y, z + 0.015), (x - 0.006, y, z + 0.095),
-                   (x + 0.012, y - 0.016, z + 0.17),
-                   (x + 0.028, y - 0.028, z + 0.24)],
-                  [0.039, 0.049, 0.025, 0.002], 9, pleats=3)
-point_light("Light_Entrance_Torch", x - 0.10, y, z + 0.12, 1.35,
-            (1.0, 0.43, 0.14), collection="Gallery_Lights", reach=2.2)
+
+
+def entrance_torch(name, x, y, z, dx, dy, energy, reach):
+    def at(depth, side, height):
+        return (x + dx * depth + dy * side,
+                y + dy * depth - dx * side, z + height)
+
+    torch_metal.tube([at(0.015, 0, -0.335), at(0.11, 0, -0.32),
+                     at(0.21, 0, -0.17), at(0.21, 0, 0)],
+                    [0.035, 0.020, 0.022, 0.033], 8)
+    torch_metal.tube([at(0.21, 0, -0.04), at(0.21, 0, 0.03)],
+                    [0.037, 0.069], 10)
+    torch_flames.tube([at(0.21, 0, 0.015), at(0.216, 0, 0.095),
+                       at(0.198, -0.016, 0.17), at(0.182, -0.028, 0.24)],
+                      [0.039, 0.049, 0.025, 0.002], 9, pleats=3)
+    point_light(f"Light_Entrance_Torch_{name}", *at(0.31, 0, 0.12), energy,
+                (1.0, 0.56, 0.23), collection="Gallery_Lights", reach=reach)
+
+
+entrance_torch("North", 10.0, 1.19, 1.92, -1, 0, 1.8, 2.7)
+entrance_torch("Reaper", 8.95, -1.99, 2.28, 0, 1, 3.0, 3.4)
 torch_metal.object("Entrance_Torch_Brackets", IRON, collections["Gallery_Render"])
 torch_flames.object("Entrance_Torch_Flames", glow("Torch fire", (1.0, 0.31, 0.055), 4.0),
                     collections["Gallery_Render"])
