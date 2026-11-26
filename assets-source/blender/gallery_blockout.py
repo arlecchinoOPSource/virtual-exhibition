@@ -1020,6 +1020,22 @@ place(list(collections["Basement_Render"].objects) + list(collections["Basement_
 for frame in PLAN["frames"]:
     if frame["section"] == "basement":
         marker(frame["slot"], *frame["at"], BOTTOM + ANCHOR_HEIGHT, frame["gaze"], "Basement_Render")
+        # A warm picture light under the low ceiling, so each frame reads
+        # against the dim room (#96). It exports with basement.glb and follows
+        # the Display spotlights setting like the gallery's.
+        gx, gy = GAZE[frame["gaze"]]
+        x, y = frame["at"]
+        position = Vector((x - gx * 0.9, y - gy * 0.9, TOP - 0.15))
+        aim = Vector((x, y, BOTTOM + ANCHOR_HEIGHT)) - position
+        data = bpy.data.lights.new(f"Light_Basement_{frame['slot']}", "SPOT")
+        data.energy = 3.0
+        data.spot_size = math.radians(70)
+        data.spot_blend = 0.7
+        data.color = (1.0, 0.8, 0.55)
+        light = bpy.data.objects.new(data.name, data)
+        light.location = position
+        light.rotation_euler = aim.to_track_quat("-Z", "Y").to_euler()
+        collections["Basement_Render"].objects.link(light)
 
 export(os.path.join(output, "frame.glb"), ("Frame_Display",))
 export(
