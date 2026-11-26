@@ -100,12 +100,20 @@ describe('gallery blockout', () => {
       'Theater_Burgundy',
     ].map((name) => model.getObjectByName(name)!);
     const byOpening = [
-      ['Studio_Door', 'Gallery_Walls', 'Studio_Bamboo'],
-      ['Living_Door', 'Living_Teal', 'Gallery_Walls'],
+      ['Studio_Door', 'Reading_Terracotta', 'Studio_Bamboo'],
+      ['Living_Door', 'Living_Teal', 'Reading_Terracotta'],
       ['Theater_Door', 'Theater_Burgundy', 'Reading_Terracotta'],
       ['Studio_Street', 'Studio_Bamboo', 'Gallery_Walls'],
       ['Living_Theater', 'Living_Teal', 'Theater_Burgundy'],
     ] as const;
+
+    const endWall = new Raycaster(
+      new Vector3(-12.5, 1.5, 0),
+      new Vector3(-1, 0, 0),
+    );
+    expect(endWall.intersectObjects(finishes)[0]?.object.name).toBe(
+      'Reading_Terracotta',
+    );
 
     for (const [id, lowFinish, highFinish] of byOpening) {
       const [x0, x1, y0, y1] = plan.openings.find(
@@ -735,8 +743,8 @@ describe('gallery export budget', () => {
     // for the theater (#94): its joined props and its burgundy paint. The
     // street (#95) fits within the same cap: its props join into one draw and
     // the truck's glass shares Prop_Glass.
-    // The five room casings share one additional draw.
-    expect(drawCalls).toBeLessThanOrEqual(68);
+    // The room casings, open leaves, and brass pulls share one draw each.
+    expect(drawCalls).toBeLessThanOrEqual(70);
     world.dispose();
   });
 

@@ -263,7 +263,19 @@ box("Wall_West_Lintel", -14 - WALL, -14, door_y0, door_y1, DOOR_HEIGHT, HEIGHT, 
 # Trim the five enclosed room passages using the measured opening rectangles.
 # The wide, unwalled room transitions and the two working doors need no casing.
 CASING = material("Gallery portal dark walnut", (0.13, 0.073, 0.038), 0.52)
-ROOM_DOORS = {"Studio_Door", "Living_Door", "Theater_Door", "Studio_Street", "Living_Theater"}
+DOOR = material("Door_Basement", (0.05, 0.045, 0.04), 0.7)
+PULL = material("Gallery door aged brass", (0.32, 0.22, 0.10), 0.45)
+PULL.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.4
+DOOR_THICKNESS = 0.06
+# Park a pair of leaves at 90 degrees so the wide openings stay passable
+# and the leaves project less than a metre into the receiving room.
+ROOM_DOORS = {
+    "Studio_Door": 1,
+    "Living_Door": -1,
+    "Theater_Door": 1,
+    "Studio_Street": 1,
+    "Living_Theater": 1,
+}
 HEAD = 2.55
 HEADER_TOP = HEAD + 0.10
 JAMB_REVEAL = 0.015
@@ -291,6 +303,29 @@ for opening in PLAN["openings"]:
               depth0 - 0.037, depth1 + 0.037, HEAD, HEADER_TOP, CASING)
     door_part(f"Wall_Portal_{name}_Infill", low, high,
               depth0, depth1, HEADER_TOP, HEIGHT, WALLS)
+
+    hinge_depth = (depth0 + depth1) / 2
+    leaf_width = (high - low) / 2 - JAMB_REVEAL - 0.01
+    open_side = ROOM_DOORS[name]
+    free_edge = hinge_depth + open_side * leaf_width
+    leaf_start, leaf_end = sorted((hinge_depth, free_edge))
+    for side, edge in (("Left", low + JAMB_REVEAL),
+                       ("Right", high - JAMB_REVEAL - DOOR_THICKNESS)):
+        leaf_rect = ((edge, edge + DOOR_THICKNESS, leaf_start, leaf_end) if along_x
+                     else (leaf_start, leaf_end, edge, edge + DOOR_THICKNESS))
+        box(f"Room_Door_Leaf_{name}_{side}", *leaf_rect, 0.018, HEAD - 0.015, DOOR)
+        pull_depth = free_edge - open_side * 0.095
+        for face, surface, projection in (("A", edge, -1), ("B", edge + DOOR_THICKNESS, 1)):
+            pull_edge = surface + projection * 0.04
+            prefix = f"Room_Door_Pull_{name}_{side}_{face}"
+            for label, start, end, z0, z1 in (
+                ("Grip", pull_edge - 0.008, pull_edge + 0.008, 0.90, 1.11),
+                ("Lower", surface, pull_edge, 0.91, 0.928),
+                ("Upper", surface, pull_edge, 1.082, 1.10),
+            ):
+                a, b = sorted((start, end))
+                door_part(f"{prefix}_{label}", a, b, pull_depth - 0.009, pull_depth + 0.009,
+                          z0, z1, PULL)
 
 box("Elevator_Floor", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, -WALL, 0, CAR_FLOOR)
 box("Elevator_Ceiling", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, CAR_HEIGHT,
@@ -437,11 +472,16 @@ for index, (rect, turn_deg, base_z) in enumerate((
                                  decimate=0.25)
     print("THIRD_PARTY Reading_Scroll", measures)
 
-# Original terracotta finish on the reading side of the spine and the south
-# partitions, 1 cm thick like the studio's bamboo, including above the theater door.
+# Terracotta continues from the library through the catalogue alcove, including
+# its west end wall and the library-facing sides of all three door headers.
 TERRACOTTA = material("Reading terracotta plaster", (0.46, 0.17, 0.09), 0.85)
 for index, (x0, x1, y0, y1, z0) in enumerate((
+    (-14.0, -13.99, -1.99, 1.99, 0),  # west end of the catalogue alcove
+    (-14.0, -12.0, 1.99, 2.0, 0),    # spine, west of the studio door
+    (-12.0, -10.0, 1.99, 2.0, HEADER_TOP),
     (-10.0, 4.0, 1.99, 2.0, 0),    # spine
+    (-14.0, -12.0, -2.0, -1.99, 0),  # south partition, west of the living door
+    (-12.0, -10.0, -2.0, -1.99, HEADER_TOP),
     (-10.0, 1.4, -2.0, -1.99, 0),  # south partition, west of the theater door
     (3.4, 4.0, -2.0, -1.99, 0),    # south partition, east of the theater door
     (1.4, 3.4, -2.0, -1.99, HEADER_TOP),
@@ -705,7 +745,6 @@ def place(objects):
 
 
 entrance_before = set(bpy.data.objects.keys())
-DOOR = material("Door_Basement", (0.05, 0.045, 0.04), 0.7)
 IRON = material("Entrance_Iron", (0.06, 0.06, 0.065), 0.45)
 BONE = material("Sign_Lettering", (0.78, 0.74, 0.66), 0.6)
 CLOTH = material("Statue_Robe", (0.015, 0.015, 0.018), 0.9)
@@ -716,12 +755,12 @@ hinge = bpy.data.objects.new("Door_Basement_Hinge", None)
 hinge.empty_display_type = "PLAIN_AXES"
 hinge.location = (10 + WALL / 2, 0.8, 0)
 collections["Gallery_Markers"].objects.link(hinge)
-door = bpy.data.objects.new("Door_Basement", box_mesh("Door_Basement", (0.06, 1.6, 2.4)))
+door = bpy.data.objects.new("Door_Basement", box_mesh("Door_Basement", (DOOR_THICKNESS, 1.6, 2.4)))
 door.data.materials.append(DOOR)
 door.parent = hinge
 door.location = (0, -0.8, 1.2)
 collections["Gallery_Render"].objects.link(door)
-proxy = bpy.data.objects.new("COL_Door_Basement", box_mesh("COL_Door_Basement", (0.06, 1.6, 2.4)))
+proxy = bpy.data.objects.new("COL_Door_Basement", box_mesh("COL_Door_Basement", (DOOR_THICKNESS, 1.6, 2.4)))
 proxy.location = (10 + WALL / 2, 0, 1.2)
 proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
@@ -981,6 +1020,8 @@ join("Elevator_Car", ("Elevator_Wall_", "Elevator_Floor", "Elevator_Ceiling",
      "Gallery_Render")
 join("Lectern_Woodwork", ("Lectern_",), "Gallery_Render")
 join("Gallery_Door_Casing", ("Portal_Trim_",), "Gallery_Render")
+join("Gallery_Door_Leaves", ("Room_Door_Leaf_",), "Gallery_Render")
+join("Gallery_Door_Pulls", ("Room_Door_Pull_",), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
 
