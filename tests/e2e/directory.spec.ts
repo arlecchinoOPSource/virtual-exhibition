@@ -21,7 +21,7 @@ test('lists every exhibit without WebGL', async ({ page }) => {
   await page.goto('/directory.html');
 
   const exhibits = page.getByRole('list', { name: 'Exhibits' });
-  await expect(exhibits.getByRole('listitem')).toHaveCount(15);
+  await expect(exhibits.getByRole('listitem')).toHaveCount(18);
   const first = exhibits.getByRole('article', { name: essayTitle });
   await expect(first).toContainText('Display 01');
   await expect(first.getByRole('img', { name: essayTitle })).toBeVisible();
@@ -101,7 +101,7 @@ test('opens the catalogue with E and click and restores the view', async ({
   await expect(prompt).toHaveText('E / Click · Open Exhibition Directory');
   await page.keyboard.press('e');
   const catalogue = page.getByRole('dialog', { name: 'Exhibition Directory' });
-  await expect(catalogue.getByRole('listitem')).toHaveCount(15);
+  await expect(catalogue.getByRole('listitem')).toHaveCount(18);
   await expect(page.locator('#crosshair')).toBeHidden();
   await expect
     .poll(() => page.evaluate(() => document.pointerLockElement === null))

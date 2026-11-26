@@ -12,7 +12,7 @@ test('draws the preview in WebGL and resizes the canvas', async ({ page }) => {
     name: 'Eye-level view inside the exhibition',
   });
   await expect(canvas).toHaveAttribute('data-environment', 'gallery');
-  await expect(canvas).toHaveAttribute('data-exhibit-count', '15');
+  await expect(canvas).toHaveAttribute('data-exhibit-count', '18');
   await expect(page.getByRole('status')).toBeHidden();
 
   await expect
@@ -85,7 +85,7 @@ test('pauses frame rendering while hidden and preserves the view on resume', asy
   const canvas = page.getByRole('img', {
     name: 'Eye-level view inside the exhibition',
   });
-  await expect(canvas).toHaveAttribute('data-exhibit-count', '15');
+  await expect(canvas).toHaveAttribute('data-exhibit-count', '18');
   const readDrawCount = async () =>
     Number(await canvas.getAttribute('data-draw-count'));
   const initialDrawCount = await readDrawCount();
@@ -395,6 +395,43 @@ test('makes no basement requests until the visitor opens the door', async ({
   await page.keyboard.up('w');
   await page.waitForLoadState('networkidle');
   expect(basementRequests).toEqual([]);
+});
+
+test('hangs the basement frames once it loads and opens their details', async ({
+  page,
+}) => {
+  const prompt = await walkToBasementDoor(page);
+  const label = page.locator('#exhibit-label');
+  await page.keyboard.press('e');
+  await expect(prompt).toBeEmpty({ timeout: 10000 });
+  // Straight down the stairs and across the room until the throne stops
+  // the visitor, beside Exhibit_17 on the room's east wall.
+  await page.keyboard.down('w');
+  await page.waitForTimeout(8000);
+  await page.keyboard.up('w');
+  // Facing south, a quarter turn left faces east, toward the frame.
+  await page.evaluate(() =>
+    document.dispatchEvent(
+      new MouseEvent('mousemove', { movementX: (-Math.PI / 2) * 500 }),
+    ),
+  );
+  await page.keyboard.down('w');
+  await expect(label.getByRole('heading')).toHaveText(
+    'Artwork placeholder 17',
+    { timeout: 15000 },
+  );
+  await page.keyboard.up('w');
+  await expect(prompt).toHaveText('E / Click · View details');
+
+  const dialog = page.getByRole('dialog', { name: 'Artwork placeholder 17' });
+  await page.keyboard.press('e');
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  const resume = page.getByRole('button', { name: 'Resume walk' });
+  await expect(resume).toBeFocused();
+  await resume.click();
+  await expect(label.getByRole('heading')).toHaveText('Artwork placeholder 17');
 });
 
 test('keeps the gallery usable when the basement fails, then retries', async ({

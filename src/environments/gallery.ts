@@ -15,9 +15,13 @@ import { hangExhibits } from '../exhibition/displays';
 import { createDoor } from './door';
 import { createElevator } from './elevator';
 import { paintExhibit } from '../exhibition/placeholder';
-import type { Exhibit } from '../types/exhibit';
+import type { Exhibit, ExhibitAnchor } from '../types/exhibit';
 
-import { anchorOrder } from '../exhibition/manifest';
+import {
+  basementAnchors,
+  galleryAnchors,
+  sectionOf,
+} from '../exhibition/manifest';
 
 // Hides COL_ proxies as solids and collects visible meshes as ray surfaces.
 function collect(
@@ -39,13 +43,49 @@ function collect(
   });
 }
 
+// Returns a root's exhibit anchors in manifest order, refusing duplicates,
+// missing slots and slots that belong to the other environment.
+function resolveAnchors(
+  root: Object3D,
+  expected: readonly ExhibitAnchor[],
+  where: string,
+) {
+  const found = new Map<string, Object3D>();
+  root.traverse((node) => {
+    if (!node.name.startsWith('Exhibit_')) return;
+    if (found.has(node.name))
+      throw new Error(`Duplicate ${where} anchor: ${node.name}.`);
+    if (!expected.includes(node.name as ExhibitAnchor))
+      throw new Error(`${node.name} does not belong in the ${where}.`);
+    found.set(node.name, node);
+  });
+  return expected.map((name) => {
+    const match = found.get(name);
+    if (!match) throw new Error(`The ${where} is missing ${name}.`);
+    return match;
+  });
+}
+
+// Frees a model's own geometry and materials, leaving the shared frame's.
+function release(root: Object3D, keep: ReadonlySet<unknown>) {
+  root.traverse((node) => {
+    if (!(node instanceof Mesh)) return;
+    for (const resource of [node.geometry, node.material].flat())
+      if (!keep.has(resource)) resource.dispose();
+  });
+}
+
 // Builds the walkable world from the exported gallery and display frame. The
-// basement loads through loadBasement the first time the door opens.
+// basement loads through loadBasement the first time the door opens; its
+// three frames are attached then and handed to hangBasement, before the
+// basement joins the scene. A failed load leaves nothing behind and can be
+// retried; a successful one is never repeated.
 export function createGallery(
   root: Object3D,
   frame: Object3D,
   loadBasement: () => Promise<Object3D> = () =>
     Promise.reject(new Error('No basement loader was provided.')),
+  hangBasement: (anchors: Object3D[]) => void = () => {},
 ) {
   const scene = new Scene();
   scene.background = new Color(0x252930);
@@ -53,19 +93,11 @@ export function createGallery(
 
   const spawnNode = root.getObjectByName('Spawn_Gallery');
   if (!spawnNode) throw new Error('The gallery has no Spawn_Gallery marker.');
-  const exportedAnchors = new Map<string, Object3D>();
-  root.traverse((node) => {
-    if (!node.name.startsWith('Exhibit_')) return;
-    if (exportedAnchors.has(node.name))
-      throw new Error(`Duplicate gallery anchor: ${node.name}.`);
-    exportedAnchors.set(node.name, node);
-  });
-  if (exportedAnchors.size !== anchorOrder.length)
-    throw new Error('The gallery anchor count differs from the manifest.');
-  const anchors = anchorOrder.map((name) => {
-    const match = exportedAnchors.get(name);
-    if (!match) throw new Error(`The gallery is missing ${name}.`);
-    return match;
+  const anchors = resolveAnchors(root, galleryAnchors, 'gallery');
+  const shared = new Set<unknown>();
+  frame.traverse((node) => {
+    if (node instanceof Mesh)
+      [node.geometry, node.material].flat().forEach((r) => shared.add(r));
   });
   // Clones share the frame's geometry and materials.
   for (const anchor of anchors) anchor.add(frame.clone());
@@ -113,11 +145,29 @@ export function createGallery(
   const downstairsKey = keyLight.clone();
   const downstairsSky = skyLight.clone();
   downstairs.add(downstairsKey, downstairsSky);
+  let basementReady = false;
+  let disposed = false;
   const door = createDoor(hinge, doorCollider, solids, async () => {
+    if (basementReady) return;
     const basement = await loadBasement();
+    // The world went away while the basement was on its way.
+    if (disposed) return release(basement, shared);
+    try {
+      const downstairsAnchors = resolveAnchors(
+        basement,
+        basementAnchors,
+        'basement',
+      );
+      for (const anchor of downstairsAnchors) anchor.add(frame.clone());
+      hangBasement(downstairsAnchors);
+    } catch (error) {
+      release(basement, shared);
+      throw error;
+    }
     downstairs.add(basement);
     basement.updateMatrixWorld(true);
     collect(basement, solids, surfaces, colliders);
+    basementReady = true;
   });
   // Daylight fades with depth down the stairs, so the basement's bulbs and
   // candles take over without a switch. What fill remains below ground takes
@@ -174,6 +224,7 @@ export function createGallery(
       downstairsSky.groundColor.copy(skyLight.groundColor);
     },
     dispose() {
+      disposed = true;
       const resources = new Set<BufferGeometry | Material>();
       for (const root of [scene, downstairs])
         root.traverse((node) => {
@@ -194,16 +245,29 @@ export async function loadGallery(exhibits: readonly Exhibit[]) {
     loader.loadAsync(`${models}/gallery.glb`),
     loader.loadAsync(`${models}/frame.glb`),
   ]);
-  const world = createGallery(gallery.scene, frame.scene, async () => {
-    const basement = await loader.loadAsync(`${models}/basement.glb`);
-    return basement.scene;
-  });
-  const displays = hangExhibits(world.anchors, exhibits, paintExhibit);
+  const upstairs = exhibits.filter((e) => sectionOf[e.anchor] !== 'basement');
+  const downstairs = exhibits.filter((e) => sectionOf[e.anchor] === 'basement');
+  // Basement artwork is painted (and any image fetched) only once it loads.
+  let basementDisplays: ReturnType<typeof hangExhibits> | undefined;
+  const world = createGallery(
+    gallery.scene,
+    frame.scene,
+    async () => {
+      const basement = await loader.loadAsync(`${models}/basement.glb`);
+      return basement.scene;
+    },
+    (anchors) => {
+      basementDisplays = hangExhibits(anchors, downstairs, paintExhibit);
+    },
+  );
+  const displays = hangExhibits(world.anchors, upstairs, paintExhibit);
   return {
     ...world,
-    exhibitAt: displays.exhibitAt,
+    exhibitAt: (object: Object3D | undefined) =>
+      displays.exhibitAt(object) ?? basementDisplays?.exhibitAt(object),
     dispose() {
       displays.dispose();
+      basementDisplays?.dispose();
       world.dispose();
     },
   };

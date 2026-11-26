@@ -12,8 +12,9 @@ export function hangExhibits(
 ) {
   const byAnchor = new Map<Object3D, Exhibit>();
   const textures: Texture[] = [];
-
-  exhibits.forEach((exhibit, index) => {
+  // Match every entry to its anchor and canvas before painting anything, so a
+  // bad pairing throws without leaving textures behind.
+  const canvases = exhibits.map((exhibit) => {
     const matches = anchors.filter((anchor) => anchor.name === exhibit.anchor);
     const [anchor] = matches;
     if (!anchor || matches.length !== 1 || byAnchor.has(anchor))
@@ -21,7 +22,14 @@ export function hangExhibits(
     const canvas = anchor.getObjectByName('Frame_Canvas');
     if (!(canvas instanceof Mesh))
       throw new Error(`${anchor.name} has no Frame_Canvas.`);
+    byAnchor.set(anchor, exhibit);
+    return canvas;
+  });
+  if (byAnchor.size !== anchors.length)
+    throw new Error('Every anchor needs exactly one exhibit.');
 
+  exhibits.forEach((exhibit, index) => {
+    const canvas = canvases[index]!;
     const texture = paint(exhibit, index + 1);
     // glTF UVs put v = 0 on the top edge, so textures must not be flipped.
     texture.flipY = false;
@@ -31,10 +39,7 @@ export function hangExhibits(
       map: texture,
       roughness: 0.9,
     });
-    byAnchor.set(anchor, exhibit);
   });
-  if (byAnchor.size !== anchors.length)
-    throw new Error('Every anchor needs exactly one exhibit.');
 
   return {
     exhibitAt(object: Object3D | undefined) {

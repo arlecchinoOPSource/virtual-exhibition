@@ -8,7 +8,7 @@ The shell is 24.0 × 16.5 m inside with the south-east corner cut away and a 3.6
 
 ![Top-down render of the exported shell, ceiling hidden](renders/shell/overview.jpg)
 
-Reserve exactly fifteen anchors, `Exhibit_01` through `Exhibit_15`. Slot 01 is the Doraemon academic essay, published with its rights record in `public/essays/CREDITS.md`. Slots 02–15 are initially placeholders. Anchors 01–15 hang at the plan's upstairs slots, three per section in walking order; #88 adds the three basement slots. Validate that every display can be approached and read. Materials, lighting style, and palette require approval before final modeling. The preview uses temporary colors.
+Reserve exactly eighteen anchors, `Exhibit_01` through `Exhibit_18`, three per section. Slot 01 is the Doraemon academic essay, published with its rights record in `public/essays/CREDITS.md`. Slots 02–18 are initially placeholders with neutral titles. Anchors 01–15 hang at the plan's upstairs slots in `gallery.glb`, three per section in walking order. Anchors 16–18 export with `basement.glb` and are hung only when the basement first loads (#88), so the initial load requests no basement geometry or artwork. All 18 appear in the accessible directory either way. Validate that every display can be approached and read. Materials, lighting style, and palette require approval before final modeling. The preview uses temporary colors.
 
 ## Visitor experience
 
@@ -96,7 +96,7 @@ Basement frames sit at z −1.56 (1.5 m above the basement floor). Their 2.8 m c
 
 ### Content mapping
 
-Content stays bound to slot IDs, so nothing is lost when frames move. Exhibit_01 keeps the published Doraemon artwork and essay PDF and hangs on the studio partition facing the elevator, the first frame seen when its doors open. Exhibit_03 takes the studio's west wall, north of the elevator. Exhibit_02–15 keep their placeholder entries and move to the positions above. #88 adds Exhibit_16–18 as basement placeholders and extends the manifest from 15 to 18 entries. Directory entries keep neutral names; section names stay out of artwork titles.
+Content stays bound to slot IDs, so nothing is lost when frames move. Exhibit_01 keeps the published Doraemon artwork and essay PDF and hangs on the studio partition facing the elevator, the first frame seen when its doors open. Exhibit_03 takes the studio's west wall, north of the elevator. Exhibit_02–15 keep their placeholder entries and move to the positions above. Exhibit_16–18 are basement placeholders; the manifest has 18 entries, and `src/exhibition/manifest.ts` records each slot's section (a unit test keeps it in step with the plan). Directory entries keep neutral names; section names stay out of artwork titles.
 
 ### Decisions
 
