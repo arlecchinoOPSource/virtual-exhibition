@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { moveSpawn } from './spawn';
 import type { Page } from '@playwright/test';
 import { spawnAtBasementDoor } from './basement';
 
@@ -184,10 +185,13 @@ test('captures the pointer, walks to the switch, interacts, and pauses', async (
 
 const essayTitle = 'Bakit Hindi Puwedeng Maging Filipino Rin si Doraemon';
 
-// Starts the walk, faces Exhibit_01 on the north wall, and walks until its
-// label shows. Walking waits on the label, not a timer, because slow frames
-// shorten each step.
+// Starts the walk 3.8 m in front of Exhibit_01, on the studio partition the
+// visitor faces leaving the elevator, and walks east until its label shows.
+// Walking waits on the label, not a timer, because slow frames shorten each
+// step.
 async function walkToExhibitOne(page: Page) {
+  // Blender (-10.5, 3.3): in the studio, level with the frame, facing east.
+  await moveSpawn(page, [-10.5, 0, -3.3]);
   await page.goto('/');
   const label = page.locator('#exhibit-label');
   await page.bringToFront();
@@ -200,12 +204,6 @@ async function walkToExhibitOne(page: Page) {
   // The crosshair appears once the game handles capture and accepts mouse look.
   await expect(page.locator('#crosshair')).toBeVisible();
   await expect(label).toBeHidden();
-  // One radian is 500 px of mouse movement at the current look speed.
-  await page.evaluate(
-    (dx) =>
-      document.dispatchEvent(new MouseEvent('mousemove', { movementX: dx })),
-    -Math.atan2(4.98, 4.5) * 500,
-  );
   await page.keyboard.down('w');
   await expect(label).toBeVisible({ timeout: 15000 });
   await page.keyboard.up('w');
@@ -348,7 +346,8 @@ test('offers the PDF file when the essay fails to load', async ({ page }) => {
   ).toBeVisible();
 });
 
-// Put the test visitor on the door axis. Separate unit tests walk the gallery.
+// Put the test visitor on the door axis in the rear landing, facing south
+// into the cut-away corner's doorway. Separate unit tests walk the gallery.
 async function walkToBasementDoor(page: Page) {
   await spawnAtBasementDoor(page);
   await page.goto('/');

@@ -57,9 +57,11 @@ const radioDistance = (page: Page) =>
   page.evaluate(() => {
     const listener = window.audioProbe.contexts[0]?.listener;
     if (!listener?.positionX) return undefined;
+    // The radio's grille in Three.js x, z: (26.4, 3.6) in the basement's
+    // original frame, placed by the plan's basement_transform (#87).
     return Math.hypot(
-      listener.positionX.value - 26.4,
-      listener.positionZ.value - 3.6,
+      listener.positionX.value - 3.4,
+      listener.positionZ.value - 18.4,
     );
   });
 

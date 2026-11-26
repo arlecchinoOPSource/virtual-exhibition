@@ -244,6 +244,11 @@ async function start() {
     startButton.addEventListener('click', () => {
       ambience.setEnabled(settings.sound);
       radio.setSound(settings.sound);
+      // The arrival elevator opens onto the gallery once the walk starts;
+      // with reduced motion its doors are simply open.
+      gallery?.elevator.open(
+        matchMedia('(prefers-reduced-motion: reduce)').matches,
+      );
     });
     volume?.addEventListener('input', () => {
       settings.volume = Number(volume.value);
