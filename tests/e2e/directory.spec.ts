@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { moveSpawn } from './spawn';
 
 const essayTitle = 'Bakit Hindi Puwedeng Maging Filipino Rin si Doraemon';
 
@@ -81,37 +82,19 @@ test('keeps the keyboard fallback and fills the gallery viewport', async ({
 test('opens the catalogue with E and click and restores the view', async ({
   page,
 }) => {
-  // Move only the test spawn beside the lectern, keeping real geometry and collision.
-  await page.route('**/models/gallery.glb', async (route) => {
-    const response = await route.fetch();
-    const model = await response.body();
-    const jsonLength = model.readUInt32LE(12);
-    const document = JSON.parse(
-      model.subarray(20, 20 + jsonLength).toString('utf8'),
-    ) as {
-      nodes: { name?: string; translation?: number[] }[];
-    };
-    const spawn = document.nodes.find(({ name }) => name === 'Spawn_Gallery');
-    if (!spawn) throw new Error('Expected a gallery spawn in the GLB.');
-    spawn.translation = [-1.65, 0, 0];
-    const json = JSON.stringify(document);
-    const padded = Buffer.from(
-      json + ' '.repeat((4 - (Buffer.byteLength(json) % 4)) % 4),
-    );
-    const header = Buffer.from(model.subarray(0, 20));
-    header.writeUInt32LE(model.length - jsonLength + padded.length, 8);
-    header.writeUInt32LE(padded.length, 12);
-    await route.fulfill({
-      response,
-      body: Buffer.concat([header, padded, model.subarray(20 + jsonLength)]),
-    });
-  });
+  // Stand at the catalogue stand's reading side, north of it on the arrival
+  // axis: Blender (-9.2, 0.35).
+  await moveSpawn(page, [-9.2, 0, -0.35]);
 
   await page.goto('/');
   await page.bringToFront();
   await page.getByRole('button', { name: 'Start walk' }).press('Enter');
   await expect(page.locator('#crosshair')).toBeVisible();
   await page.evaluate(() => {
+    // A quarter turn right faces south across the stand, then look down.
+    document.dispatchEvent(
+      new MouseEvent('mousemove', { movementX: (Math.PI / 2) * 500 }),
+    );
     document.dispatchEvent(new MouseEvent('mousemove', { movementY: 143 }));
   });
   const prompt = page.locator('#interaction');

@@ -10,9 +10,12 @@ frame.glb (the reusable display frame), and basement.glb (loaded on demand). Exh
 artwork stays out of every export; the basement's two historical prints are
 baked into basement.glb (posters.py, public/models/CREDITS.md).
 
-Units are meters with Z up. The room spans x -10..10 and y -5..5 with a
-3.6 m ceiling. The visitor spawns at the left end (-X) and the basement
-opening is in the right end wall (+X).
+Units are meters with Z up. The shell follows the accepted plan in
+assets-source/layout/redesign.json (docs/DESIGN.md): a 24.0 x 16.5 m
+interior, x -14..10 and y -9..7.5, with the south-east corner cut away and a
+3.6 m ceiling. The visitor spawns at the west end of the central band (-X)
+and the basement opening is in the east wall (+X) at x = 10, where it has
+always been, so the basement keeps its world transform.
 
 Every marker's local +Y axis points the way a visitor looks: forward at the
 spawn and into the display surface at an exhibit anchor. After the glTF Y-up
@@ -24,12 +27,13 @@ Light energy is exported raw: each spot's Blender energy becomes the
 Three.js intensity in candela.
 """
 
+import json
 import math
 import os
 import sys
 
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from grim_reaper import Sculpture, sculpt_reaper
@@ -85,7 +89,6 @@ def material(name, rgb, roughness=0.85):
 FLOOR = material("Lacquered oak parquet", (0.45, 0.27, 0.12), 0.2)
 WALLS = material("Warm white mineral paint", (0.79, 0.77, 0.73), 0.91)
 paint_finish(WALLS)
-DISPLAY = WALLS
 CEILING = material("Ceiling white", (0.82, 0.81, 0.78), 0.94)
 # Approximate diffuse ceiling bounce where the realtime renderer has no GI.
 ceiling_shader = CEILING.node_tree.nodes["Principled BSDF"]
@@ -186,43 +189,43 @@ def gallery_light(index, x, y, gaze):
         stem.z, HEIGHT-0.048, FIXTURE, collide=False)
     box(prefix + "_Adaptor", stem.x-0.048, stem.x+0.048, stem.y-0.048, stem.y+0.048,
         HEIGHT-0.075, HEIGHT-0.027, FIXTURE, collide=False)
-    # One continuous rail per perimeter row and per island-facing row.
-    if index in (1, 4, 7, 8, 11):
-        if gx:
-            box(prefix+"_Rail", -1.75, 1.75, -0.09, 0.09, HEIGHT-0.03, HEIGHT,
-                FIXTURE, collide=False)
-        else:
-            box(prefix+"_Rail", -5.0, 5.0, stem.y-0.024, stem.y+0.024, HEIGHT-0.03,
-                HEIGHT, FIXTURE, collide=False)
+    # A short length of ceiling track over each head, parallel to its wall.
+    rx, ry = (0.024, 0.6) if gx else (0.6, 0.024)
+    box(prefix + "_Rail", stem.x-rx, stem.x+rx, stem.y-ry, stem.y+ry, HEIGHT-0.03,
+        HEIGHT, FIXTURE, collide=False)
 
+
+# The measured shell from the accepted plan (docs/DESIGN.md, issue #86).
+# Rectangles there are [x0, x1, y0, y1] in these same Blender coordinates.
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "layout",
+                       "redesign.json")) as plan_file:
+    PLAN = json.load(plan_file)
+FOOT_X0, FOOT_X1, FOOT_Y0, FOOT_Y1 = -14 - WALL, 10 + WALL, -9 - WALL, 7.5 + WALL
+# The south-east corner outside the building: no parquet is laid there.
+NOTCH = (4 + WALL, 10 + WALL, -9 - WALL, -2 - WALL)
 
 # Floor and ceiling. Nothing can reach the ceiling, so it needs no proxy.
-floor = box("Floor", -10 - WALL, 10 + WALL, -5 - WALL, 5 + WALL, -WALL, 0, FLOOR)
-oak_floor(floor, FLOOR)
-box(
-    "Ceiling",
-    -10 - WALL,
-    10 + WALL,
-    -5 - WALL,
-    5 + WALL,
-    HEIGHT,
-    HEIGHT + WALL,
-    CEILING,
-    collide=False,
-)
+floor = box("Floor", FOOT_X0, FOOT_X1, FOOT_Y0, FOOT_Y1, -WALL, 0, FLOOR)
+oak_floor(floor, FLOOR, exclude=(NOTCH,))
+box("Ceiling", FOOT_X0, FOOT_X1, FOOT_Y0, FOOT_Y1, HEIGHT, HEIGHT + WALL, CEILING,
+    collide=False)
 
-# Long walls with piers that recess three display bays per side.
-box("Wall_North", -10 - WALL, 10 + WALL, 5, 5 + WALL, 0, HEIGHT, WALLS)
-box("Wall_South", -10 - WALL, 10 + WALL, -5 - WALL, -5, 0, HEIGHT, WALLS)
-for index, x in enumerate((-6, -2, 2, 6), start=1):
-    box(f"Pier_North_{index:02}", x - 0.3, x + 0.3, 4.65, 5, 0, HEIGHT, WALLS)
-    box(f"Pier_South_{index:02}", x - 0.3, x + 0.3, -5, -4.65, 0, HEIGHT, WALLS)
-
-# Left end wall behind the spawn and right end wall around the basement opening.
-box("Wall_West", -10 - WALL, -10, -5, 5, 0, HEIGHT, WALLS)
-box("Wall_East_North", 10, 10 + WALL, 0.8, 5, 0, HEIGHT, WALLS)
-box("Wall_East_South", 10, 10 + WALL, -5, -0.8, 0, HEIGHT, WALLS)
+# Outer walls and full-height partitions. The street's north wall carries a
+# 0.4 m furring wall that #95 dresses as shallow facades; frames 04 and 05
+# hang on its face.
+for wall in PLAN["walls"]:
+    if not wall["id"].startswith(("Stairwell_", "Room_")):
+        box(wall["id"], *wall["rect"], 0, HEIGHT, WALLS)
+facade = next(item for item in PLAN["furniture"] if item["id"] == "Street_Facades")
+box("Street_Facade_Base", *facade["rect"], 0, HEIGHT, WALLS)
 box("Wall_East_Lintel", 10, 10 + WALL, -0.8, 0.8, 2.4, HEIGHT, WALLS)
+
+# A static elevator behind the spawn marks the arrival; it does not open.
+STEEL = material("Elevator brushed steel", (0.46, 0.46, 0.47), 0.32)
+STEEL.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.85
+box("Elevator_Surround", -14.0, -13.96, -1.05, 1.05, 0, 2.55, FIXTURE, collide=False)
+for name, y0, y1 in (("South", -0.9, -0.008), ("North", 0.008, 0.9)):
+    box(f"Elevator_Leaf_{name}", -13.96, -13.945, y0, y1, 0, 2.4, STEEL, collide=False)
 # Basement entrance in the right end wall: a hinged door, its frame, a sign,
 # and a statue. The door collider is a separate proxy the engine toggles.
 DOOR = material("Door_Basement", (0.05, 0.045, 0.04), 0.7)
@@ -274,35 +277,34 @@ proxy.location = (sx, sy, 1.2)
 proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
 
-# Two freestanding islands flank the catalogue stand.
-box("Island_Left", -5.5, -2.5, -0.3, 0.3, 0, 2.4, DISPLAY)
-box("Island_Right", 2.5, 5.5, -0.3, 0.3, 0, 2.4, DISPLAY)
+# The catalogue stand beside the arrival axis. It is modelled at the origin
+# with its reader on the west side; a quarter turn puts the reader on the
+# north side, facing south across the stand, at the plan's position.
 from lectern import build_lectern
 build_lectern(box, material, collections["Gallery_Render"])
+lx0, lx1, ly0, ly1 = PLAN["lectern"]["rect"]
+lectern_at = Vector(((lx0 + lx1) / 2, (ly0 + ly1) / 2, 0))
+turn = Matrix.Translation(lectern_at) @ Matrix.Rotation(-math.pi / 2, 4, "Z")
+for obj in collections["Gallery_Render"].objects:
+    if obj.name.startswith(("Lectern_", "Catalogue_")):
+        obj.matrix_world = turn @ obj.matrix_world
+# Collision proxies stay axis-aligned, so the clearance box is rebuilt turned.
+clearance = bpy.data.objects["COL_Lectern_Clearance"]
+clearance.data = box_mesh("COL_Lectern_Clearance", (lx1 - lx0, ly1 - ly0, 1.2))
+clearance.location = lectern_at + Vector((0, 0, 0.6))
 
-marker("Spawn_Gallery", -8.5, 0, 0, "E")
+spawn = PLAN["spawn"]
+marker("Spawn_Gallery", *spawn["at"], 0, spawn["gaze"])
 
-# 01–06 perimeter bays, 07–10 islands, 11–15 entrance walls.
-anchors = [
-    (-4, 5 - ANCHOR_OFFSET, "N"),
-    (0, 5 - ANCHOR_OFFSET, "N"),
-    (4, 5 - ANCHOR_OFFSET, "N"),
-    (4, -5 + ANCHOR_OFFSET, "S"),
-    (0, -5 + ANCHOR_OFFSET, "S"),
-    (-4, -5 + ANCHOR_OFFSET, "S"),
-    (-4, 0.3 + ANCHOR_OFFSET, "S"),
-    (-4, -0.3 - ANCHOR_OFFSET, "N"),
-    (4, 0.3 + ANCHOR_OFFSET, "S"),
-    (4, -0.3 - ANCHOR_OFFSET, "N"),
-    (-8, 5 - ANCHOR_OFFSET, "N"),
-    (-8, -5 + ANCHOR_OFFSET, "S"),
-    (-10 + ANCHOR_OFFSET, -2.5, "W"),
-    (-10 + ANCHOR_OFFSET, 0, "W"),
-    (-10 + ANCHOR_OFFSET, 2.5, "W"),
-]
-for index, (x, y, gaze) in enumerate(anchors, start=1):
-    marker(f"Exhibit_{index:02}", x, y, ANCHOR_HEIGHT, gaze)
-    gallery_light(index, x, y, gaze)
+# The fifteen upstairs slots, three per section, numbered in walking order.
+# Basement slots 16-18 join with #88 once the basement hangs its own frames.
+for frame in PLAN["frames"]:
+    if frame["section"] == "basement":
+        continue
+    index = int(frame["slot"].split("_")[1])
+    x, y = frame["at"]
+    marker(frame["slot"], x, y, ANCHOR_HEIGHT, frame["gaze"])
+    gallery_light(index, x, y, frame["gaze"])
 
 # Reusable frame: back at the origin, front facing -Y, centered on the anchor.
 w, h, d, b = FRAME_WIDTH / 2, FRAME_HEIGHT / 2, FRAME_DEPTH, FRAME_BORDER
@@ -483,8 +485,8 @@ def join(name, prefixes, collection):
 
 
 # COL_ proxies stay separate: the engine needs one box per collider.
-join("Gallery_Walls", ("Wall_", "Pier_"), "Gallery_Render")
-join("Gallery_Displays", ("Island_",), "Gallery_Render")
+join("Gallery_Walls", ("Wall_", "Partition_", "Street_Facade_"), "Gallery_Render")
+join("Elevator_Arrival", ("Elevator_",), "Gallery_Render")
 join("Lectern_Woodwork", ("Lectern_",), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")

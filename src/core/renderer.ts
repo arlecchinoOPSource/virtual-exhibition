@@ -40,7 +40,9 @@ export function startRenderer(
   onFrame?: (feet: Vector3) => void,
 ) {
   const renderer = new WebGLRenderer({ canvas, antialias: true });
-  const camera = new PerspectiveCamera(60, 1, 0.05, 40);
+  // 45 m clears the longest sightline: from the arrival spawn through the
+  // open basement door to the basement's far wall is about 39.5 m.
+  const camera = new PerspectiveCamera(60, 1, 0.05, 45);
   const body = { feet: world.spawn.feet.clone(), fallSpeed: 0, grounded: true };
   camera.position.copy(body.feet);
   camera.position.y += EYE_HEIGHT;

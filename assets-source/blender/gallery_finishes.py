@@ -6,7 +6,7 @@ import numpy as np
 from mathutils import Vector
 
 
-def oak_floor(obj, mat):
+def oak_floor(obj, mat, exclude=()):
     """Lacquered mosaic parquet: 480 mm squares of five oak fingers, laid in
     alternating directions. Each finger samples its own pre-seamed block of
     the atlas, so the joints are in the texture (stable under mipmapping)
@@ -99,6 +99,12 @@ def oak_floor(obj, mat):
                 c0, c1 = max(a0, xmin), min(a1, xmax)
                 d0, d1 = max(b0, ymin), min(b1, ymax)
                 if c0 >= c1 or d0 >= d1:
+                    continue
+                # Skip fingers wholly inside an excluded [x0, x1, y0, y1] area,
+                # given in world coordinates (the slab's vertices are local).
+                ox, oy = obj.location.x, obj.location.y
+                if any(c0 + ox >= e[0] and c1 + ox <= e[1] and d0 + oy >= e[2] and d1 + oy <= e[3]
+                       for e in exclude):
                     continue
                 k = int(rng.integers(count))
                 row, col = divmod(k, per_row)

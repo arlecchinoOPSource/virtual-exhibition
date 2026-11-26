@@ -2,11 +2,13 @@
 
 ## Main gallery
 
-Use a compact rectangular footprint, recessed perimeter walls, two freestanding display islands, and a central catalogue lectern. A visitor spawns at the far-left end with a clear route to displays. The optional basement entrance sits at the far-right end. Keep the central walkway and routes to displays clear.
+The gallery follows the accepted redesign plan below (#86), built as an undecorated shell in #87. It replaced the original 20 × 10 m blockout with recessed bays, two freestanding islands and a central lectern; that history stays in git and `docs/ROADMAP.md`. Keep the routes, viewing zones and the basement approach clear.
 
-The approved blockout is 20 × 10 m with a 3.6 m ceiling. Piers recess three display bays along each long wall. Two 3 m islands sit on the center line 4 m either side of a wooden lectern. The visitor spawns 1.5 m from the left wall facing down the room. The basement opening is a 1.6 × 2.4 m doorway in the right end wall. Each display has a test frame with a red top-left mark and its own ceiling spot light. `assets-source/blender/gallery_blockout.py` generates the scene.
+The shell is 24.0 × 16.5 m inside with the south-east corner cut away and a 3.6 m ceiling. Full-height partitions divide it into the arrival, studio, street, reading area, living room, theater and rear landing, as planned. A 0.4 m furring wall along the street's north wall stands in for the facades #95 will dress. The catalogue lectern stands beside the arrival axis with its reader on the north side, and a static elevator door on the west wall marks the arrival. The visitor spawns 1.5 m in front of it facing east, down the central band to the 1.6 × 2.4 m basement doorway in the east wall, which has not moved. Each display has a test frame with a red top-left mark and its own track spot light. `assets-source/blender/gallery_blockout.py` builds the walls, partitions, spawn, lectern placement and anchors from `assets-source/layout/redesign.json`, so the plan and the export cannot drift apart. No furniture is placed yet; the furniture envelopes in the plan wait for #91–#95.
 
-Reserve exactly fifteen anchors, `Exhibit_01` through `Exhibit_15`. Slot 01 is the Doraemon academic essay, published with its rights record in `public/essays/CREDITS.md`. Slots 02–15 are initially placeholders. Anchors 01–06 sit in the wall bays, 07–10 on the island faces, and 11–15 near the west entrance. Validate that every display can be approached and read. Materials, lighting style, and palette require approval before final modeling. The preview uses temporary colors.
+![Top-down render of the exported shell, ceiling hidden](renders/shell/overview.jpg)
+
+Reserve exactly fifteen anchors, `Exhibit_01` through `Exhibit_15`. Slot 01 is the Doraemon academic essay, published with its rights record in `public/essays/CREDITS.md`. Slots 02–15 are initially placeholders. Anchors 01–15 hang at the plan's upstairs slots, three per section in walking order; #88 adds the three basement slots. Validate that every display can be approached and read. Materials, lighting style, and palette require approval before final modeling. The preview uses temporary colors.
 
 ## Visitor experience
 
@@ -20,7 +22,7 @@ The room draws on the Helvete record shop basement. Its planned elements include
 
 ## Exhibition redesign plan (accepted)
 
-This section is the measured plan for issue #86. The owner accepted the layout as drawn on 2026-11-26, including the five decisions below. The sections above still describe what is built, and nothing here changes the scene until #87 builds the shell and #88 wires the frames. The machine-readable plan is `assets-source/layout/redesign.json`. `tests/unit/layout-plan.test.ts` checks it, and `node assets-source/layout/plan_svg.mjs docs/renders/layout/redesign-plan.svg` redraws the [plan diagram](renders/layout/redesign-plan.svg).
+This section is the measured plan for issue #86. The owner accepted the layout as drawn on 2026-11-26, including the five decisions below. #87 built the shell and the fifteen upstairs slots from it; #88 adds the basement slots and section-aware loading. The machine-readable plan is `assets-source/layout/redesign.json`. `tests/unit/layout-plan.test.ts` checks it, and `node assets-source/layout/plan_svg.mjs docs/renders/layout/redesign-plan.svg` redraws the [plan diagram](renders/layout/redesign-plan.svg).
 
 ![Accepted redesign plan, north up](renders/layout/redesign-plan.svg)
 
@@ -42,7 +44,7 @@ A full-length spine at y = 2 and a parallel partition at y = −2 make a 4 m cen
 
 | Section      | Plan rectangle                         | Size         | Furniture envelopes                                                                                                                 |
 | ------------ | -------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Arrival      | x −14 to −8, y −2 to 2                 | 6.0 × 4.0 m  | Catalogue lectern 0.7 × 0.8 m; static elevator doors on the west wall                                                               |
+| Arrival      | x −14 to −8, y −2 to 2                 | 6.0 × 4.0 m  | Catalogue lectern 0.8 × 0.7 m, reader on its north side; static elevator doors on the west wall                                     |
 | Studio       | x −14 to −6.7, y 2.2 to 7.5            | 7.3 × 5.3 m  | Worktable 3.0 × 2.1 m (1.8 × 0.9 m table with 0.6 m working space), easel 1.0 × 1.2 m, statue 0.8 × 0.8 m, supply shelf 2.0 × 0.5 m |
 | Street       | x −6.5 to 4, y 2.2 to 7.5              | 10.5 × 5.3 m | Facades 0.4 m deep along the north wall, two planters 0.6 × 0.6 m, jeepney 3.2 × 1.4 m where the street meets the rear landing      |
 | Reading      | x −8 to 4, y −2 to 2                   | 12.0 × 4.0 m | Two bookshelves 1.0 × 0.35 m, desk with chair 1.2 × 1.3 m, scrolls 1.0 × 0.6 m                                                      |
