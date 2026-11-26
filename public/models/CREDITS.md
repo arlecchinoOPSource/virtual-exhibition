@@ -141,6 +141,46 @@ The source files are kept unmodified in `assets-source/posters/`. `assets-source
 - **In the model:** part of `Living_Props` (one vase, `vase.113`, in the living room's north-west corner).
 - **Modifications:** Only `vase.113` is used; the other seven vases are left out. `assets-source/blender/third_party.py` joins its parts, scales it to 0.75 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs.
 
+## Theater_Props: Bench
+
+- **Work:** "Bench" by Quaternius, from [Poly Pizza](https://poly.pizza/m/nARUaxtRHA).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/nARUaxtRHA/bench.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/d0ed7f6f-ccca-412c-8328-7835d2575dab.glb>. It is 21,044 bytes, SHA-256 `746c726d642ff279788d9950a7667a15d9963a25a541ca1ff9f2324e76907f91`.
+- **In the model:** part of `Theater_Props` (twice, beside the stage aisle).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.48 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. Its palette texture is sampled into the vertex colours and not exported.
+
+## Theater_Props: Stone Tower
+
+- **Work:** "Stone Tower" by Quaternius, from [Poly Pizza](https://poly.pizza/m/dJLAD6p90F).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/dJLAD6p90F/stone-tower.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/9d0ad85b-a250-4197-a5d3-8bac9f463004.glb>. It is 217,660 bytes, SHA-256 `5f4db1513020d24f57f991b951efcddf97beebf061d11c2e5a6da64fadc52cd3`.
+- **In the model:** part of `Theater_Props` (twice, as reliefs in the stage corners).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.8 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is flattened to 0.33 m deep as a wall relief and simplified to 30% of its triangles.
+
+## Theater_Props: Banner Wall
+
+- **Work:** "Banner Wall" by Quaternius, from [Poly Pizza](https://poly.pizza/m/dQjx8fBjIl).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/dQjx8fBjIl/banner-wall.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/0c1ba162-9d94-4fc7-9a35-23653aacc7ac.glb>. It is 26,720 bytes, SHA-256 `4f9f8af26f4b46f18bd9f6a03de4978d70788f161e0d4a3c26286985f3c78c62`.
+- **In the model:** part of `Theater_Props` (twice, on the theater's side walls).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 2.2 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is flattened to 0.18 m deep against the wall.
+
+## Theater_Props: Window Bars
+
+- **Work:** "Window Bars" by Quaternius, from [Poly Pizza](https://poly.pizza/m/mvTeQA5aBn).
+- **Licence:** Public Domain (attribution not required; credited anyway), [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+- **File:** `assets-source/third-party/mvTeQA5aBn/window-bars.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/9de110df-9370-4925-b031-8ab5fe90dea8.glb>. It is 87,260 bytes, SHA-256 `a9bf3cccd2e313d410e5241e3b73d94de4fbf3df77baf8fc5acf6d84d0470dd4`.
+- **In the model:** part of `Theater_Props` (a relief on the theater's north wall).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 1.6 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is flattened to 0.12 m deep and simplified to 50% of its triangles.
+
+## Theater_Props: Flower Pot
+
+- **Work:** "Flower Pot" by Zsky, from [Poly Pizza](https://poly.pizza/m/Kgt363WkKd).
+- **Licence:** Creative Commons Attribution 3.0, [BY](https://creativecommons.org/licenses/by/3.0/).
+- **File:** `assets-source/third-party/Kgt363WkKd/flower-pot.glb`, the untouched original, downloaded 2026-11-26 from <https://static.poly.pizza/fcbc720c-858e-4c35-ab6c-0797c71d6978.glb>. It is 56,460 bytes, SHA-256 `eaceb6b254efe758829450d90657b6d7cc6db658548c761fd88291cd460396a6`.
+- **In the model:** part of `Theater_Props` (beside the theater door).
+- **Modifications:** `assets-source/blender/third_party.py` joins its parts, scales it to 0.7 m tall, sets its origin at the base and turns it to face the room. It bakes each original material's colour into vertex colours under one shared material and drops its unused UVs. It is simplified to 50% of its triangles.
+
 ## Replacing a print
 
 Overwrite the file in `assets-source/posters/` (keep the file name, or change it in the `hang_poster` call in `gallery_blockout.py`, along with any `crop` box), re-export, and update the entry above. Each print has its own material and image, so the other print and every other texture export unchanged.

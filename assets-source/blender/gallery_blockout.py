@@ -478,6 +478,68 @@ for index, (x0, x1, y0, y1) in enumerate((
 )):
     box(f"Living_Teal_{index:02}", x0, x1, y0, y1, 0, HEIGHT, TEAL, collide=False)
 
+# Theater (#94). An original stone proscenium with static drapes frames
+# Exhibit_13 on the stage wall. Components of the castle set become shallow
+# reliefs: a Stone Tower in each stage corner and the Window Bars on the north
+# wall, flattened against the wall, and a Banner Wall on each side wall. Two
+# benches flank the stage aisle and the Flower Pot stands by the theater door.
+THEATER_PAINT = vertex_colour_material("Theater_Prop_Paint")
+STONE = (0.33, 0.31, 0.28)
+DRAPE = (0.32, 0.02, 0.03)
+
+
+def theater_prop(file, name, rect, height, turn_deg, wall, proxy=None, **options):
+    prop, measures = import_prop(os.path.join(THIRD_PARTY, file), f"Theater_Prop_{name}",
+                                 collections["Gallery_Render"], rect, height, turn_deg, wall,
+                                 material=THEATER_PAINT, **options)
+    print("THIRD_PARTY Theater_" + name, {k: v for k, v in measures.items() if k != "glass"})
+    if proxy:
+        prop_proxy(proxy, measures["bounds"], options.get("base_z", 0.0) + height,
+                   options.get("base_z", 0.0))
+    return measures
+
+
+# The proscenium: two pilasters and a header 20 cm proud of the stage wall,
+# drapes and a valance between them, all clear of the frame.
+for name, rect, z0, z1, rgb in (
+    ("Pilaster_West", (-1.35, -0.95, -8.99, -8.79), 0, 3.0, STONE),
+    ("Pilaster_East", (2.05, 2.45, -8.99, -8.79), 0, 3.0, STONE),
+    ("Header", (-1.35, 2.45, -8.99, -8.79), 2.7, 3.0, STONE),
+    ("Drape_West", (-0.95, -0.6, -8.99, -8.9), 0, 2.7, DRAPE),
+    ("Drape_East", (1.7, 2.05, -8.99, -8.9), 0, 2.7, DRAPE),
+    ("Valance", (-0.95, 2.05, -8.99, -8.9), 2.4, 2.7, DRAPE),
+):
+    colour_block(f"Theater_Prop_{name}", collections["Gallery_Render"], rect, z0, z1, rgb,
+                 THEATER_PAINT)
+for name in ("West", "East"):
+    rect = (-1.35, -0.95, -8.99, -8.79) if name == "West" else (2.05, 2.45, -8.99, -8.79)
+    prop_proxy(f"Theater_Pilaster_{name}", rect, 3.0)
+
+for side in ("West", "East"):
+    theater_prop("dJLAD6p90F/stone-tower.glb", f"Tower_{side}", envelope[f"Theater_Castle_{side}"],
+                 1.8, 180, "S", proxy=f"Theater_Castle_{side}", flatten=0.3, decimate=0.3)
+    theater_prop("dQjx8fBjIl/banner-wall.glb", f"Banner_{side}", envelope[f"Theater_Banner_{side}"],
+                 2.2, 90 if side == "West" else -90, side[0], gap=0.01, base_z=1.0, flatten=0.4,
+                 proxy=f"Theater_Banner_{side}")
+    theater_prop("nARUaxtRHA/bench.glb", f"Bench_{side}", envelope[f"Theater_Bench_{side}"],
+                 0.48, 90, "C", proxy=f"Theater_Bench_{side}")
+theater_prop("mvTeQA5aBn/window-bars.glb", "Window", envelope["Theater_Window"], 1.6, 0, "N",
+             gap=0.01, base_z=0.8, flatten=0.5, proxy="Theater_Window", decimate=0.5)
+theater_prop("Kgt363WkKd/flower-pot.glb", "Flower_Pot", envelope["Theater_Vase"], 0.7, 0, "C",
+             proxy="Theater_Vase", decimate=0.5)
+
+# Original deep burgundy paint on the theater's side of its walls, 1 cm thick.
+BURGUNDY = material("Theater burgundy paint", (0.13, 0.025, 0.03), 0.8)
+for index, (x0, x1, y0, y1) in enumerate((
+    (-2.9, 4.0, -9.0, -8.99),      # stage wall
+    (3.99, 4.0, -9.0, -2.2),       # east wall
+    (-2.9, -2.89, -9.0, -6.5),     # west partition, south of the opening
+    (-2.9, -2.89, -4.5, -2.2),     # west partition, north of the opening
+    (-2.9, 1.4, -2.21, -2.2),      # north, west of the theater door
+    (3.4, 4.0, -2.21, -2.2),       # north, east of the theater door
+)):
+    box(f"Theater_Burgundy_{index:02}", x0, x1, y0, y1, 0, HEIGHT, BURGUNDY, collide=False)
+
 # Basement entrance in the right end wall: a hinged door, its frame, a sign,
 # and a statue. The door collider is a separate proxy the engine toggles.
 # The basement and its entrance are modelled in their original frame (door in
@@ -770,6 +832,8 @@ join("Reading_Terracotta", ("Reading_Terracotta_",), "Gallery_Render")
 join("Living_Props", ("Living_Prop_",), "Gallery_Render")
 join("Living_Glass", ("Living_Glass_",), "Gallery_Render")
 join("Living_Teal", ("Living_Teal_",), "Gallery_Render")
+join("Theater_Props", ("Theater_Prop_",), "Gallery_Render")
+join("Theater_Burgundy", ("Theater_Burgundy_",), "Gallery_Render")
 join("Elevator_Car", ("Elevator_Wall_", "Elevator_Floor", "Elevator_Ceiling",
                       "Elevator_Handrail", "Elevator_Surround_", "Elevator_Front_",
                       "Elevator_Panel", "Elevator_Button_", "Elevator_Indicator"),

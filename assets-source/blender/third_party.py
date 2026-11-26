@@ -32,8 +32,10 @@ def _document(path):
 
 def bake_colours(mesh, path):
     """Bake each face's glTF base colour factor, times any vertex colour the
-    model has, into one corner colour attribute (8-bit, sRGB-encoded), so a single material
-    can show every original material's colour."""
+    model has and any base colour texture, into one corner colour attribute
+    (8-bit, sRGB-encoded), so a single material can show every original
+    material's colour. A texture is sampled once per face, at the centre of its
+    UVs, which suits the small palette textures low-poly models use."""
     document = _document(path)
     factors = {m.get("name"): m.get("pbrMetallicRoughness", {}).get("baseColorFactor", [1, 1, 1, 1])
                for m in document.get("materials", [])}
@@ -44,10 +46,33 @@ def bake_colours(mesh, path):
             name = re.sub(r"\.\d{3}$", "", name)
         return factors.get(name, [1, 1, 1, 1])[:3]
 
+    textures = {}
+
+    def texture(material):
+        if material is None or not material.use_nodes:
+            return None
+        if material.name not in textures:
+            image = next((n.image for n in material.node_tree.nodes
+                          if n.type == "TEX_IMAGE" and n.image), None)
+            textures[material.name] = image and (image.size[0], image.size[1], image.pixels[:])
+        return textures[material.name]
+
+    def linear(c):
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+    uvs = mesh.uv_layers.active.data if mesh.uv_layers.active else None
     source = mesh.color_attributes[0] if len(mesh.color_attributes) else None
     baked = mesh.color_attributes.new(BAKED, "BYTE_COLOR", "CORNER")
     for poly in mesh.polygons:
-        rgb = factor(mesh.materials[poly.material_index] if mesh.materials else None)
+        material = mesh.materials[poly.material_index] if mesh.materials else None
+        rgb = factor(material)
+        image = texture(material)
+        if image and uvs is not None:
+            w, h, pixels = image
+            u = sum(uvs[i].uv[0] for i in poly.loop_indices) / poly.loop_total
+            v = sum(uvs[i].uv[1] for i in poly.loop_indices) / poly.loop_total
+            at = ((int(v * h) % h) * w + int(u * w) % w) * 4
+            rgb = [rgb[i] * linear(pixels[at + i]) for i in range(3)]
         for loop in poly.loop_indices:
             tint = (1, 1, 1)
             if source is not None:
@@ -73,7 +98,7 @@ def vertex_colour_material(name, roughness=0.8):
 
 
 def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", gap=0.05,
-                base_z=0.0, material=None, decimate=1.0, only=None, glass=None):
+                base_z=0.0, material=None, decimate=1.0, only=None, glass=None, flatten=1.0):
     """Import, normalize and place a prop. Returns the object and its measures.
 
     envelope is the plan rectangle [x0, x1, y0, y1] in Blender metres; the prop
@@ -87,6 +112,8 @@ def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", ga
     glass is (name, material): faces of the original's alpha-blended materials
     move to a separate object with that shared material, since vertex colours
     carry no transparency. Returns that object in measures["glass"].
+    flatten below 1 compresses the model's depth from its wall into a
+    shallow relief for a wall, such as a tower against a theater wall.
     """
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=path)
@@ -140,6 +167,13 @@ def import_prop(path, name, collection, envelope, height, turn_deg, wall="N", ga
     mesh.transform(Matrix.Translation(-Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))))
     mesh.transform(Matrix.Scale(scale, 4))
     size = (hi - lo) * scale
+    if flatten != 1.0:
+        # Compress the axis that runs away from the wall it stands against.
+        axis = 0 if wall in ("E", "W") else 1
+        factors = [1, 1, 1, 1]
+        factors[axis] = flatten
+        mesh.transform(Matrix.Diagonal(factors))
+        size[axis] *= flatten
 
     x0, x1, y0, y1 = envelope
     at = {

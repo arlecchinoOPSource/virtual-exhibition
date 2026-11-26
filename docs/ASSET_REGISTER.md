@@ -51,14 +51,14 @@ Every external asset the exhibition considers is listed here, whether it is used
 
 ## Theater (#94)
 
-| ID                                            | Page title  | Creator    | Licence   | Board label     | Status    | Notes                                                       |
-| --------------------------------------------- | ----------- | ---------- | --------- | --------------- | --------- | ----------------------------------------------------------- |
-| [nARUaxtRHA](https://poly.pizza/m/nARUaxtRHA) | Bench       | Quaternius | CC0       | Bench           | Candidate |                                                             |
-| [Kgt363WkKd](https://poly.pizza/m/Kgt363WkKd) | Flower Pot  | Zsky       | CC BY 3.0 | Vase 2          | Candidate | A flower pot, not a vase.                                   |
-| [mvTeQA5aBn](https://poly.pizza/m/mvTeQA5aBn) | Window Bars | Quaternius | CC0       | Castle elements | Candidate |                                                             |
-| [dJLAD6p90F](https://poly.pizza/m/dJLAD6p90F) | Stone Tower | Quaternius | CC0       | Castle elements | Candidate | Likely too large; adapt as a wall piece within 0.6 × 0.4 m. |
-| [tKTchdiQzV](https://poly.pizza/m/tKTchdiQzV) | Castle Gate | Quaternius | CC0       | Castle elements | Candidate |                                                             |
-| [dQjx8fBjIl](https://poly.pizza/m/dQjx8fBjIl) | Banner Wall | Quaternius | CC0       | Banner          | Candidate |                                                             |
+| ID                                            | Page title  | Creator    | Licence   | Board label     | Status   | Notes                                                                                                                                                                      |
+| --------------------------------------------- | ----------- | ---------- | --------- | --------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [nARUaxtRHA](https://poly.pizza/m/nARUaxtRHA) | Bench       | Quaternius | CC0       | Bench           | Imported | Theater (#94), one each side of the stage aisle. See below.                                                                                                                |
+| [Kgt363WkKd](https://poly.pizza/m/Kgt363WkKd) | Flower Pot  | Zsky       | CC BY 3.0 | Vase 2          | Imported | A flower pot, not a vase; it fills the theater's vase slot (#94). See below.                                                                                               |
+| [mvTeQA5aBn](https://poly.pizza/m/mvTeQA5aBn) | Window Bars | Quaternius | CC0       | Castle elements | Imported | Theater (#94), a shallow relief on the north wall. See below.                                                                                                              |
+| [dJLAD6p90F](https://poly.pizza/m/dJLAD6p90F) | Stone Tower | Quaternius | CC0       | Castle elements | Imported | Theater (#94), a 1.8 m relief flattened to 0.33 m in each stage corner. See below.                                                                                         |
+| [tKTchdiQzV](https://poly.pizza/m/tKTchdiQzV) | Castle Gate | Quaternius | CC0       | Castle elements | Not used | A whole gate with towers; #94 asks for components, not full-scale gates indoors. The original proscenium frames the stage instead. Evaluated on 2026-11-26, not committed. |
+| [dQjx8fBjIl](https://poly.pizza/m/dQjx8fBjIl) | Banner Wall | Quaternius | CC0       | Banner          | Imported | Theater (#94), one on each side wall. See below.                                                                                                                           |
 
 ## Street (#95)
 
@@ -209,3 +209,54 @@ The route walk passes the vase, goes under Exhibit_10, round the coffee table an
 **Browser:** Firefox at 100% and 50% resolution: `docs/renders/shell/living-100.jpg` and `living-50.jpg`. Also `living-tv.jpg`, `living-display-case.jpg` and `living-dining.jpg`.
 
 **Limits:** the palette is the creators' own. The couch's dark red and the case's dark wood sit well against the teal, but they are not matched to the owner's reference photographs, which are references only and not cleared textures.
+
+### Theater (#94): Bench, Stone Tower, Banner Wall, Window Bars, Flower Pot
+
+These follow the same steps. Everything joins into `Theater_Props` (one draw) under `Theater_Prop_Paint`, including the original proscenium.
+
+**Proscenium:** the stage wall carries an original stone proscenium around Exhibit_13. It has two pilasters and a header, 0.2 m proud of the wall and 3.0 m tall. Static deep-red drapes and a valance sit inside it. There is no cloth simulation, and no lights were added.
+
+**Castle components as reliefs:** `import_prop(flatten=…)` compresses a model's depth away from its wall. It is used to extract components rather than stand full-scale castle pieces indoors:
+
+- a Stone Tower in each stage corner, 1.8 m tall and flattened to 0.33 m;
+- a Banner Wall on each side wall, hung 1.0 m up and flattened to 0.18 m;
+- the Window Bars on the north wall, 0.8 m up and flattened to 0.12 m.
+
+The Castle Gate is not used.
+
+**Texture baking:** the Bench is the first intake with a texture, a 2.9 KB palette PNG. `bake_colours` now samples a base colour texture once per face, at the centre of its UVs, and bakes it into the vertex colours. The texture itself is not exported.
+
+| Asset                                     | Original (downloaded 2026-11-26)                | Measured original                                                                                       | Placed                                                                                                                                    |
+| ----------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Bench (nARUaxtRHA), Quaternius, CC0       | 21,044 B, SHA-256 `746c726d…`, FBX2glTF v0.9.7  | 1 mesh, 1 material with a 2.9 KB palette texture; 364 triangles, 432 vertices; 0.88 × 1.57 × 0.74 units | Scaled ×0.645 to 0.48 m (1.01 × 0.57 m), unsimplified; one each side of the stage aisle                                                   |
+| Stone Tower (dJLAD6p90F), Quaternius, CC0 | 217,660 B, SHA-256 `5f4db151…`, FBX2glTF v0.9.7 | 1 mesh, 5 materials, no textures; 3,564 triangles, 5,918 vertices; 0.86 × 0.72 × 1.20 units             | Scaled ×1.503 to 1.8 m (1.29 m wide), flattened to 0.33 m deep and kept to 30% (1,069 triangles); both stage corners, its crates included |
+| Banner Wall (dQjx8fBjIl), Quaternius, CC0 | 26,720 B, SHA-256 `4f9f8af2…`, FBX2glTF v0.9.7  | 1 mesh, 3 materials, no textures; 440 triangles, 845 vertices; 1.64 × 0.59 × 2.85 units                 | Scaled ×0.773 to 2.2 m (1.27 m wide), flattened to 0.18 m; on each side wall from 1.0 m up, clear of Exhibit_14 and 15                    |
+| Window Bars (mvTeQA5aBn), Quaternius, CC0 | 87,260 B, SHA-256 `a9bf3ccc…`, FBX2glTF v0.9.7  | 1 mesh, 3 materials, no textures; 1,220 triangles, 2,361 vertices; 1.99 × 0.30 × 1.99 units             | Scaled ×0.732 to 1.6 m, flattened to 0.12 m and kept to 50% (610 triangles); on the north wall from 0.8 m up                              |
+| Flower Pot (Kgt363WkKd), Zsky, CC BY 3.0  | 56,460 B, SHA-256 `eaceb6b2…`, FBX2glTF v0.9.7  | 1 mesh, 3 materials, no textures; 780 triangles, 1,484 vertices; 1.03 × 0.62 × 1.85 units               | Scaled ×0.376 to 0.7 m, kept to 50% (390 triangles); in the vase slot beside the theater door                                             |
+
+**Walls:** the theater's side of its walls gets an original deep burgundy paint (`Theater_Burgundy`, 1 cm, one draw). Floor and ceiling stay shared.
+
+**Plan changes:**
+
+- Both bench envelopes are 0.15 m deeper.
+- The castle envelopes are widened to 1.3 m along the stage wall, clear of the proscenium.
+- New envelopes: `Theater_Banner_West`, `Theater_Banner_East` and `Theater_Window`.
+
+**Validation:** the Khronos glTF Validator reports 0 errors and 0 warnings on all five originals, and 0 errors on `gallery.glb`. Unit tests check:
+
+- `Theater_Props` is one vertex-coloured draw, below the 3.6 m ceiling;
+- every collision box is inside its envelope;
+- clear sightlines to Exhibit_13, 14 and 15.
+
+The route walk goes in front of both towers, inside the proscenium under Exhibit_13, up and back down the aisle between the benches, under Exhibit_14, past the flower pot and below the window. The basement door is outside the theater and unaffected.
+
+**Cost (Firefox, M5, against #93):**
+
+- `gallery.glb`: 4.74 → 5.12 MB, so the cold load goes from 5.50 to 5.87 MB.
+- The unit-test budget for `gallery.glb` plus `frame.glb` rises from 5 MB to 6 MB. The shared shell is now most of the file: the parquet alone is 1.16 MB, with fixtures and signage another 0.63 MB. The room props are already simplified, and the overall initial target stays 10–20 MB.
+- Unit-test draw count: 2 more (props and burgundy). The cap goes from 65 to 67.
+- Theater view, facing the stage: 15 draws, 39.5k triangles.
+- Elevator view: 61 draws.
+- Median frame time: unchanged at 16.7 ms.
+
+**Browser:** Firefox at 100% and 50% resolution: `docs/renders/shell/theater-100.jpg` and `theater-50.jpg`. Also `theater-north.jpg` and `theater-benches.jpg`.
