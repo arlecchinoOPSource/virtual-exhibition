@@ -132,9 +132,15 @@ export function createGallery(
   const cataloguePrint = root.getObjectByName('Catalogue_Print');
   if (!catalogue) throw new Error('The gallery is missing its catalogue.');
 
-  const keyLight = new DirectionalLight(0xf6f3ee, 2.1);
+  const galleryKeyIntensity = 0.22;
+  const galleryFillIntensity = 0.42;
+  const keyLight = new DirectionalLight(0xf6f3ee, galleryKeyIntensity);
   keyLight.position.set(-4, 8, 3);
-  const skyLight = new HemisphereLight(0xe7edf6, 0x43464d, 1.4);
+  const skyLight = new HemisphereLight(
+    0xe7edf6,
+    0x43464d,
+    galleryFillIntensity,
+  );
   scene.add(keyLight, skyLight);
 
   // The basement is drawn in a second pass, lit only by its own lamps and the
@@ -144,6 +150,11 @@ export function createGallery(
   const downstairs = new Scene();
   const downstairsKey = keyLight.clone();
   const downstairsSky = skyLight.clone();
+  // Keep the existing cellar and stair fill independent of the upper gallery.
+  const basementKeyIntensity = 2.1;
+  const basementFillIntensity = 1.4;
+  downstairsKey.intensity = basementKeyIntensity;
+  downstairsSky.intensity = basementFillIntensity;
   downstairs.add(downstairsKey, downstairsSky);
   let basementReady = false;
   let disposed = false;
@@ -213,13 +224,13 @@ export function createGallery(
       const depth = Math.min(1, Math.max(0, (-feet.y - 0.3) / 2.1));
       const target = 1 - 0.9 * depth * depth * (3 - 2 * depth);
       daylight += (target - daylight) * Math.min(1, seconds * 2);
-      keyLight.intensity = 2.1 * daylight;
-      skyLight.intensity = 1.4 * daylight;
+      keyLight.intensity = galleryKeyIntensity * daylight;
+      skyLight.intensity = galleryFillIntensity * daylight;
       const cellar = Math.min(1, (1 - daylight) / 0.9);
       skyLight.color.lerpColors(daySky, cellarSky, cellar);
       skyLight.groundColor.lerpColors(dayGround, cellarGround, cellar);
-      downstairsKey.intensity = keyLight.intensity;
-      downstairsSky.intensity = skyLight.intensity;
+      downstairsKey.intensity = basementKeyIntensity * daylight;
+      downstairsSky.intensity = basementFillIntensity * daylight;
       downstairsSky.color.copy(skyLight.color);
       downstairsSky.groundColor.copy(skyLight.groundColor);
     },

@@ -56,7 +56,7 @@ FRAME_DEPTH = 0.05
 FRAME_BORDER = 0.06
 LIGHT_HEIGHT = 3.3
 LIGHT_THROW = 1.3
-LIGHT_INTENSITY = 6.5
+LIGHT_INTENSITY = 20
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
@@ -94,7 +94,7 @@ CEILING = material("Ceiling white", (0.82, 0.81, 0.78), 0.94)
 # Approximate diffuse ceiling bounce where the realtime renderer has no GI.
 ceiling_shader = CEILING.node_tree.nodes["Principled BSDF"]
 ceiling_shader.inputs["Emission Color"].default_value = (0.26, 0.25, 0.23, 1)
-ceiling_shader.inputs["Emission Strength"].default_value = 1
+ceiling_shader.inputs["Emission Strength"].default_value = 0.18
 FIXTURE = material("Fixture_Housing", (0.03, 0.03, 0.035), 0.5)
 FRAME = material("Frame_Moulding", (0.04, 0.035, 0.03), 0.6)
 FIXTURE.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.48
@@ -165,8 +165,8 @@ def gallery_light(index, x, y, gaze, colour=(1.0, 0.95, 0.88)):
     name = f"Light_Gallery_{index:02}"
     data = bpy.data.lights.new(name, "SPOT")
     data.energy = LIGHT_INTENSITY
-    data.spot_size = math.radians(68)
-    data.spot_blend = 0.72
+    data.spot_size = math.radians(54)
+    data.spot_blend = 0.55
     data.color = colour
     light = bpy.data.objects.new(name, data)
     light.location = position
@@ -729,6 +729,8 @@ place(obj for obj in entrance if obj is not hinge)
 # north side, facing south across the stand, at the plan's position.
 from lectern import build_lectern
 build_lectern(box, material, collections["Gallery_Render"])
+# Flush the new members’ local transforms before applying the room placement.
+bpy.context.view_layer.update()
 lx0, lx1, ly0, ly1 = PLAN["lectern"]["rect"]
 lectern_at = Vector(((lx0 + lx1) / 2, (ly0 + ly1) / 2, 0))
 turn = Matrix.Translation(lectern_at) @ Matrix.Rotation(-math.pi / 2, 4, "Z")

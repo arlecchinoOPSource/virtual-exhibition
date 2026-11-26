@@ -384,7 +384,7 @@ describe('basement room', () => {
 
   it('fades daylight below ground and restores it upstairs', async () => {
     const world = await openBasement();
-    // Both passes share the same fading daylight.
+    // The fade follows the same curve, with independent light levels.
     const skies: HemisphereLight[] = [];
     for (const root of [world.scene, world.passes[0]!])
       root.traverse((node) => {
@@ -395,7 +395,8 @@ describe('basement room', () => {
       world.update(1 / 60, moved(22, -3.06, 0));
     for (const sky of skies) expect(sky.intensity).toBeLessThan(0.3);
     for (let t = 0; t < 4; t += 1 / 60) world.update(1 / 60, outside);
-    for (const sky of skies) expect(sky.intensity).toBeGreaterThan(1.3);
+    expect(skies[0]?.intensity).toBeCloseTo(0.42, 2);
+    expect(skies[1]?.intensity).toBeCloseTo(1.4, 2);
     world.dispose();
   });
 });

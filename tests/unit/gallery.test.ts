@@ -117,6 +117,11 @@ describe('gallery blockout', () => {
     const wood = world.scene.getObjectByName('Lectern_Woodwork');
     if (!wood) throw new Error('Missing Lectern_Woodwork.');
     const woodBounds = new Box3().setFromObject(wood);
+    const pages = world.scene.getObjectByName('Catalogue_Pages');
+    if (!pages) throw new Error('Missing catalogue pages.');
+    const pageBounds = new Box3().setFromObject(pages);
+    expect(pageBounds.min.y - woodBounds.max.y).toBeLessThan(0.025);
+    expect(woodBounds.max.y).toBeGreaterThan(1.15);
     expect(woodBounds.min.x).toBeGreaterThan(x0 - 0.02);
     expect(woodBounds.max.x).toBeLessThan(x1 + 0.02);
     expect(woodBounds.min.z).toBeGreaterThan(-y1 - 0.02);
@@ -337,6 +342,10 @@ describe('display frames and gallery lights', () => {
       if (node instanceof SpotLight) spots.push(node);
     });
     expect(spots).toHaveLength(15);
+    for (const spot of spots) {
+      expect(spot.intensity).toBeCloseTo(20);
+      expect(spot.angle).toBeCloseTo((27 * Math.PI) / 180);
+    }
 
     for (const anchor of world.anchors) {
       const target = anchor.getWorldPosition(new Vector3());
