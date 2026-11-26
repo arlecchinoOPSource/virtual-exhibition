@@ -1,13 +1,36 @@
+import { unlockGallery } from './gallery-entry';
 import { expect, test } from '@playwright/test';
 import { moveSpawn } from './spawn';
 import type { Page } from '@playwright/test';
 import { spawnAtBasementDoor } from './basement';
+
+test('opens initially closed gallery doors with E and closes them with a click', async ({
+  page,
+}) => {
+  // Face the right leaf close to its studio jamb, clear of the swing.
+  const yaw = Math.atan2(-0.925, -1.36);
+  await moveSpawn(
+    page,
+    [-11, 0, -3.55],
+    [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)],
+  );
+  await page.goto('/');
+  await unlockGallery(page);
+  await page.getByRole('button', { name: 'Start walk' }).click();
+  const prompt = page.locator('#interaction');
+  await expect(prompt).toHaveText('E / Click · Open the doors');
+  await page.keyboard.press('e');
+  await expect(prompt).toHaveText('E / Click · Close the doors');
+  await page.mouse.click(50, 50);
+  await expect(prompt).toHaveText('E / Click · Open the doors');
+});
 
 test('draws the preview in WebGL and resizes the canvas', async ({ page }) => {
   const pageErrors: Error[] = [];
   page.on('pageerror', (error) => pageErrors.push(error));
 
   await page.goto('/');
+  await unlockGallery(page);
   const canvas = page.getByRole('img', {
     name: 'Eye-level view inside the exhibition',
   });
@@ -82,6 +105,7 @@ test('pauses frame rendering while hidden and preserves the view on resume', asy
     };
   });
   await page.goto('/');
+  await unlockGallery(page);
   const canvas = page.getByRole('img', {
     name: 'Eye-level view inside the exhibition',
   });
@@ -346,11 +370,12 @@ test('offers the PDF file when the essay fails to load', async ({ page }) => {
   ).toBeVisible();
 });
 
-// Put the test visitor on the door axis in the rear landing, facing south
-// into the cut-away corner's doorway. Separate unit tests walk the gallery.
+// Put the test visitor on the door axis in the rear landing, facing east
+// into the stairwell. Separate unit tests walk the gallery.
 async function walkToBasementDoor(page: Page) {
   await spawnAtBasementDoor(page);
   await page.goto('/');
+  await unlockGallery(page);
   await page.bringToFront();
   await page.getByRole('button', { name: 'Start walk' }).click();
   await expect(page.locator('#crosshair')).toBeVisible();
@@ -389,6 +414,7 @@ test('makes no basement requests until the visitor opens the door', async ({
     if (/basement/.test(request.url())) basementRequests.push(request.url());
   });
   await page.goto('/');
+  await unlockGallery(page);
   await page.getByRole('button', { name: 'Start walk' }).click();
   await page.keyboard.down('w');
   await page.waitForTimeout(1500);
@@ -405,11 +431,11 @@ test('hangs the basement frames once it loads and opens their details', async ({
   await page.keyboard.press('e');
   await expect(prompt).toBeEmpty({ timeout: 10000 });
   // Straight down the stairs and across the room until the throne stops
-  // the visitor, beside Exhibit_17 on the room's east wall.
+  // the visitor, beside Exhibit_17 on the room's north wall.
   await page.keyboard.down('w');
   await page.waitForTimeout(8000);
   await page.keyboard.up('w');
-  // Facing south, a quarter turn left faces east, toward the frame.
+  // Facing east, a quarter turn left faces north, toward the frame.
   await page.evaluate(() =>
     document.dispatchEvent(
       new MouseEvent('mousemove', { movementX: (-Math.PI / 2) * 500 }),

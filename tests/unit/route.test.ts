@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { Vector3 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -24,18 +23,8 @@ const FPS = 120;
 const SPEED = 3.2; // m/s, the visitor's walking speed
 const BASEMENT_FLOOR = -3.06;
 
-// Plan points in Blender (x, y). Upstairs legs stay at floor level. The
-// basement legs are written in the basement's original frame (stairs running
-// east from x 12 to 18) and placed by the plan's basement_transform.
-type Leg = [label: string, x: number, y: number];
-const { basement_transform: place } = JSON.parse(
-  readFileSync('assets-source/layout/redesign.json', 'utf8'),
-) as { basement_transform: { translate: number[]; rotate_z_deg: number } };
-if (place.rotate_z_deg !== -90)
-  throw new Error('These legs assume a quarter turn clockwise.');
-const [tx = 0, ty = 0] = place.translate;
-const placed = (legs: Leg[]): Leg[] =>
-  legs.map(([label, x, y]) => [label, y + tx, ty - x]);
+// Plan points in Blender (x, y). Upstairs legs stay at floor level.
+type Leg = [label: string, x: number, y: number, openDoor?: string];
 
 const northLoop: Leg[] = [
   ['out of the elevator', -13.0, 4.05],
@@ -49,27 +38,34 @@ const northLoop: Leg[] = [
   ['studio south side', -8.0, 3.6],
   ['studio north-east corner', -7.0, 7.2],
   ['studio south-east corner', -7.0, 2.5],
-  ['studio to street opening', -7.6, 5.5],
+  ['studio to street opening', -7.6, 5.5, 'Studio_Street'],
   ['street west end', -6.0, 5.5],
   ['under Exhibit_04, on the sidewalk', -3.5, 6.4],
   ['under Exhibit_05, on the sidewalk', 1.5, 6.4],
   ['in front of the store', 3.1, 6.1],
   ['back to the street west end', -6.0, 5.5],
+  ['around the open street door leaf', -5.2, 5.5],
+  ['south of the open street door leaf', -5.2, 3.3],
+  ['approach the corner beside the west planter', -6.2, 3.3],
   ['street south-west corner', -6.2, 2.5],
   ['north of the west planter', -5.5, 3.3],
   ['under Exhibit_06', -1.0, 2.6],
   ['north of the east planter', 3.1, 3.3],
   ['street south-east corner', 3.7, 2.5],
+  ['street beside the store', 3.7, 4.6],
   ['past the truck', 8.5, 5.2],
-  ['rear landing past the facades', 8.5, 6.8],
-  ['rear landing north-east corner', 9.7, 7.2],
-  ['rear landing south-east corner', 9.7, -1.7],
+  ['street past the facades', 8.5, 6.8],
+  ['street north-east corner', 9.7, 7.2],
+  ['street east wall', 9.7, 4.6],
+  ['street side of the rear doors', 7.0, 3.55, 'Street_Rear'],
+  ['through the street doors to the rear landing', 7.0, 1.2],
+  ['rear landing north-east corner', 9.7, 1.55],
   ['rear landing west side', 4.3, -0.4],
   ['rear landing south-west corner', 4.3, -1.7],
   ['past the statue', 4.3, -0.4],
-  ['basement door landing', 7.0, -0.9],
+  ['basement door landing', 8.9, 0],
 ];
-const basementLoop: Leg[] = placed([
+const basementLoop: Leg[] = [
   ['top of the stairs', 10.6, 0],
   ['foot of the stairs', 18.5, 0],
   ['basement north-west corner', 19.5, 3.7],
@@ -82,7 +78,7 @@ const basementLoop: Leg[] = placed([
   ['foot of the stairs, going up', 18.5, 0],
   ['top of the stairs, going up', 10.6, 0],
   ['back through the door', 9.0, 0],
-]);
+];
 const reading: Leg[] = [
   ['reading east end', 3.7, 0],
   ['reading north-east corner', 3.7, 1.7],
@@ -98,8 +94,10 @@ const reading: Leg[] = [
   ['catalogue end of the band', -12.5, 0],
 ];
 const southLoop: Leg[] = [
-  ['living door', -11, 0],
+  ['living door', -11, 0, 'Living_Door'],
   ['living door', -11, -3],
+  ['past the open living room doors', -11, -3.45],
+  ['around the living room door leaf', -13, -3.45],
   ['beside the vase', -13.0, -3.0],
   ['under Exhibit_10', -13.6, -4.0],
   ['north of the TV', -13.6, -6.6],
@@ -116,8 +114,10 @@ const southLoop: Leg[] = [
   ['under Exhibit_11', -5.5, -7.9],
   ['living south-east corner', -3.4, -8.7],
   ['living north-east corner', -3.4, -2.5],
-  ['living to theater opening', -3.4, -5.5],
+  ['living to theater opening', -3.6, -5.5, 'Living_Theater'],
   ['theater west side', -2.3, -5.5],
+  ['theater aisle, clear of the open door and bench', 0.5, -5.5],
+  ['past the theater benches', 0.5, -8.3],
   ['in front of the west tower', -2.3, -8.3],
   ['under Exhibit_13, inside the proscenium', 0.5, -8.3],
   ['up the aisle between the benches', 0.5, -6.5],
@@ -126,10 +126,10 @@ const southLoop: Leg[] = [
   ['under Exhibit_14', 3.4, -5.6],
   ['theater north-east, beside the flower pot', 3.1, -2.5],
   ['theater north-west, below the window', -2.6, -2.75],
-  ['theater door', 2.4, -2.5],
+  ['theater door', 2.4, -2.65, 'Theater_Door'],
   ['reading area from the theater', 2.4, 0],
   ['catalogue end of the band', -12.5, 0],
-  ['studio door', -11, 0],
+  ['studio door', -11, 0, 'Studio_Door'],
   ['studio door', -11, 3.2],
   ['beside the elevator', -13.0, 4.05],
   ['back into the elevator', -15.5, 4.05],
@@ -151,7 +151,7 @@ describe('walking the accepted layout', () => {
 
     // Steers straight at each point; the leg fails if the visitor is stuck.
     const walk = (legs: Leg[]) => {
-      for (const [label, x, y] of legs) {
+      for (const [label, x, y, openDoor] of legs) {
         const target = new Vector3(x, 0, -y);
         let frames = 0;
         for (; frames < FPS * 20; frames++) {
@@ -165,8 +165,8 @@ describe('walking the accepted layout', () => {
           // Outside the stairwell (x 6 to 8, south of the doorway) and the
           // basement room, the floor never gives way.
           const below =
-            (body.feet.x > 6 && body.feet.x < 8 && body.feet.z > 2.2) ||
-            body.feet.z > 11;
+            (body.feet.x > 10.2 && Math.abs(body.feet.z) < 0.8) ||
+            body.feet.x > 19;
           if (!below) expect(body.feet.y, label).toBeCloseTo(0, 3);
         }
         const reached = Math.hypot(
@@ -178,6 +178,15 @@ describe('walking the accepted layout', () => {
         for (let i = 0; i < FPS / 4; i++)
           stepBody(body, 0, 0, 1 / FPS, world.solids);
         expect(body.grounded, label).toBe(true);
+        if (openDoor) {
+          const leaf = world.scene.getObjectByName(
+            `Room_Door_${openDoor}_Left_Leaf`,
+          );
+          const action = world.actionAt(leaf, body.feet);
+          expect(action?.label, label).toBe('E / Click · Open the doors');
+          action?.run();
+          world.update(0.8);
+        }
       }
     };
 

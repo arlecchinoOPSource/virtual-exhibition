@@ -12,7 +12,8 @@ import {
 import type { BufferGeometry, Material, Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { hangExhibits } from '../exhibition/displays';
-import { createDoor } from './door';
+import { shadeEntrance } from './entrance-shadow';
+import { createDoor, createRoomDoor } from './door';
 import { createElevator } from './elevator';
 import { paintExhibit } from '../exhibition/placeholder';
 import type { Exhibit, ExhibitAnchor } from '../types/exhibit';
@@ -116,6 +117,20 @@ export function createGallery(
   const doorCollider = colliders.get('COL_Door_Basement');
   if (!hinge || !doorMesh || !doorCollider)
     throw new Error('The gallery is missing the basement door.');
+  const roomHinges = new Map<string, Object3D[]>();
+  root.traverse((node) => {
+    const name: unknown = node.userData.roomDoor;
+    if (typeof name !== 'string') return;
+    const pair = roomHinges.get(name) ?? [];
+    pair.push(node);
+    roomHinges.set(name, pair);
+  });
+  const roomDoors = new Map<Object3D, ReturnType<typeof createRoomDoor>>();
+  const doorPairs = [...roomHinges.values()].map((pair) => {
+    const roomDoor = createRoomDoor(pair, colliders, solids);
+    for (const pivot of pair) roomDoors.set(pivot, roomDoor);
+    return roomDoor;
+  });
   const leaves = ['Elevator_Door_South', 'Elevator_Door_North'].map((name) =>
     root.getObjectByName(name),
   );
@@ -132,9 +147,15 @@ export function createGallery(
   const cataloguePrint = root.getObjectByName('Catalogue_Print');
   if (!catalogue) throw new Error('The gallery is missing its catalogue.');
 
-  const keyLight = new DirectionalLight(0xf6f3ee, 2.1);
+  const galleryKeyIntensity = 0.22;
+  const galleryFillIntensity = 0.42;
+  const keyLight = new DirectionalLight(0xf6f3ee, galleryKeyIntensity);
   keyLight.position.set(-4, 8, 3);
-  const skyLight = new HemisphereLight(0xe7edf6, 0x43464d, 1.4);
+  const skyLight = new HemisphereLight(
+    0xe7edf6,
+    0x43464d,
+    galleryFillIntensity,
+  );
   scene.add(keyLight, skyLight);
 
   // The basement is drawn in a second pass, lit only by its own lamps and the
@@ -144,6 +165,11 @@ export function createGallery(
   const downstairs = new Scene();
   const downstairsKey = keyLight.clone();
   const downstairsSky = skyLight.clone();
+  // Leave only a trace of gallery spill before the bulbs and picture lights.
+  const basementKeyIntensity = 0.16;
+  const basementFillIntensity = 0.2;
+  downstairsKey.intensity = basementKeyIntensity;
+  downstairsSky.intensity = basementFillIntensity;
   downstairs.add(downstairsKey, downstairsSky);
   let basementReady = false;
   let disposed = false;
@@ -201,25 +227,33 @@ export function createGallery(
       );
     },
     actionAt(object: Object3D | undefined, feet: Vector3) {
-      for (let node = object; node; node = node.parent ?? undefined)
+      for (let node = object; node; node = node.parent ?? undefined) {
         if (node === doorMesh)
           return { label: door.label(feet), run: () => void door.toggle(feet) };
+        const roomDoor = roomDoors.get(node);
+        if (roomDoor)
+          return {
+            label: roomDoor.label(feet),
+            run: () => roomDoor.toggle(feet),
+          };
+      }
       return undefined;
     },
     update(seconds: number, feet?: Vector3) {
       door.update(seconds);
+      for (const roomDoor of doorPairs) roomDoor.update(seconds);
       elevator.update(seconds);
       if (!feet) return;
       const depth = Math.min(1, Math.max(0, (-feet.y - 0.3) / 2.1));
       const target = 1 - 0.9 * depth * depth * (3 - 2 * depth);
       daylight += (target - daylight) * Math.min(1, seconds * 2);
-      keyLight.intensity = 2.1 * daylight;
-      skyLight.intensity = 1.4 * daylight;
+      keyLight.intensity = galleryKeyIntensity * daylight;
+      skyLight.intensity = galleryFillIntensity * daylight;
       const cellar = Math.min(1, (1 - daylight) / 0.9);
       skyLight.color.lerpColors(daySky, cellarSky, cellar);
       skyLight.groundColor.lerpColors(dayGround, cellarGround, cellar);
-      downstairsKey.intensity = keyLight.intensity;
-      downstairsSky.intensity = skyLight.intensity;
+      downstairsKey.intensity = basementKeyIntensity * daylight;
+      downstairsSky.intensity = basementFillIntensity * daylight;
       downstairsSky.color.copy(skyLight.color);
       downstairsSky.groundColor.copy(skyLight.groundColor);
     },
@@ -261,6 +295,7 @@ export async function loadGallery(exhibits: readonly Exhibit[]) {
     },
   );
   const displays = hangExhibits(world.anchors, upstairs, paintExhibit);
+  shadeEntrance(world.scene);
   return {
     ...world,
     exhibitAt: (object: Object3D | undefined) =>

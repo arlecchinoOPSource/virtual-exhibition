@@ -1,3 +1,4 @@
+import { unlockGallery } from './gallery-entry';
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -36,6 +37,7 @@ const facing = {
 
 async function startWalk(page: Page) {
   await page.goto('/');
+  await unlockGallery(page);
   await page.bringToFront();
   // Keyboard only: Enter starts the walk, E opens, Escape closes.
   await page.getByRole('button', { name: 'Start walk' }).press('Enter');
@@ -102,15 +104,15 @@ test('the three basement frames are reachable once the door opens', async ({
   await page.waitForTimeout(16000);
   await page.keyboard.up('w');
 
-  // Exhibit_17: a quarter turn left (east) and walk up to it.
+  // Exhibit_17: a quarter turn left (north) and walk up to it.
   await turn(-Math.PI / 2);
   await page.keyboard.down('w');
   await expect(label).toHaveText(titleOf('Exhibit_17'), { timeout: 15000 });
   await page.keyboard.up('w');
   await checkDetails(page, 'Exhibit_17');
 
-  // Exhibit_16: up to the east wall (the label shows from 3 m, so stopping
-  // where it appears leaves the visitor on that edge), then step left (north)
+  // Exhibit_16: up to the north wall (the label shows from 3 m, so stopping
+  // where it appears leaves the visitor on that edge), then step left (west)
   // along the wall.
   await page.keyboard.down('w');
   await page.waitForTimeout(3000);
@@ -120,8 +122,8 @@ test('the three basement frames are reachable once the door opens', async ({
   await page.keyboard.up('a');
   await checkDetails(page, 'Exhibit_16');
 
-  // Exhibit_18: step back south until Exhibit_17 is in view again (just
-  // north of the throne), then half a turn to face west across the room.
+  // Exhibit_18: step back east until Exhibit_17 is in view again (just
+  // west of the throne), then half a turn to face south across the room.
   await page.keyboard.down('d');
   await expect(label).toHaveText(titleOf('Exhibit_17'), { timeout: 15000 });
   await page.keyboard.up('d');

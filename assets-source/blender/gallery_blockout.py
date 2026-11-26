@@ -56,7 +56,8 @@ FRAME_DEPTH = 0.05
 FRAME_BORDER = 0.06
 LIGHT_HEIGHT = 3.3
 LIGHT_THROW = 1.3
-LIGHT_INTENSITY = 6.5
+LIGHT_INTENSITY = 20
+RAIL_TOP = HEIGHT - 0.12
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
@@ -87,14 +88,32 @@ def material(name, rgb, roughness=0.85):
     return mat
 
 
+def glow(name, rgb, strength):
+    mat = material(name, rgb, 0.4)
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs["Emission Color"].default_value = (*rgb, 1.0)
+    bsdf.inputs["Emission Strength"].default_value = strength
+    return mat
+
+
+def point_light(name, x, y, z, energy, rgb, collection="Basement_Render", reach=None):
+    data = bpy.data.lights.new(name, "POINT")
+    data.energy = energy
+    data.color = rgb
+    data.shadow_soft_size = 0.05
+    if reach is not None:
+        data.use_custom_distance = True
+        data.cutoff_distance = reach
+    light = bpy.data.objects.new(name, data)
+    light.location = (x, y, z)
+    collections[collection].objects.link(light)
+
+
 FLOOR = material("Lacquered oak parquet", (0.45, 0.27, 0.12), 0.2)
 WALLS = material("Warm white mineral paint", (0.79, 0.77, 0.73), 0.91)
 paint_finish(WALLS)
-CEILING = material("Ceiling white", (0.82, 0.81, 0.78), 0.94)
-# Approximate diffuse ceiling bounce where the realtime renderer has no GI.
-ceiling_shader = CEILING.node_tree.nodes["Principled BSDF"]
-ceiling_shader.inputs["Emission Color"].default_value = (0.26, 0.25, 0.23, 1)
-ceiling_shader.inputs["Emission Strength"].default_value = 1
+CEILING = material("Ceiling matte black backing", (0.02, 0.023, 0.028), 0.94)
+BAFFLES = material("Ceiling black powder-coated steel", (0.066, 0.071, 0.079), 0.67)
 FIXTURE = material("Fixture_Housing", (0.03, 0.03, 0.035), 0.5)
 FRAME = material("Frame_Moulding", (0.04, 0.035, 0.03), 0.6)
 FIXTURE.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.48
@@ -165,8 +184,8 @@ def gallery_light(index, x, y, gaze, colour=(1.0, 0.95, 0.88)):
     name = f"Light_Gallery_{index:02}"
     data = bpy.data.lights.new(name, "SPOT")
     data.energy = LIGHT_INTENSITY
-    data.spot_size = math.radians(68)
-    data.spot_blend = 0.72
+    data.spot_size = math.radians(54)
+    data.spot_blend = 0.55
     data.color = colour
     light = bpy.data.objects.new(name, data)
     light.location = position
@@ -187,13 +206,15 @@ def gallery_light(index, x, y, gaze, colour=(1.0, 0.95, 0.88)):
     turned(prefix + "_Pivot", [(-0.068, 0.024), (0.076, 0.024)],
            mount, side, FIXTURE, render)
     box(prefix + "_Yoke", stem.x-0.013, stem.x+0.013, stem.y-0.013, stem.y+0.013,
-        stem.z, HEIGHT-0.048, FIXTURE, collide=False)
+        stem.z, RAIL_TOP-0.048, FIXTURE, collide=False)
     box(prefix + "_Adaptor", stem.x-0.048, stem.x+0.048, stem.y-0.048, stem.y+0.048,
-        HEIGHT-0.075, HEIGHT-0.027, FIXTURE, collide=False)
+        RAIL_TOP-0.075, RAIL_TOP-0.027, FIXTURE, collide=False)
     # A short length of ceiling track over each head, parallel to its wall.
     rx, ry = (0.024, 0.6) if gx else (0.6, 0.024)
-    box(prefix + "_Rail", stem.x-rx, stem.x+rx, stem.y-ry, stem.y+ry, HEIGHT-0.03,
-        HEIGHT, FIXTURE, collide=False)
+    box(prefix + "_Rail", stem.x-rx, stem.x+rx, stem.y-ry, stem.y+ry, RAIL_TOP-0.03,
+        RAIL_TOP, FIXTURE, collide=False)
+    box(prefix + "_Ceiling_Mount", stem.x-0.015, stem.x+0.015, stem.y-0.015, stem.y+0.015,
+        RAIL_TOP, HEIGHT, FIXTURE, collide=False)
 
 
 def join(name, prefixes, collection):
@@ -207,6 +228,7 @@ def join(name, prefixes, collection):
     joined = bpy.context.view_layer.objects.active
     joined.name = name
     joined.data.name = name
+    return joined
 
 
 # The measured shell from the accepted plan (docs/DESIGN.md, issue #86).
@@ -218,14 +240,32 @@ FOOT_X0, FOOT_X1, FOOT_Y0, FOOT_Y1 = -14 - WALL, 10 + WALL, -9 - WALL, 7.5 + WAL
 # The south-east corner outside the building: no parquet is laid there.
 NOTCH = (4 + WALL, 10 + WALL, -9 - WALL, -2 - WALL)
 
-# Floor and ceiling, each in two parts that leave out the cut-away corner,
-# where the basement stairs now descend under their own ceiling. Nothing can
-# reach the ceiling, so it needs no proxy.
+# Floor and ceiling, each in two parts that leave out the cut-away corner.
+# Nothing can reach the ceiling, so it needs no proxy.
 for z0, z1, mat, name in ((-WALL, 0, FLOOR, "Floor"), (HEIGHT, HEIGHT + WALL, CEILING, "Ceiling")):
     box(f"{name}_North", FOOT_X0, FOOT_X1, NOTCH[3], FOOT_Y1, z0, z1, mat, collide=name == "Floor")
     box(f"{name}_South", FOOT_X0, NOTCH[0], FOOT_Y0, NOTCH[3], z0, z1, mat, collide=name == "Floor")
     join(name, (f"{name}_North", f"{name}_South"), "Gallery_Render")
 oak_floor(bpy.data.objects["Floor"], FLOOR, exclude=(NOTCH,))
+
+# Dark open-joint baffles follow the gallery's long axis. Cross rails tie
+# the slats together. Everything shares one material and draw call.
+for room in PLAN["sections"]:
+    if room["id"] in {"basement", "elevator", "rear"}:
+        continue
+    x0, x1, y0, y1 = room["rect"]
+    name = f"Ceiling_Grid_{room['id']}"
+    pitch = 0.19
+    for index in range(math.ceil((y0 + 0.055) / pitch), math.floor((y1 - 0.055) / pitch) + 1):
+        y = index * pitch
+        box(f"{name}_Baffle_{index}", x0 + 0.035, x1 - 0.035, y - 0.021, y + 0.021,
+            HEIGHT - 0.10, HEIGHT, BAFFLES, collide=False)
+    support_count = max(1, math.ceil((x1 - x0) / 3.0))
+    for index in range(support_count + 1):
+        x = x0 + 0.054 + (x1 - x0 - 0.108) * index / support_count
+        box(f"{name}_Support_{index}", x - 0.035, x + 0.035, y0 + 0.035, y1 - 0.035,
+            HEIGHT - 0.112, HEIGHT - 0.10, BAFFLES, collide=False)
+join("Gallery_Ceiling_Baffles", ("Ceiling_Grid_",), "Gallery_Render")
 
 # The arrival elevator: an enclosed car behind the west wall where the visitor
 # spawns. Its walls, handrail, door surround and leaves share one satin steel
@@ -257,8 +297,87 @@ for wall in PLAN["walls"]:
 facade = next(item for item in PLAN["furniture"] if item["id"] == "Street_Facades")
 box("Street_Facade_Base", *facade["rect"], 0, HEIGHT, WALLS)
 bx0, bx1, by0, by1 = PLAN["basement_door"]["opening"]
-box("Wall_Notch_Lintel", bx0, bx1, by0, by1, 2.4, HEIGHT, WALLS)
+box("Wall_Basement_Lintel", bx0, bx1, by0, by1, 2.4, HEIGHT, WALLS)
 box("Wall_West_Lintel", -14 - WALL, -14, door_y0, door_y1, DOOR_HEIGHT, HEIGHT, WALLS)
+
+# Trim the enclosed room passages using the measured opening rectangles.
+# The wide, unwalled room transitions and the two working doors need no casing.
+CASING = material("Gallery portal dark walnut", (0.13, 0.073, 0.038), 0.52)
+DOOR = material("Door_Basement", (0.05, 0.045, 0.04), 0.7)
+PULL = material("Gallery door aged brass", (0.32, 0.22, 0.10), 0.45)
+PULL.node_tree.nodes["Principled BSDF"].inputs["Metallic"].default_value = 0.4
+DOOR_THICKNESS = 0.06
+# Export the paired leaves open so the wide openings start passable.
+ROOM_DOORS = {
+    "Studio_Door": 1,
+    "Living_Door": -1,
+    "Theater_Door": 1,
+    "Studio_Street": 1,
+    "Street_Rear": 1,
+    "Living_Theater": 1,
+}
+HEAD = 2.55
+HEADER_TOP = HEAD + 0.10
+JAMB_REVEAL = 0.015
+for opening in PLAN["openings"]:
+    name = opening["id"]
+    if name not in ROOM_DOORS:
+        continue
+    x0, x1, y0, y1 = opening["rect"]
+    along_x = (x1 - x0) > (y1 - y0)
+    low, high, depth0, depth1 = (x0, x1, y0, y1) if along_x else (y0, y1, x0, x1)
+
+    def door_part(label, a, b, d0, d1, bottom, top, mat):
+        rect = (a, b, d0, d1) if along_x else (d0, d1, a, b)
+        obj = box(label, *rect, bottom, top, mat, collide=False)
+        if mat == CASING:
+            soften(obj, 0.006)
+
+    # The walnut reveal sits inside the opening so its face and bevel clear
+    # the plaster and room finishes instead of sharing the wall's end plane.
+    door_part(f"Portal_Trim_{name}_Left", low - 0.085, low + JAMB_REVEAL,
+              depth0 - 0.037, depth1 + 0.037, 0, HEAD, CASING)
+    door_part(f"Portal_Trim_{name}_Right", high - JAMB_REVEAL, high + 0.085,
+              depth0 - 0.037, depth1 + 0.037, 0, HEAD, CASING)
+    door_part(f"Portal_Trim_{name}_Head", low - 0.085, high + 0.085,
+              depth0 - 0.037, depth1 + 0.037, HEAD, HEADER_TOP, CASING)
+    door_part(f"Wall_Portal_{name}_Infill", low, high,
+              depth0, depth1, HEADER_TOP, HEIGHT, WALLS)
+
+    hinge_depth = (depth0 + depth1) / 2
+    leaf_width = (high - low - DOOR_THICKNESS) / 2 - JAMB_REVEAL - 0.01
+    open_side = ROOM_DOORS[name]
+    free_edge = hinge_depth + open_side * leaf_width
+    leaf_start, leaf_end = sorted((hinge_depth - open_side * DOOR_THICKNESS / 2, free_edge))
+    for side, edge, direction in (("Left", low + JAMB_REVEAL, -1),
+                                  ("Right", high - JAMB_REVEAL - DOOR_THICKNESS, 1)):
+        leaf_name = f"Room_Door_{name}_{side}"
+        hinge = bpy.data.objects.new(leaf_name, None)
+        hinge.location = ((edge + DOOR_THICKNESS / 2, hinge_depth, 0) if along_x
+                          else (hinge_depth, edge + DOOR_THICKNESS / 2, 0))
+        hinge["closesBy"] = direction * open_side * (1 if along_x else -1) * math.pi / 2
+        hinge["roomDoor"] = name
+        collections["Gallery_Markers"].objects.link(hinge)
+        leaf_rect = ((edge, edge + DOOR_THICKNESS, leaf_start, leaf_end) if along_x
+                     else (leaf_start, leaf_end, edge, edge + DOOR_THICKNESS))
+        leaf = box(f"{leaf_name}_Leaf", *leaf_rect, 0.018, HEAD - 0.015, DOOR)
+        pull_depth = free_edge - open_side * 0.095
+        pull_prefix = f"{leaf_name}_Pull"
+        for face, surface, projection in (("A", edge, -1), ("B", edge + DOOR_THICKNESS, 1)):
+            pull_edge = surface + projection * 0.04
+            for label, start, end, z0, z1 in (
+                ("Grip", pull_edge - 0.008, pull_edge + 0.008, 0.90, 1.11),
+                ("Lower", surface, pull_edge, 0.91, 0.928),
+                ("Upper", surface, pull_edge, 1.082, 1.10),
+            ):
+                a, b = sorted((start, end))
+                door_part(f"{pull_prefix}_{face}_{label}", a, b, pull_depth - 0.009, pull_depth + 0.009,
+                          z0, z1, PULL)
+        pull = join(pull_prefix, (pull_prefix,), "Gallery_Render")
+        proxy = bpy.data.objects[f"COL_{leaf.name}"]
+        for part in (leaf, pull, proxy):
+            part.parent = hinge
+            part.location -= hinge.location
 
 box("Elevator_Floor", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, -WALL, 0, CAR_FLOOR)
 box("Elevator_Ceiling", car_x0 - 0.1, car_x1, car_y0 - 0.1, car_y1 + 0.1, CAR_HEIGHT,
@@ -332,7 +451,7 @@ for name, file, rect, height, turn_deg, wall, decimate in STUDIO_PROPS:
 
 # Original bamboo panelling (gallery_finishes.bamboo_finish) on the studio's
 # side of its walls, 1 cm thick so the frames' anchors stay 1 cm proud of it,
-# leaving the doorways and the elevator surround clear.
+# leaving the doorways clear and continuing above their headers.
 from gallery_finishes import bamboo_finish
 BAMBOO = material("Studio bamboo panelling", (0.78, 0.64, 0.36), 0.55)
 bamboo_finish(BAMBOO)
@@ -343,8 +462,10 @@ for index, (x0, x1, y0, y1, z0) in enumerate((
     (-14.0, -13.99, 3.03, 5.07, 2.55),  # over the elevator surround
     (-14.0, -12.0, 2.2, 2.21, 0),       # spine, west of the studio door
     (-10.0, -6.7, 2.2, 2.21, 0),        # spine, east of the studio door
+    (-12.0, -10.0, 2.2, 2.21, HEADER_TOP),
     (-6.71, -6.7, 2.2, 4.5, 0),         # partition, south of the street opening
     (-6.71, -6.7, 6.5, 7.5, 0),         # partition, north of the street opening
+    (-6.71, -6.7, 4.5, 6.5, HEADER_TOP),
 )):
     panel = box(f"Studio_Bamboo_{index:02}", x0, x1, y0, y1, z0, HEIGHT, BAMBOO, collide=False)
     paint_uv(panel)
@@ -403,16 +524,25 @@ for index, (rect, turn_deg, base_z) in enumerate((
                                  decimate=0.25)
     print("THIRD_PARTY Reading_Scroll", measures)
 
-# Original terracotta finish on the reading side of the spine and the south
-# partitions, 1 cm thick like the studio's bamboo, leaving the theater door clear.
-# It runs on to the studio and living-room door jambs so the band reads as one.
+# Terracotta continues from the library through the catalogue alcove, including
+# its west end wall and the library-facing sides of all three door headers.
 TERRACOTTA = material("Reading terracotta plaster", (0.46, 0.17, 0.09), 0.85)
-for index, (x0, x1, y0, y1) in enumerate((
-    (-10.0, 4.0, 1.99, 2.0),    # spine
-    (-10.0, 1.4, -2.0, -1.99),   # south partition, west of the theater door
-    (3.4, 4.0, -2.0, -1.99),    # south partition, east of the theater door
+for index, (x0, x1, y0, y1, z0) in enumerate((
+    (-14.0, -13.99, -1.99, 1.99, 0),  # west end of the catalogue alcove
+    (-14.0, -12.0, 1.99, 2.0, 0),    # spine, west of the studio door
+    (-12.0, -10.0, 1.99, 2.0, HEADER_TOP),
+    (-10.0, 4.0, 1.99, 2.0, 0),    # spine
+    (-14.0, -12.0, -2.0, -1.99, 0),  # south partition, west of the living door
+    (-12.0, -10.0, -2.0, -1.99, HEADER_TOP),
+    (-10.0, 1.4, -2.0, -1.99, 0),  # south partition, west of the theater door
+    (3.4, 4.0, -2.0, -1.99, 0),    # south partition, east of the theater door
+    (1.4, 3.4, -2.0, -1.99, HEADER_TOP),
+    (4.0, 6.0, 1.99, 2.0, 0),     # rear landing face of the street partition
+    (6.0, 8.0, 1.99, 2.0, HEADER_TOP),
+    (8.0, 10.0, 1.99, 2.0, 0),
+    (4.0, 10.0, -2.0, -1.99, 0),  # the sealed former basement wall
 )):
-    box(f"Reading_Terracotta_{index:02}", x0, x1, y0, y1, 0, HEIGHT, TERRACOTTA, collide=False)
+    box(f"Reading_Terracotta_{index:02}", x0, x1, y0, y1, z0, HEIGHT, TERRACOTTA, collide=False)
 
 # Living room (#93). One old TV on an original cabinet, an original coffee
 # table carrying the bowl of fruit, the couch facing the TV, the display case,
@@ -469,15 +599,17 @@ for file, name, rect, height, turn_deg, wall, options in (
 
 # Original teal paint on the living room's side of its walls, 1 cm thick.
 TEAL = material("Living teal paint", (0.07, 0.25, 0.24), 0.8)
-for index, (x0, x1, y0, y1) in enumerate((
-    (-14.0, -13.99, -9.0, -2.2),    # west wall
-    (-14.0, -3.1, -9.0, -8.99),     # south wall
-    (-14.0, -12.0, -2.21, -2.2),    # north, west of the living door
-    (-10.0, -3.1, -2.21, -2.2),     # north, east of the living door
-    (-3.11, -3.1, -9.0, -6.5),      # east partition, south of the theater opening
-    (-3.11, -3.1, -4.5, -2.2),      # east partition, north of the theater opening
+for index, (x0, x1, y0, y1, z0) in enumerate((
+    (-14.0, -13.99, -9.0, -2.2, 0),    # west wall
+    (-14.0, -3.1, -9.0, -8.99, 0),     # south wall
+    (-14.0, -12.0, -2.21, -2.2, 0),    # north, west of the living door
+    (-10.0, -3.1, -2.21, -2.2, 0),     # north, east of the living door
+    (-12.0, -10.0, -2.21, -2.2, HEADER_TOP),
+    (-3.11, -3.1, -9.0, -6.5, 0),      # east partition, south of the theater opening
+    (-3.11, -3.1, -4.5, -2.2, 0),      # east partition, north of the theater opening
+    (-3.11, -3.1, -6.5, -4.5, HEADER_TOP),
 )):
-    box(f"Living_Teal_{index:02}", x0, x1, y0, y1, 0, HEIGHT, TEAL, collide=False)
+    box(f"Living_Teal_{index:02}", x0, x1, y0, y1, z0, HEIGHT, TEAL, collide=False)
 
 # Theater (#94). An original stone proscenium with static drapes frames
 # Exhibit_13 on the stage wall. Components of the castle set become shallow
@@ -531,15 +663,17 @@ theater_prop("Kgt363WkKd/flower-pot.glb", "Flower_Pot", envelope["Theater_Vase"]
 
 # Original deep burgundy paint on the theater's side of its walls, 1 cm thick.
 BURGUNDY = material("Theater burgundy paint", (0.13, 0.025, 0.03), 0.8)
-for index, (x0, x1, y0, y1) in enumerate((
-    (-2.9, 4.0, -9.0, -8.99),      # stage wall
-    (3.99, 4.0, -9.0, -2.2),       # east wall
-    (-2.9, -2.89, -9.0, -6.5),     # west partition, south of the opening
-    (-2.9, -2.89, -4.5, -2.2),     # west partition, north of the opening
-    (-2.9, 1.4, -2.21, -2.2),      # north, west of the theater door
-    (3.4, 4.0, -2.21, -2.2),       # north, east of the theater door
+for index, (x0, x1, y0, y1, z0) in enumerate((
+    (-2.9, 4.0, -9.0, -8.99, 0),      # stage wall
+    (3.99, 4.0, -9.0, -2.2, 0),       # east wall
+    (-2.9, -2.89, -9.0, -6.5, 0),     # west partition, south of the opening
+    (-2.9, -2.89, -4.5, -2.2, 0),     # west partition, north of the opening
+    (-2.9, -2.89, -6.5, -4.5, HEADER_TOP),
+    (-2.9, 1.4, -2.21, -2.2, 0),      # north, west of the theater door
+    (3.4, 4.0, -2.21, -2.2, 0),       # north, east of the theater door
+    (1.4, 3.4, -2.21, -2.2, HEADER_TOP),
 )):
-    box(f"Theater_Burgundy_{index:02}", x0, x1, y0, y1, 0, HEIGHT, BURGUNDY, collide=False)
+    box(f"Theater_Burgundy_{index:02}", x0, x1, y0, y1, z0, HEIGHT, BURGUNDY, collide=False)
 
 # Street (#95). Shallow facades on the street wall between the frames: two
 # stock buildings used only as bases, flattened to 15 cm reliefs, and an
@@ -644,8 +778,7 @@ for index in range(1, int((sx1 - sx0) // pitch)):
 # and a statue. The door collider is a separate proxy the engine toggles.
 # The basement and its entrance are modelled in their original frame (door in
 # an east wall at x = 10, stairs running east) and then placed by the plan's
-# basement_transform: a quarter turn and a move that put the door in the cut-
-# away corner's north wall with the stairs running south.
+# basement_transform, which keeps them facing east from the rear landing.
 turn = PLAN["basement_transform"]
 PLACE = (Matrix.Translation(Vector(turn["translate"]))
          @ Matrix.Rotation(math.radians(turn["rotate_z_deg"]), 4, "Z"))
@@ -667,23 +800,62 @@ def place(objects):
 
 
 entrance_before = set(bpy.data.objects.keys())
-DOOR = material("Door_Basement", (0.05, 0.045, 0.04), 0.7)
 IRON = material("Entrance_Iron", (0.06, 0.06, 0.065), 0.45)
 BONE = material("Sign_Lettering", (0.78, 0.74, 0.66), 0.6)
 CLOTH = material("Statue_Robe", (0.015, 0.015, 0.018), 0.9)
 BLADE = material("Statue_Blade", (0.55, 0.56, 0.58), 0.3)
 WOOD = material("Statue_Staff", (0.12, 0.08, 0.05), 0.8)
 
+# Charcoal plaster at the entrance and under its ceiling absorbs the gallery
+# fill. The wood floor and the two library-coloured side walls carry through.
+ALCOVE = material("Basement entrance charcoal plaster", (0.065, 0.054, 0.049))
+for label, y0, y1, bottom in (
+    ("South", -1.99, -0.8, 0),
+    ("North", 0.8, 1.99, 0),
+    ("Head", -0.8, 0.8, 2.4),
+):
+    box(f"Entrance_Charcoal_{label}", 9.99, 10, y0, y1, bottom, HEIGHT, ALCOVE, collide=False)
+box("Entrance_Charcoal_Ceiling", 4.0, 10.0, -2.0, 2.0, HEIGHT - 0.012,
+    HEIGHT, ALCOVE, collide=False)
+
+# The north torch lights the jamb. The torch on the south return sits in
+# front of the Reaper so its light reaches the face and raised lettering.
+torch_metal, torch_flames = Sculpture(), Sculpture()
+
+
+def entrance_torch(name, x, y, z, dx, dy, energy, reach):
+    def at(depth, side, height):
+        return (x + dx * depth + dy * side,
+                y + dy * depth - dx * side, z + height)
+
+    torch_metal.tube([at(0.015, 0, -0.335), at(0.11, 0, -0.32),
+                     at(0.21, 0, -0.17), at(0.21, 0, 0)],
+                    [0.035, 0.020, 0.022, 0.033], 8)
+    torch_metal.tube([at(0.21, 0, -0.04), at(0.21, 0, 0.03)],
+                    [0.037, 0.069], 10)
+    torch_flames.tube([at(0.21, 0, 0.015), at(0.216, 0, 0.095),
+                       at(0.198, -0.016, 0.17), at(0.182, -0.028, 0.24)],
+                      [0.039, 0.049, 0.025, 0.002], 9, pleats=3)
+    point_light(f"Light_Entrance_Torch_{name}", *at(0.31, 0, 0.12), energy,
+                (1.0, 0.56, 0.23), collection="Gallery_Lights", reach=reach)
+
+
+entrance_torch("North", 10.0, 1.19, 1.92, -1, 0, 1.8, 2.7)
+entrance_torch("Reaper", 8.95, -1.99, 2.28, 0, 1, 3.0, 3.4)
+torch_metal.object("Entrance_Torch_Brackets", IRON, collections["Gallery_Render"])
+torch_flames.object("Entrance_Torch_Flames", glow("Torch fire", (1.0, 0.31, 0.055), 4.0),
+                    collections["Gallery_Render"])
+
 hinge = bpy.data.objects.new("Door_Basement_Hinge", None)
 hinge.empty_display_type = "PLAIN_AXES"
 hinge.location = (10 + WALL / 2, 0.8, 0)
 collections["Gallery_Markers"].objects.link(hinge)
-door = bpy.data.objects.new("Door_Basement", box_mesh("Door_Basement", (0.06, 1.6, 2.4)))
+door = bpy.data.objects.new("Door_Basement", box_mesh("Door_Basement", (DOOR_THICKNESS, 1.6, 2.4)))
 door.data.materials.append(DOOR)
 door.parent = hinge
 door.location = (0, -0.8, 1.2)
 collections["Gallery_Render"].objects.link(door)
-proxy = bpy.data.objects.new("COL_Door_Basement", box_mesh("COL_Door_Basement", (0.06, 1.6, 2.4)))
+proxy = bpy.data.objects.new("COL_Door_Basement", box_mesh("COL_Door_Basement", (DOOR_THICKNESS, 1.6, 2.4)))
 proxy.location = (10 + WALL / 2, 0, 1.2)
 proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
@@ -715,7 +887,7 @@ proxy = bpy.data.objects.new("COL_Statue", box_mesh("COL_Statue", (0.7, 0.7, 2.4
 proxy.location = (sx, sy, 1.2)
 proxy.display_type = "WIRE"
 collections["Gallery_Collision"].objects.link(proxy)
-# Place the entrance. The hinge sits on a turned mount so the door module's
+# Place the entrance. The hinge sits on a mount so the door module's
 # local swing about Y still starts from zero.
 entrance = [bpy.data.objects[name] for name in set(bpy.data.objects.keys()) - entrance_before]
 mount = bpy.data.objects.new("Door_Basement_Mount", None)
@@ -729,6 +901,8 @@ place(obj for obj in entrance if obj is not hinge)
 # north side, facing south across the stand, at the plan's position.
 from lectern import build_lectern
 build_lectern(box, material, collections["Gallery_Render"])
+# Flush the new members’ local transforms before applying the room placement.
+bpy.context.view_layer.update()
 lx0, lx1, ly0, ly1 = PLAN["lectern"]["rect"]
 lectern_at = Vector(((lx0 + lx1) / 2, (ly0 + ly1) / 2, 0))
 turn = Matrix.Translation(lectern_at) @ Matrix.Rotation(-math.pi / 2, 4, "Z")
@@ -812,14 +986,6 @@ OAK = material("Throne_Wood", (0.13, 0.06, 0.025), 0.75)
 WAX = material("Candle_Wax", (0.5, 0.42, 0.3), 0.7)
 
 
-def glow(name, rgb, strength):
-    mat = material(name, rgb, 0.4)
-    bsdf = mat.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs["Emission Color"].default_value = (*rgb, 1.0)
-    bsdf.inputs["Emission Strength"].default_value = strength
-    return mat
-
-
 FLAME = glow("Candle_Flame", (1.0, 0.55, 0.15), 6)
 FILAMENT = glow("Bulb_Filament", (1.0, 0.78, 0.45), 12)
 # Clear, slightly smoky glass that glows faintly; the filament shows through.
@@ -827,16 +993,6 @@ GLASS = glow("Bulb_Glass", (1.0, 0.8, 0.55), 0.9)
 GLASS.node_tree.nodes["Principled BSDF"].inputs["Alpha"].default_value = 0.45
 GLASS.surface_render_method = "BLENDED"
 BAKELITE = material("Bulb_Socket", (0.025, 0.018, 0.014), 0.5)
-
-
-def point_light(name, x, y, z, energy, rgb):
-    data = bpy.data.lights.new(name, "POINT")
-    data.energy = energy
-    data.color = rgb
-    data.shadow_soft_size = 0.05
-    light = bpy.data.objects.new(name, data)
-    light.location = (x, y, z)
-    collections["Basement_Render"].objects.link(light)
 
 
 def prop(name, x0, x1, y0, y1, z0, z1, mat):
@@ -897,8 +1053,8 @@ solid("COL_Radio_Table", *radio_box)
 # the throne for a little fill there, and one high over the stairs so the
 # steps read in both directions. Both are weak and warm.
 for name, x, y, ceiling, drop, energy in (
-    ("Room", 23.4, 0.0, TOP, 0.75, 3.0),
-    ("Stairs", STAIR_X + 2.4, 0.0, HEIGHT, 1.2, 2.6),
+    ("Room", 23.4, 0.0, TOP, 0.75, 0.85),
+    ("Stairs", STAIR_X + 2.4, 0.0, HEIGHT, 1.2, 1.1),
 ):
     bulb_z = ceiling - drop
     cord, socket, glass, filament = Sculpture(), Sculpture(), Sculpture(), Sculpture()
@@ -940,8 +1096,10 @@ join("Elevator_Car", ("Elevator_Wall_", "Elevator_Floor", "Elevator_Ceiling",
                       "Elevator_Panel", "Elevator_Button_", "Elevator_Indicator"),
      "Gallery_Render")
 join("Lectern_Woodwork", ("Lectern_",), "Gallery_Render")
+join("Gallery_Door_Casing", ("Portal_Trim_",), "Gallery_Render")
 join("Gallery_Fixtures", ("Fixture_Gallery_",), "Gallery_Render")
 join("Door_Frame", ("Door_Frame_", "Statue_Plinth"), "Gallery_Render")
+join("Entrance_Charcoal", ("Entrance_Charcoal_",), "Gallery_Render")
 
 def export(path, collection_names, image_format="AUTO"):
     bpy.ops.object.select_all(action="DESELECT")
@@ -1012,7 +1170,7 @@ hang_poster(collections["Basement_Render"], "Poster_Dore_Pale_Horse",
             # The engraved plate only: no scanned page edge or printed caption.
             crop=(8, 12, 760, 961))
 
-# Turn and move the finished basement into place (see PLACE above).
+# Place the finished basement with the same transform as the entrance.
 place(list(collections["Basement_Render"].objects) + list(collections["Basement_Collision"].objects))
 # The basement's three frame slots (#88), already in world coordinates in the
 # plan, so they are added after the move. They export with basement.glb and
@@ -1029,7 +1187,7 @@ for frame in PLAN["frames"]:
         aim = Vector((x, y, BOTTOM + ANCHOR_HEIGHT)) - position
         data = bpy.data.lights.new(f"Light_Basement_{frame['slot']}", "SPOT")
         data.energy = 3.0
-        data.spot_size = math.radians(70)
+        data.spot_size = math.radians(56)
         data.spot_blend = 0.7
         data.color = (1.0, 0.8, 0.55)
         light = bpy.data.objects.new(data.name, data)

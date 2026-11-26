@@ -6,6 +6,7 @@ import {
   Group,
   Mesh,
   MeshStandardMaterial,
+  PointLight,
   Quaternion,
   PerspectiveCamera,
   Raycaster,
@@ -39,6 +40,7 @@ const plan = JSON.parse(
 ) as {
   spawn: { at: [number, number] };
   sections: { id: string; level: string; rect: number[] }[];
+  openings: { id: string; rect: [number, number, number, number] }[];
   basement_door: { hinge: [number, number]; opening: number[] };
   furniture: { id: string; rect: number[] }[];
   lectern: { rect: [number, number, number, number] };
@@ -50,8 +52,170 @@ const gazes: Record<string, [number, number]> = {
   E: [1, 0],
   W: [-1, 0],
 };
+const roomDoors = [
+  'Studio_Door',
+  'Living_Door',
+  'Theater_Door',
+  'Studio_Street',
+  'Living_Theater',
+  'Street_Rear',
+];
 
 describe('gallery blockout', () => {
+  it('starts both leaves closed and opens or closes each passage from either handle', async () => {
+    const world = await loadWorld();
+    for (const id of roomDoors) {
+      const [x0, x1, y0, y1] = plan.openings.find(
+        (opening) => opening.id === id,
+      )!.rect;
+      const center = new Vector3((x0 + x1) / 2, 0, -(y0 + y1) / 2);
+      const alongX = x1 - x0 > y1 - y0;
+      const toward = alongX ? new Vector3(0, 0, -1) : new Vector3(1, 0, 0);
+      const feet = center.clone().addScaledVector(toward, 1.5);
+      const left = world.scene.getObjectByName(`Room_Door_${id}_Left`)!;
+      const right = world.scene.getObjectByName(`Room_Door_${id}_Right`)!;
+      const leftPull = left.getObjectByName(`${left.name}_Pull`);
+      const rightLeaf = right.getObjectByName(`${right.name}_Leaf`);
+      expect(leftPull).toBeDefined();
+      expect(rightLeaf).toBeDefined();
+      const inDoorway = world.actionAt(leftPull, center)!;
+      expect(inDoorway.label).toBe('Step back to clear the doors');
+      inDoorway.run();
+      world.update(1);
+      expect(Math.abs(left.rotation.y)).toBeCloseTo(Math.PI / 2);
+      expect(left.rotation.y).toBeCloseTo(-right.rotation.y);
+      world.scene.updateMatrixWorld(true);
+      const leftLeaf = left.getObjectByName(`${left.name}_Leaf`)!;
+      const leftBounds = new Box3().setFromObject(leftLeaf);
+      const rightBounds = new Box3().setFromObject(rightLeaf!);
+      expect(
+        alongX
+          ? rightBounds.min.x - leftBounds.max.x
+          : leftBounds.min.z - rightBounds.max.z,
+        id,
+      ).toBeCloseTo(0.02, 3);
+      const body = {
+        feet: center.clone().addScaledVector(toward, -0.5),
+        grounded: true,
+        fallSpeed: 0,
+      };
+      const walk = () => {
+        for (let step = 0; step < 50; step++)
+          stepBody(
+            body,
+            toward.x * 0.02,
+            toward.z * 0.02,
+            1 / 120,
+            world.solids,
+          );
+      };
+      walk();
+      expect(body.feet.clone().sub(center).dot(toward), id).toBeLessThan(-0.2);
+      const open = world.actionAt(rightLeaf, feet)!;
+      expect(open.label).toContain('Open the doors');
+      open.run();
+      world.update(0.4);
+      expect(Math.abs(left.rotation.y)).toBeCloseTo(Math.PI / 4);
+      expect(left.rotation.y).toBeCloseTo(-right.rotation.y);
+      world.update(0.4);
+      expect(left.rotation.y).toBeCloseTo(0);
+      expect(right.rotation.y).toBeCloseTo(0);
+      walk();
+      expect(body.feet.clone().sub(center).dot(toward), id).toBeGreaterThan(
+        0.5,
+      );
+      const close = world.actionAt(leftPull, feet)!;
+      expect(close.label).toContain('Close the doors');
+      close.run();
+      world.update(1);
+      expect(Math.abs(left.rotation.y)).toBeCloseTo(Math.PI / 2);
+      body.feet.copy(center).addScaledVector(toward, -0.5);
+      walk();
+      expect(body.feet.clone().sub(center).dot(toward), id).toBeLessThan(-0.2);
+    }
+    world.dispose();
+  });
+
+  it('keeps the walnut jamb faces proud of the wall ends at each room opening', async () => {
+    const model = await parseModel('gallery');
+    model.updateMatrixWorld(true);
+    const casing = model.getObjectByName('Gallery_Door_Casing')!;
+    const walls = model.getObjectByName('Gallery_Walls')!;
+    const openings = plan.openings.filter(({ id }) => roomDoors.includes(id));
+    expect(openings).toHaveLength(roomDoors.length);
+    for (const {
+      id,
+      rect: [x0, x1, y0, y1],
+    } of openings) {
+      const center = new Vector3((x0 + x1) / 2, 1.5, -(y0 + y1) / 2);
+      const alongX = x1 - x0 > y1 - y0;
+      for (const side of [-1, 1]) {
+        const direction = alongX
+          ? new Vector3(side, 0, 0)
+          : new Vector3(0, 0, side);
+        const ray = new Raycaster(center, direction);
+        const [trimHit] = ray.intersectObject(casing);
+        const [wallHit] = ray.intersectObject(walls);
+        expect(trimHit!.distance, id).toBeLessThan(wallHit!.distance - 0.01);
+        expect(trimHit!.distance, id).toBeGreaterThan(
+          wallHit!.distance - 0.025,
+        );
+      }
+    }
+  });
+
+  it('continues each adjoining room finish over the door header', async () => {
+    const model = await parseModel('gallery');
+    model.updateMatrixWorld(true);
+    const finishes = [
+      'Gallery_Walls',
+      'Studio_Bamboo',
+      'Reading_Terracotta',
+      'Living_Teal',
+      'Theater_Burgundy',
+    ].map((name) => model.getObjectByName(name)!);
+    const byOpening = [
+      ['Studio_Door', 'Reading_Terracotta', 'Studio_Bamboo'],
+      ['Living_Door', 'Living_Teal', 'Reading_Terracotta'],
+      ['Theater_Door', 'Theater_Burgundy', 'Reading_Terracotta'],
+      ['Studio_Street', 'Studio_Bamboo', 'Gallery_Walls'],
+      ['Living_Theater', 'Living_Teal', 'Theater_Burgundy'],
+      ['Street_Rear', 'Reading_Terracotta', 'Gallery_Walls'],
+    ] as const;
+
+    const endWall = new Raycaster(
+      new Vector3(-12.5, 1.5, 0),
+      new Vector3(-1, 0, 0),
+    );
+    expect(endWall.intersectObjects(finishes)[0]?.object.name).toBe(
+      'Reading_Terracotta',
+    );
+
+    for (const [id, lowFinish, highFinish] of byOpening) {
+      const [x0, x1, y0, y1] = plan.openings.find(
+        (opening) => opening.id === id,
+      )!.rect;
+      const center = new Vector3((x0 + x1) / 2, 3.15, -(y0 + y1) / 2);
+      const depth =
+        x1 - x0 > y1 - y0 ? new Vector3(0, 0, -1) : new Vector3(1, 0, 0);
+      for (const [side, expected] of [
+        [-1, lowFinish],
+        [1, highFinish],
+      ] as const) {
+        const origin = center.clone().addScaledVector(depth, side * 0.3);
+        const ray = new Raycaster(
+          origin,
+          depth.clone().multiplyScalar(-side),
+          0,
+          0.4,
+        );
+        expect(ray.intersectObjects(finishes)[0]?.object.name, id).toBe(
+          expected,
+        );
+      }
+    }
+  });
+
   it('spawns inside the arrival elevator facing its doors and the basement door', async () => {
     const world = await loadWorld();
     const [x, y] = plan.spawn.at;
@@ -117,6 +281,11 @@ describe('gallery blockout', () => {
     const wood = world.scene.getObjectByName('Lectern_Woodwork');
     if (!wood) throw new Error('Missing Lectern_Woodwork.');
     const woodBounds = new Box3().setFromObject(wood);
+    const pages = world.scene.getObjectByName('Catalogue_Pages');
+    if (!pages) throw new Error('Missing catalogue pages.');
+    const pageBounds = new Box3().setFromObject(pages);
+    expect(pageBounds.min.y - woodBounds.max.y).toBeLessThan(0.025);
+    expect(woodBounds.max.y).toBeGreaterThan(1.15);
     expect(woodBounds.min.x).toBeGreaterThan(x0 - 0.02);
     expect(woodBounds.max.x).toBeLessThan(x1 + 0.02);
     expect(woodBounds.min.z).toBeGreaterThan(-y1 - 0.02);
@@ -176,14 +345,17 @@ describe('gallery blockout', () => {
     walk(0, 0.025);
     expect(body.feet.z).toBeCloseTo(0.71, 1);
     // The band runs clear to the solid east wall.
-    body.feet.set(-12.5, 0, 0);
+    body.feet.set(-12.5, 0, -1.1);
     walk(0.025, 0);
     expect(body.feet.x).toBeCloseTo(9.76, 1);
-    // The closed basement door stops a visitor walking south into the
-    // cut-away corner's doorway.
+    // The old opening into the cut-away corner is now a solid wall.
     body.feet.set(7, 0, 0.5);
     walk(0, 0.025);
-    expect(body.feet.z).toBeCloseTo(1.83, 1);
+    expect(body.feet.z).toBeCloseTo(1.76, 1);
+    // The basement door blocks the new east-facing approach.
+    body.feet.set(8.5, 0, 0);
+    walk(0.025, 0);
+    expect(body.feet.x).toBeCloseTo(9.83, 1);
     expect(body.feet.y).toBeCloseTo(0);
     world.dispose();
   });
@@ -208,8 +380,7 @@ describe('gallery blockout', () => {
           expect(hit?.point.y, `${section.id} at ${x}, ${y}`).toBeCloseTo(0, 3);
         }
     }
-    // None of it reaches over the cut-away corner, where the basement stairs
-    // start just south of the doorway (Blender y below -2.2).
+    // None of it reaches over the cut-away corner outside the gallery.
     for (let x = 6.25; x < 8; x += 0.25)
       for (const y of [-2.25, -2.6, -3.5]) {
         ray.set(new Vector3(x, 1, -y), down);
@@ -337,6 +508,10 @@ describe('display frames and gallery lights', () => {
       if (node instanceof SpotLight) spots.push(node);
     });
     expect(spots).toHaveLength(15);
+    for (const spot of spots) {
+      expect(spot.intensity).toBeCloseTo(20);
+      expect(spot.angle).toBeCloseTo((27 * Math.PI) / 180);
+    }
 
     for (const anchor of world.anchors) {
       const target = anchor.getWorldPosition(new Vector3());
@@ -613,16 +788,36 @@ describe('street', () => {
 });
 
 describe('gallery export budget', () => {
+  it('exports raised open-joint ceiling slats over the gallery and leaves the basement entry clear', async () => {
+    const model = await parseModel('gallery');
+    model.updateMatrixWorld(true);
+    const slats = model.getObjectByName('Gallery_Ceiling_Baffles')!;
+    const backing = model.getObjectByName('Ceiling')!;
+    const upward = new Vector3(0, 1, 0);
+    const fromReadingRoom = (z: number) =>
+      new Raycaster(new Vector3(-5.1, 2.5, z), upward);
+
+    // The underside of a slat is lower than the matte backing visible
+    // through the neighboring gap.
+    expect(
+      fromReadingRoom(-0.38).intersectObject(slats)[0]?.point.y,
+    ).toBeCloseTo(3.5);
+    const gap = fromReadingRoom(-0.475);
+    expect(gap.intersectObject(slats)).toHaveLength(0);
+    expect(gap.intersectObject(backing)[0]?.point.y).toBeCloseTo(3.6);
+    const atEntrance = new Raycaster(new Vector3(8, 2.5, 0), upward);
+    expect(atEntrance.intersectObject(slats)).toHaveLength(0);
+  });
+
   it('keeps both models within the gallery transfer budget', async () => {
     const sizes = await Promise.all(
       ['gallery', 'frame'].map(
         async (name) => (await stat(`public/models/${name}.glb`)).size,
       ),
     );
-    // Budget: 6 MB of the 10–20 MB initial target, leaving room for artwork.
-    // Raised from 5 MB in #94: with four rooms furnished, the shared shell
-    // (parquet, fixtures, signage) is most of it, and room props are simplified.
-    expect(sizes.reduce((sum, size) => sum + size, 0)).toBeLessThan(6e6);
+    // The shell and furnishings use a 6 MB budget, with 0.15 MB reserved for
+    // the modeled ceiling and track mounts. The initial target is 10–20 MB.
+    expect(sizes.reduce((sum, size) => sum + size, 0)).toBeLessThan(6.15e6);
   });
 
   it('keeps draw calls low and textures within 2048 px', async () => {
@@ -646,7 +841,10 @@ describe('gallery export budget', () => {
     // for the theater (#94): its joined props and its burgundy paint. The
     // street (#95) fits within the same cap: its props join into one draw and
     // the truck's glass shares Prop_Glass.
-    expect(drawCalls).toBeLessThanOrEqual(67);
+    // The casings share one draw, while each moving leaf and its pull have two.
+    // The entrance plaster, torch ironwork, and flames add one each.
+    // The joined ceiling baffles and cross rails add one draw.
+    expect(drawCalls).toBeLessThanOrEqual(96);
     world.dispose();
   });
 
@@ -667,6 +865,38 @@ describe('gallery export budget', () => {
 });
 
 describe('basement entrance', () => {
+  it('places torches on both sides of the entrance and extends the library plaster', async () => {
+    const world = await loadWorld();
+    const statue = world.scene.getObjectByName('COL_Statue')!;
+    const statueBounds = new Box3().setFromObject(statue);
+    const north = world.scene.getObjectByName('Light_Entrance_Torch_North');
+    const reaper = world.scene.getObjectByName('Light_Entrance_Torch_Reaper');
+    expect(north).toBeInstanceOf(PointLight);
+    expect(reaper).toBeInstanceOf(PointLight);
+    expect(north?.getWorldPosition(new Vector3()).z).toBeLessThan(-0.95);
+    const reaperLightPosition = reaper!.getWorldPosition(new Vector3());
+    expect(reaperLightPosition.z).toBeGreaterThan(0.95);
+    expect(reaperLightPosition.x).toBeLessThan(statueBounds.min.x);
+    expect(statueBounds.min.z).toBeGreaterThan(0.95);
+    expect((reaper as PointLight).distance).toBeLessThan(3.5);
+    expect(world.scene.getObjectByName('Entrance_Torch_Flames')).toBeInstanceOf(
+      Mesh,
+    );
+    const oldWall = new Raycaster(
+      new Vector3(7, 1.5, 0),
+      new Vector3(0, 0, 1),
+      0,
+      2.1,
+    );
+    expect(oldWall.intersectObjects(world.surfaces)[0]?.object.name).toBe(
+      'Reading_Terracotta',
+    );
+    expect(world.scene.getObjectByName('Entrance_Charcoal')).toBeInstanceOf(
+      Mesh,
+    );
+    world.dispose();
+  });
+
   it('hangs the door on its hinge with a separate collider over the opening', async () => {
     const root = await parseModel('gallery');
     root.updateMatrixWorld(true);
@@ -676,19 +906,19 @@ describe('basement entrance', () => {
     const collider = root.getObjectByName('COL_Door_Basement');
     if (!collider) throw new Error('Missing COL_Door_Basement.');
     const bounds = new Box3().setFromObject(collider);
-    // Across the opening in the cut-away corner's north wall (#87 revision).
+    // Across the opening in the east wall.
     const [x0, x1, y0, y1] = plan.basement_door.opening as [
       number,
       number,
       number,
       number,
     ];
-    expect(bounds.min.x).toBeCloseTo(x0);
-    expect(bounds.max.x).toBeCloseTo(x1);
-    expect(bounds.min.z).toBeGreaterThan(-y1);
-    expect(bounds.max.z).toBeLessThan(-y0);
+    expect(bounds.min.x).toBeGreaterThan(x0);
+    expect(bounds.max.x).toBeLessThan(x1);
+    expect(bounds.min.z).toBeCloseTo(-y1);
+    expect(bounds.max.z).toBeCloseTo(-y0);
     expect(bounds.max.y).toBeCloseTo(2.4);
-    // The hinge sits on the opening's east jamb, where the plan puts it.
+    // The hinge sits on the opening's north jamb.
     const at = hinge!.getWorldPosition(new Vector3());
     expect(at.x).toBeCloseTo(plan.basement_door.hinge[0]);
     expect(at.z).toBeCloseTo(-plan.basement_door.hinge[1]);
@@ -703,10 +933,10 @@ describe('basement entrance', () => {
     if (!sign) throw new Error('Missing Sign_Basement.');
     expect(sign.userData.text).toBe('BASEMENT OF DOOM');
     const bounds = new Box3().setFromObject(sign);
-    // On the gallery side of the cut-away corner's wall, over the doorway.
-    expect(bounds.max.z).toBeLessThanOrEqual(2.0);
+    // On the gallery side of the east wall, over the doorway.
+    expect(bounds.max.x).toBeLessThanOrEqual(10.0);
     expect(bounds.min.y).toBeGreaterThan(2.4);
-    expect(bounds.getCenter(new Vector3()).x).toBeCloseTo(7, 1);
+    expect(bounds.getCenter(new Vector3()).z).toBeCloseTo(0, 1);
   });
 
   it('keeps the statue beside the doorway, clear of the door and its approach', async () => {
@@ -714,9 +944,9 @@ describe('basement entrance', () => {
     const statue = world.scene.getObjectByName('COL_Statue');
     if (!statue) throw new Error('Missing COL_Statue.');
     const bounds = new Box3().setFromObject(statue);
-    // West of the door frame (x 6.05) and against the corner's wall.
-    expect(bounds.max.x).toBeLessThan(6.05);
-    expect(bounds.min.x).toBeGreaterThan(5);
+    // South of the frame and against the east wall.
+    expect(bounds.min.z).toBeGreaterThan(0.95);
+    expect(bounds.max.z).toBeLessThan(2);
     // The scythe stays in front of the end wall and the sign board.
     const render = new Box3();
     for (const name of ['Statue_Cloak', 'Statue_Blade', 'Statue_Staff']) {
@@ -724,16 +954,16 @@ describe('basement entrance', () => {
       if (!part) throw new Error(`Missing ${name}.`);
       render.union(new Box3().setFromObject(part));
     }
-    expect(render.max.z).toBeLessThan(1.94);
+    expect(render.max.x).toBeLessThan(9.94);
     const body = {
-      feet: new Vector3(5.25, 0, 0.4),
+      feet: new Vector3(8.85, 0, 1.75),
       grounded: true,
       fallSpeed: 0,
     };
-    // 1.75 m east past the statue onto the door's axis.
+    // 1.75 m north past the statue onto the door's axis.
     for (let count = 0; count < 70; count++)
-      stepBody(body, 0.025, 0, 1 / 120, world.solids);
-    expect(body.feet.x).toBeCloseTo(7, 1);
+      stepBody(body, 0, -0.025, 1 / 120, world.solids);
+    expect(body.feet.z).toBeCloseTo(0, 1);
     world.dispose();
   });
 });

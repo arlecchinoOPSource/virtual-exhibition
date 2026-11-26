@@ -1,7 +1,9 @@
+import { unlockGallery } from './gallery-entry';
 import { expect, test } from '@playwright/test';
 
 test('explains the controls on the opening screen', async ({ page }) => {
   await page.goto('/');
+  await unlockGallery(page);
   const menu = page.getByRole('group', { name: 'Explore the exhibition' });
   await expect(menu).toBeVisible();
   const controls = menu.getByRole('definition');
@@ -21,13 +23,11 @@ test('enters, pauses, and resumes with the keyboard without trapping focus', asy
   page,
 }) => {
   await page.goto('/');
+  await unlockGallery(page);
   await page.bringToFront();
   const start = page.getByRole('button', { name: 'Start walk' });
   await expect(start).toBeVisible();
 
-  // The header link comes first, then the menu's Start walk button.
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Tab');
   await expect(start).toBeFocused();
   // Keyboard activation may not grant pointer capture (Firefox refuses it), so
   // the walk falls back to arrow-key looking instead of stalling.
@@ -61,11 +61,13 @@ test('enters, pauses, and resumes with the keyboard without trapping focus', asy
 
 test('keeps the look sensitivity setting between visits', async ({ page }) => {
   await page.goto('/');
+  await unlockGallery(page);
   const menu = page.getByRole('group', { name: 'Explore the exhibition' });
   await menu.getByText('Settings').click();
   const sensitivity = menu.getByLabel('Look sensitivity');
   await sensitivity.fill('1.5');
   await page.reload();
+  await unlockGallery(page);
   await page
     .getByRole('group', { name: 'Explore the exhibition' })
     .getByText('Settings')

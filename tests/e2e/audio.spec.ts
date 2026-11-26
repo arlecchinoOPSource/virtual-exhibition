@@ -1,3 +1,4 @@
+import { unlockGallery } from './gallery-entry';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { spawnAtBasementDoor } from './basement';
@@ -35,6 +36,7 @@ const masterGain = (page: Page) =>
 
 async function openAudioSettings(page: Page) {
   await page.goto('/');
+  await unlockGallery(page);
   await expect(page.locator('#scene')).toHaveAttribute(
     'data-environment',
     'gallery',
@@ -57,11 +59,10 @@ const radioDistance = (page: Page) =>
   page.evaluate(() => {
     const listener = window.audioProbe.contexts[0]?.listener;
     if (!listener?.positionX) return undefined;
-    // The radio's grille in Three.js x, z: (26.4, 3.6) in the basement's
-    // original frame, placed by the plan's basement_transform (#87).
+    // The radio's grille in Three.js x, z: (26.4, 3.6).
     return Math.hypot(
-      listener.positionX.value - 3.4,
-      listener.positionZ.value - 18.4,
+      listener.positionX.value - 26.4,
+      listener.positionZ.value - 3.6,
     );
   });
 
