@@ -109,12 +109,6 @@ header p {
   color: #7d2921;
 }
 
-#gallery-entry a {
-  display: inline-block;
-  margin-top: 1rem;
-  color: var(--muted);
-}
-
 #start-walk,
 #gallery-entry button {
   padding: 0.6rem 1rem;
