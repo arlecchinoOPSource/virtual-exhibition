@@ -1,6 +1,6 @@
 # Verification record: walkable 18-frame milestone (#89)
 
-This record checks the walkable layout (#86, #87, #88) before any room is furnished. It was made on 2026-11-26 against `main` at `a16a61c` (PR #101) plus the new `tests/e2e/frames.spec.ts`. Automated results and the owner's decision are kept apart: the gate passes only when the decision at the end is filled in.
+This record checks the walkable layout (#86, #87, #88) before any room is furnished. It was made on 2026-11-26 against `main` at `a16a61c` (PR #101) plus the new `tests/e2e/frames.spec.ts`. Automated results and the owner's decision are kept apart: the decision at the end closes the gate.
 
 ## Route
 
@@ -123,7 +123,7 @@ Run on this branch:
 
 ## Decision
 
-Pending the owner's sign-off. Accepting records that the spatial layout, with the arrival elevator in the studio and the basement through the cut-away corner, is approved before furnishing begins in #90–#95.
+The owner accepted the walkable layout on 2026-11-26. Accepting records that the spatial layout, with the arrival elevator in the studio and the basement through the cut-away corner, is approved before furnishing begins in #90–#95.
 
-- Decision: _pending_
-- By / date: _pending_
+- Decision: accepted; furnishing may begin (#90–#95).
+- By / date: the owner, 2026-11-26, in review of PR #102.
