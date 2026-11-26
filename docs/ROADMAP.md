@@ -278,7 +278,7 @@ Record routes, frame actions, basement loading and performance baselines.
 
 **Dependencies.** #88.
 
-**Acceptance.** A recorded decision accepts the spatial layout before any room is furnished.
+**Acceptance.** A recorded decision accepts the spatial layout before any room is furnished. The evidence and decision are in `docs/VERIFICATION.md`.
 
 ## 10. Exhibition Redesign — Furnished Rooms
 
