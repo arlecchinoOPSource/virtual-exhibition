@@ -339,12 +339,14 @@
     {
       "id": "Living_TV",
       "section": "living",
-      "rect": [-14.0, -13.55, -8.2, -7.0]
+      "rect": [-14.0, -13.4, -8.2, -7.0],
+      "note": "old tv (Justin Randall, CC BY 3.0) at 0.5 m on an original 0.5 m cabinet, facing the couch (#93)"
     },
     {
       "id": "Living_Small_Table",
       "section": "living",
-      "rect": [-12.9, -12.4, -8.1, -7.1]
+      "rect": [-12.9, -12.4, -8.1, -7.1],
+      "note": "original coffee table, 0.46 x 0.9 x 0.45 m, carrying the Bowl of Fruit; resolves the mislabelled small-table link (#93)"
     },
     {
       "id": "Living_Couch",
