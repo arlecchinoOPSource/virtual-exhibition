@@ -411,7 +411,9 @@ test('makes no basement requests until the visitor opens the door', async ({
 }) => {
   const basementRequests: string[] = [];
   page.on('request', (request) => {
-    if (/basement/.test(request.url())) basementRequests.push(request.url());
+    // The basement model; the radios' tracks play from arrival (owner's request).
+    if (/basement\.glb/.test(request.url()))
+      basementRequests.push(request.url());
   });
   await page.goto('/');
   await unlockGallery(page);

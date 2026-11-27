@@ -70,15 +70,11 @@ async function start() {
   const up = new Vector3();
   // One valve radio set: its playback, and its nodes once its model is in the
   // scene. `key` names the viewport's data attributes (radio, radioSources).
-  function mountRadio(
-    track: Track,
-    prefix: string,
-    key: string,
-    inZone: (feet: Vector3) => boolean,
-  ) {
+  function mountRadio(track: Track, prefix: string, key: string) {
     let lamp: MeshStandardMaterial | undefined;
     let dial: MeshStandardMaterial | undefined;
     let power: Object3D | undefined;
+    let placed = false;
     // The set's pilot lamp shows power; its dial glows while it plays.
     const radio = createRadio(
       track,
@@ -94,12 +90,28 @@ async function start() {
     return {
       radio,
       isPower: (hit: Object3D) => power !== undefined && hit === power,
-      // Finds the set once its model is loaded, then follows the visitor.
-      follow(feet: Vector3, camera: PerspectiveCamera, root?: Object3D) {
-        if (!power && root) {
-          const switchNode = root.getObjectByName(`${prefix}_Power`);
-          const emitter = root.getObjectByName(`${prefix}_Emitter`);
-          if (switchNode && emitter) {
+      // Places the set's sound as soon as any root carries its emitter (or the
+      // gallery's anchor for it), binds its controls once its model loads,
+      // and follows the visitor.
+      follow(
+        camera: PerspectiveCamera,
+        roots: readonly (Object3D | undefined)[],
+      ) {
+        for (const root of roots) {
+          if (!root) continue;
+          if (!placed) {
+            const emitter =
+              root.getObjectByName(`${prefix}_Emitter`) ??
+              root.getObjectByName(`${prefix}_Anchor`);
+            if (emitter) {
+              placed = true;
+              radio.setReady(emitter.getWorldPosition(new Vector3()));
+            }
+          }
+          const switchNode = power
+            ? undefined
+            : root.getObjectByName(`${prefix}_Power`);
+          if (switchNode) {
             power = switchNode;
             const material = (name: string) => {
               const node = root.getObjectByName(name);
@@ -110,10 +122,9 @@ async function start() {
             };
             lamp = material(`${prefix}_Status`);
             dial = material(`${prefix}_Dial`);
-            radio.setReady(emitter.getWorldPosition(new Vector3()));
+            radio.sync();
           }
         }
-        radio.setZone(inZone(feet));
         camera.getWorldPosition(head);
         camera.getWorldDirection(facing);
         up.set(0, 1, 0).applyQuaternion(camera.quaternion);
@@ -121,25 +132,11 @@ async function start() {
       },
     };
   }
-  // The basement set plays below ground. The living room's copy plays while
-  // the visitor is in that room (x -14 to -3.1, z 2.2 to 9 in Three.js).
-  const basementRadio = mountRadio(
-    RADIO_TRACK,
-    'Radio_Basement',
-    'radio',
-    (feet) => feet.y < -1.2,
-  );
-  const livingRadio = mountRadio(
-    LIVING_TRACK,
-    'Radio_Living',
-    'livingRadio',
-    (feet) =>
-      feet.y > -0.5 &&
-      feet.x > -14 &&
-      feet.x < -3.1 &&
-      feet.z > 2.2 &&
-      feet.z < 9,
-  );
+  // Both sets play from the visitor's arrival and keep playing wherever they
+  // walk (owner's request); each is positional, so it grows louder nearby.
+  const basementRadio = mountRadio(RADIO_TRACK, 'Radio_Basement', 'radio');
+  const livingRadio = mountRadio(LIVING_TRACK, 'Radio_Living', 'livingRadio');
+  for (const { radio } of [basementRadio, livingRadio]) radio.setZone(true);
   const radios = [basementRadio, livingRadio];
 
   try {
@@ -203,21 +200,14 @@ async function start() {
       // Below ground, the basement's ambience takes over from the gallery's.
       (feet, camera) => {
         ambience.setZone(feet.y < -1.2 ? 'basement' : 'gallery');
-        basementRadio.follow(feet, camera, gallery?.passes[0]);
-        // The living set binds, and so prefetches its track, only once the
-        // visitor nears that room (within 2 m of its bounds).
-        const nearLiving = feet.x < -1.1 && feet.z > 0.2 && feet.y > -0.5;
-        livingRadio.follow(
-          feet,
-          camera,
-          nearLiving ? gallery?.scene : undefined,
-        );
+        basementRadio.follow(camera, [gallery?.scene, gallery?.passes[0]]);
+        livingRadio.follow(camera, [gallery?.scene]);
       },
     );
     // A blocked radio retries quietly on the visitor's next gesture.
     const retryAudio = () => {
-      if (radios.some(({ radio }) => radio.state === 'blocked'))
-        ambience.unlock();
+      // The first click or key starts the sound (browsers hold it until then).
+      ambience.unlock();
     };
     window.addEventListener('pointerdown', retryAudio);
     window.addEventListener('keydown', retryAudio);

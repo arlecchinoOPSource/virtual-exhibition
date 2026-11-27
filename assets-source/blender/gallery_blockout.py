@@ -1130,6 +1130,13 @@ def export(path, collection_names, image_format="AUTO"):
     )
 
 
+# The basement radio plays from the visitor's arrival, before its model loads,
+# so the gallery carries where its emitter will be once the basement is moved.
+bpy.context.view_layer.update()
+radio_anchor = bpy.data.objects.new("Radio_Basement_Anchor", None)
+radio_anchor.location = PLACE @ bpy.data.objects["Radio_Basement_Emitter"].matrix_world.translation
+collections["Gallery_Render"].objects.link(radio_anchor)
+
 output = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "."
 export(
     os.path.join(output, "gallery.glb"),

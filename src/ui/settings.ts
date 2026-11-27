@@ -8,12 +8,13 @@ export interface Settings {
 }
 
 const KEY = 'virtual-exhibition-settings';
-// Sound is opt-in, so it starts off.
+// Sound starts on: the radios play from the visitor's first click (owner's
+// request). Browsers still hold audio until that gesture.
 const DEFAULTS: Settings = {
   lookScale: 1,
   resolution: 1,
   spotlights: true,
-  sound: false,
+  sound: true,
   volume: 0.6,
   muted: false,
 };
