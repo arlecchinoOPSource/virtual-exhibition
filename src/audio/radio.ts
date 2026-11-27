@@ -150,8 +150,10 @@ export function createRadio(
         const panner = context.createPanner();
         panner.panningModel = 'HRTF';
         panner.distanceModel = 'inverse';
-        panner.refDistance = 0.8;
-        panner.rolloffFactor = 1.6;
+        // Full level within 1.2 m, then a gentle falloff, so the set carries
+        // across its room.
+        panner.refDistance = 1.2;
+        panner.rolloffFactor = 1.0;
         panner.maxDistance = 20;
         setPosition(panner, emitter!);
         source.connect(fade).connect(panner).connect(ch.output);

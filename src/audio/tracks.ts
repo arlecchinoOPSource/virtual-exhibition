@@ -9,17 +9,23 @@ export interface Track {
   level: number;
 }
 
-// The basement radio's soundtrack. To play the owner's recording instead of
-// the placeholder, change this entry: its files, loop length, and level.
-// Rights for each file are recorded in public/audio/CREDITS.md.
+// The radios' soundtracks. To play other recordings, change these entries:
+// their files, loop length, and level. Rights for each file are recorded in
+// public/audio/CREDITS.md.
 export const RADIO_TRACK: Track = {
-  title: 'Radio placeholder loop (original, synthesized)',
+  title: 'Basement radio placeholder (owner-supplied)',
   sources: [
-    {
-      url: 'audio/radio-placeholder.m4a',
-      type: 'audio/mp4; codecs="mp4a.40.2"',
-    },
+    { url: 'audio/basement-radio.m4a', type: 'audio/mp4; codecs="mp4a.40.2"' },
   ],
-  loopSeconds: 12.8,
-  level: 0.55,
+  // Louder than the first placeholder's 0.55, as the owner asked.
+  level: 1.0,
+};
+
+// The living room's copy of the radio.
+export const LIVING_TRACK: Track = {
+  title: 'Living room radio placeholder (owner-supplied)',
+  sources: [
+    { url: 'audio/living-radio.m4a', type: 'audio/mp4; codecs="mp4a.40.2"' },
+  ],
+  level: 1.0,
 };

@@ -100,7 +100,7 @@ const southLoop: Leg[] = [
   ['around the living room door leaf', -13, -3.45],
   ['beside the vase', -13.0, -3.0],
   ['under Exhibit_10', -13.6, -4.0],
-  ['north of the TV', -13.6, -6.6],
+  ['north of the TV and the radio table', -13.6, -6.15],
   ['round the coffee table', -12.0, -6.4],
   ['between the coffee table and the couch', -11.85, -7.6],
   ['south of the coffee table', -11.85, -8.7],

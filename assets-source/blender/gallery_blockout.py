@@ -611,6 +611,15 @@ for index, (x0, x1, y0, y1, z0) in enumerate((
 )):
     box(f"Living_Teal_{index:02}", x0, x1, y0, y1, z0, HEIGHT, TEAL, collide=False)
 
+# A copy of the basement's valve radio on its own side table, north of the TV
+# cabinet and facing the couch. Same node contract as the basement set, with
+# the prefix Radio_Living; it plays the living room's track.
+rx0, rx1, ry0, ry1 = envelope["Living_Radio"]
+living_radio, living_radio_box = build_radio(collections["Gallery_Render"], (rx0 + rx1) / 2,
+                                             (ry0 + ry1) / 2, 0, 90, prefix="Radio_Living",
+                                             table_name="Radio_Living_Table")
+prop_proxy("Living_Radio", living_radio, living_radio_box[5])
+
 # Theater (#94). An original stone proscenium with static drapes frames
 # Exhibit_13 on the stage wall. Components of the castle set become shallow
 # reliefs: a Stone Tower in each stage corner and the Window Bars on the north

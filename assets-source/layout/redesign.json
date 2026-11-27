@@ -375,6 +375,12 @@
       "note": "old tv (Justin Randall, CC BY 3.0) at 0.5 m on an original 0.5 m cabinet, facing the couch (#93)"
     },
     {
+      "id": "Living_Radio",
+      "section": "living",
+      "rect": [-14.0, -13.44, -6.98, -6.54],
+      "note": "a copy of the basement radio on its own side table, north of the TV, facing the couch"
+    },
+    {
       "id": "Living_Small_Table",
       "section": "living",
       "rect": [-12.9, -12.4, -8.1, -7.1],

@@ -37,6 +37,10 @@ DIAL_Z, KNOB_Z = 0.105, 0.048
 
 
 def material(name, rgb, roughness, metallic=0.0, wear=False):
+    # A second set (the living room's) reuses the first set's materials, so
+    # the names in the node contract hold for both.
+    if name in bpy.data.materials:
+        return bpy.data.materials[name]
     mat = bpy.data.materials.new(name)
     shader = mat.node_tree.nodes["Principled BSDF"]
     shader.inputs["Base Color"].default_value = (*rgb, 1)
@@ -200,9 +204,11 @@ def dial_image(name, w=512, h=116):
     return img
 
 
-def build_radio(collection, x, y, floor_z, heading_deg):
+def build_radio(collection, x, y, floor_z, heading_deg, prefix="Radio_Basement", table_name="Radio_Table"):
     """Side table squared to the walls at (x, y), radio on top turned to
-    heading_deg about Z. Returns the table footprint and its collider box."""
+    heading_deg about Z. Returns the table footprint and its collider box.
+    prefix names the radio's nodes (the contract above uses Radio_Basement),
+    so a second set, such as the living room's Radio_Living, can be built."""
     wood = material("Radio_Cabinet_Walnut", (0.07, 0.035, 0.018), 0.45, wear=True)
     cloth = material("Radio_Grille_Cloth", (0.05, 0.038, 0.028), 0.95)
     bakelite = material("Radio_Bakelite", (0.018, 0.012, 0.009), 0.35)
@@ -210,9 +216,10 @@ def build_radio(collection, x, y, floor_z, heading_deg):
     lamp = material("Radio_Status_Lamp", (0.3, 0.09, 0.015), 0.2)
     table_wood = material("Radio_Table_Wood", (0.05, 0.03, 0.018), 0.65, wear=True)
     face = material("Radio_Dial_Face", (1, 1, 1), 0.7)
-    tex = face.node_tree.nodes.new("ShaderNodeTexImage")
-    tex.image = dial_image("Radio_Dial_Face - scale")
-    face.node_tree.links.new(tex.outputs["Color"], face.node_tree.nodes["Principled BSDF"].inputs["Base Color"])
+    if not any(node.type == "TEX_IMAGE" for node in face.node_tree.nodes):
+        tex = face.node_tree.nodes.new("ShaderNodeTexImage")
+        tex.image = dial_image("Radio_Dial_Face - scale")
+        face.node_tree.links.new(tex.outputs["Color"], face.node_tree.nodes["Principled BSDF"].inputs["Base Color"])
 
     # The table: a plain stained top on four tapered legs with an apron.
     top_w, top_d, top_z = 0.52, 0.40, 0.725
@@ -234,9 +241,9 @@ def build_radio(collection, x, y, floor_z, heading_deg):
         ax = sx * (top_w / 2 - 0.05)
         table.solid([(ax - 0.01, top_z - 0.1), (ax + 0.01, top_z - 0.1), (ax + 0.01, top_z - 0.025),
                      (ax - 0.01, top_z - 0.025)], -top_d / 2 + 0.05, top_d / 2 - 0.05)
-    table_obj = table.object("Radio_Table", table_wood, collection, location=(x, y, floor_z), smooth=True)
+    table_obj = table.object(table_name, table_wood, collection, location=(x, y, floor_z), smooth=True)
 
-    root = bpy.data.objects.new("Radio_Basement", None)
+    root = bpy.data.objects.new(f"{prefix}", None)
     root.empty_display_size = 0.1
     collection.objects.link(root)
     root.location = (x, y, floor_z + top_z)
@@ -255,11 +262,11 @@ def build_radio(collection, x, y, floor_z, heading_deg):
         cabinet.bar((bx, g_low), (bx, arch_top(bx, g_half, g_shoulder, g_rise)), 0.011,
                     FRONT - 0.006, FRONT + 0.002)
     cabinet.bar((-g_half, g_low + 0.07), (g_half, g_low + 0.07), 0.008, FRONT - 0.0055, FRONT + 0.002)
-    cabinet_obj = cabinet.object("Radio_Basement_Cabinet", wood, collection, root, smooth=True)
+    cabinet_obj = cabinet.object(f"{prefix}_Cabinet", wood, collection, root, smooth=True)
 
     grille = Part()
     grille.solid(outline, FRONT - 0.0015, FRONT + 0.002)
-    grille.object("Radio_Basement_Grille", cloth, collection, root)
+    grille.object(f"{prefix}_Grille", cloth, collection, root)
 
     # Dial: a brass-framed strip, and the pilot lamp in a brass cup beside it.
     d_half, d_h = 0.105, 0.046
@@ -270,11 +277,11 @@ def build_radio(collection, x, y, floor_z, heading_deg):
     lamp_x = -0.155
     trim.solid([(lamp_x + 0.012 * math.cos(k * math.tau / 12), DIAL_Z + 0.012 * math.sin(k * math.tau / 12))
                 for k in range(12)], FRONT - 0.003, FRONT + 0.002)
-    trim.object("Radio_Basement_Trim", brass, collection, root)
+    trim.object(f"{prefix}_Trim", brass, collection, root)
 
     dial = Part()
     dial.solid(box, FRONT - 0.0012, FRONT + 0.002)
-    dial.object("Radio_Basement_Dial", face, collection, root,
+    dial.object(f"{prefix}_Dial", face, collection, root,
                 uv=(-d_half, DIAL_Z - d_h / 2, d_half, DIAL_Z + d_h / 2))
     # A fixed needle just proud of the scale, set to the middle of the band.
     needle = Part()
@@ -284,7 +291,7 @@ def build_radio(collection, x, y, floor_z, heading_deg):
     status = Part()
     ring = [(0.0085 * math.cos(k * math.tau / 12), 0.0085 * math.sin(k * math.tau / 12)) for k in range(12)]
     status.solid([(u * 0.6, v * 0.6) for u, v in ring], -0.007, 0.0, back=ring)
-    status.object("Radio_Basement_Status", lamp, collection, root, location=(lamp_x, FRONT - 0.003, DIAL_Z),
+    status.object(f"{prefix}_Status", lamp, collection, root, location=(lamp_x, FRONT - 0.003, DIAL_Z),
                   smooth=True)
 
     # Controls: fluted knobs either side, the chicken-head switch between them.
@@ -296,7 +303,7 @@ def build_radio(collection, x, y, floor_z, heading_deg):
         knob.solid([(u * 0.86, v * 0.86) for u, v in fluted], -0.022, 0.0, back=fluted)
         knob.solid([(0.0215 * math.cos(k * math.tau / 24), 0.0215 * math.sin(k * math.tau / 24))
                     for k in range(24)], -0.004, 0.0)
-        knob.object(f"Radio_Basement_Knob_{name}", bakelite, collection, root, location=(kx, FRONT, KNOB_Z),
+        knob.object(f"{prefix}_Knob_{name}", bakelite, collection, root, location=(kx, FRONT, KNOB_Z),
                     smooth=True)
     switch = Part()
     point = math.radians(150)
@@ -306,7 +313,7 @@ def build_radio(collection, x, y, floor_z, heading_deg):
     switch.solid([(0.016 * math.cos(k * math.tau / 16), 0.016 * math.sin(k * math.tau / 16)) for k in range(16)],
                  -0.005, 0.0)
     switch.bevel(0.0015, 1)
-    switch.object("Radio_Basement_Power", bakelite, collection, root, location=(0.0, FRONT, KNOB_Z),
+    switch.object(f"{prefix}_Power", bakelite, collection, root, location=(0.0, FRONT, KNOB_Z),
                   smooth=True)
 
     # The needle and the cloth mains cord share the bakelite draw call.
@@ -316,9 +323,9 @@ def build_radio(collection, x, y, floor_z, heading_deg):
     cord_mesh = _mesh(cord)
     needle.bm.from_mesh(cord_mesh)
     bpy.data.meshes.remove(cord_mesh)
-    needle.object("Radio_Basement_Fittings", bakelite, collection, root)
+    needle.object(f"{prefix}_Fittings", bakelite, collection, root)
 
-    emitter = bpy.data.objects.new("Radio_Basement_Emitter", None)
+    emitter = bpy.data.objects.new(f"{prefix}_Emitter", None)
     emitter.empty_display_size = 0.03
     collection.objects.link(emitter)
     emitter.parent = root

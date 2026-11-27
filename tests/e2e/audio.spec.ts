@@ -2,6 +2,7 @@ import { unlockGallery } from './gallery-entry';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { spawnAtBasementDoor } from './basement';
+import { moveSpawn } from './spawn';
 
 declare global {
   interface Window {
@@ -44,13 +45,17 @@ async function openAudioSettings(page: Page) {
   await page.locator('#settings summary').click();
 }
 
-// Every request for the radio's track, by URL.
+// Every request for each radio's track, by URL.
 let radioRequests: string[] = [];
+let livingRequests: string[] = [];
 test.beforeEach(({ page }) => {
   radioRequests = [];
+  livingRequests = [];
   page.on('request', (request) => {
-    if (request.url().includes('radio-placeholder'))
+    if (request.url().includes('basement-radio'))
       radioRequests.push(request.url());
+    if (request.url().includes('living-radio'))
+      livingRequests.push(request.url());
   });
 });
 
@@ -185,4 +190,26 @@ test('plays one radio loop in the basement, fetched only once the door opens', a
   });
   await expect(viewport).toHaveAttribute('data-ambience', 'gallery');
   expect(radioRequests).toHaveLength(1);
+});
+
+test("plays the living room's radio copy while the visitor is in that room", async ({
+  page,
+}) => {
+  // Between the coffee table and the couch, facing the TV and the radio.
+  await moveSpawn(page, [-11.85, 0, 7.6], [0, Math.SQRT1_2, 0, Math.SQRT1_2]);
+  await openAudioSettings(page);
+  const viewport = page.locator('#viewport');
+  expect(livingRequests).toEqual([]);
+  await page.getByLabel('Play environmental sound').check();
+  await page.bringToFront();
+  await page.getByRole('button', { name: 'Start walk' }).click();
+  await expect(page.locator('#crosshair')).toBeVisible();
+  await expect(viewport).toHaveAttribute('data-living-radio', 'playing', {
+    timeout: 15000,
+  });
+  await expect(viewport).toHaveAttribute('data-living-radio-sources', '1');
+  // Its own track only; the basement set stays idle and unfetched.
+  expect(livingRequests).toHaveLength(1);
+  expect(radioRequests).toEqual([]);
+  await expect(viewport).not.toHaveAttribute('data-radio', 'playing');
 });
