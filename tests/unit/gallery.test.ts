@@ -816,8 +816,9 @@ describe('gallery export budget', () => {
       ),
     );
     // The shell and furnishings use a 6 MB budget, with 0.15 MB reserved for
-    // the modeled ceiling and track mounts. The initial target is 10–20 MB.
-    expect(sizes.reduce((sum, size) => sum + size, 0)).toBeLessThan(6.15e6);
+    // the modeled ceiling and track mounts, and 0.15 MB more for the living
+    // room's radio copy. The initial target is 10–20 MB.
+    expect(sizes.reduce((sum, size) => sum + size, 0)).toBeLessThan(6.3e6);
   });
 
   it('keeps draw calls low and textures within 2048 px', async () => {
@@ -844,7 +845,9 @@ describe('gallery export budget', () => {
     // The casings share one draw, while each moving leaf and its pull have two.
     // The entrance plaster, torch ironwork, and flames add one each.
     // The joined ceiling baffles and cross rails add one draw.
-    expect(drawCalls).toBeLessThanOrEqual(96);
+    // The living room's radio copy adds ten: its table and cabinet parts, plus
+    // the lamp, dial, switch and knobs kept separate for playback.
+    expect(drawCalls).toBeLessThanOrEqual(106);
     world.dispose();
   });
 

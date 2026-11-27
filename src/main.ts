@@ -8,7 +8,8 @@ import { loadExhibits } from './exhibition/manifest';
 import { createAmbience } from './audio/ambience';
 import { createRadio } from './audio/radio';
 import type { RadioState } from './audio/radio';
-import { RADIO_TRACK } from './audio/tracks';
+import { LIVING_TRACK, RADIO_TRACK } from './audio/tracks';
+import type { Track } from './audio/tracks';
 import { renderDirectory } from './ui/directory-list';
 import { createDetails } from './ui/details';
 import { requireGalleryPassword } from './ui/gallery-entry';
@@ -55,23 +56,6 @@ async function start() {
     viewport.dataset.ambience = state;
     viewport.dataset.ambienceLayers = live.join(' ');
   });
-  // The set's pilot lamp shows power; its dial glows while it plays.
-  let radioLamp: MeshStandardMaterial | undefined;
-  let radioDial: MeshStandardMaterial | undefined;
-  function showRadio(state: RadioState) {
-    radioLamp?.emissive.setHex(state === 'off' ? 0x000000 : 0xff7a1a);
-    radioDial?.emissive.setHex(state === 'playing' ? 0x8a5a20 : 0x000000);
-    if (!viewport) return;
-    viewport.dataset.radio = state;
-  }
-  const radio = createRadio(
-    RADIO_TRACK,
-    () => ambience.channel(),
-    (state, sources) => {
-      showRadio(state);
-      if (viewport) viewport.dataset.radioSources = String(sources);
-    },
-  );
   const radioLabels: Record<RadioState, string> = {
     off: 'E / Click · Turn the radio on',
     silent: 'E / Click · Turn the radio off · Sound is off in Settings',
@@ -81,39 +65,79 @@ async function start() {
     blocked: 'E / Click · Let the radio play',
     unavailable: 'The radio is silent · E / Click to try again',
   };
-  let radioPower: Object3D | undefined;
   const head = new Vector3();
   const facing = new Vector3();
   const up = new Vector3();
-  // Finds the set once the basement has loaded, then follows the visitor.
-  function followRadio(
-    feet: Vector3,
-    camera: PerspectiveCamera,
-    downstairs: Object3D | undefined,
-  ) {
-    if (!radioPower && downstairs) {
-      const power = downstairs.getObjectByName('Radio_Basement_Power');
-      const emitter = downstairs.getObjectByName('Radio_Basement_Emitter');
-      if (power && emitter) {
-        radioPower = power;
-        const material = (name: string) => {
-          const node = downstairs.getObjectByName(name);
-          return node instanceof Mesh &&
-            node.material instanceof MeshStandardMaterial
-            ? node.material
-            : undefined;
-        };
-        radioLamp = material('Radio_Basement_Status');
-        radioDial = material('Radio_Basement_Dial');
-        radio.setReady(emitter.getWorldPosition(new Vector3()));
-      }
-    }
-    radio.setZone(feet.y < -1.2);
-    camera.getWorldPosition(head);
-    camera.getWorldDirection(facing);
-    up.set(0, 1, 0).applyQuaternion(camera.quaternion);
-    radio.listen(head, facing, up);
+  // One valve radio set: its playback, and its nodes once its model is in the
+  // scene. `key` names the viewport's data attributes (radio, radioSources).
+  function mountRadio(track: Track, prefix: string, key: string) {
+    let lamp: MeshStandardMaterial | undefined;
+    let dial: MeshStandardMaterial | undefined;
+    let power: Object3D | undefined;
+    let placed = false;
+    // The set's pilot lamp shows power; its dial glows while it plays.
+    const radio = createRadio(
+      track,
+      () => ambience.channel(),
+      (state, sources) => {
+        lamp?.emissive.setHex(state === 'off' ? 0x000000 : 0xff7a1a);
+        dial?.emissive.setHex(state === 'playing' ? 0x8a5a20 : 0x000000);
+        if (!viewport) return;
+        viewport.dataset[key] = state;
+        viewport.dataset[`${key}Sources`] = String(sources);
+      },
+    );
+    return {
+      radio,
+      isPower: (hit: Object3D) => power !== undefined && hit === power,
+      // Places the set's sound as soon as any root carries its emitter (or the
+      // gallery's anchor for it), binds its controls once its model loads,
+      // and follows the visitor.
+      follow(
+        camera: PerspectiveCamera,
+        roots: readonly (Object3D | undefined)[],
+      ) {
+        for (const root of roots) {
+          if (!root) continue;
+          if (!placed) {
+            const emitter =
+              root.getObjectByName(`${prefix}_Emitter`) ??
+              root.getObjectByName(`${prefix}_Anchor`);
+            if (emitter) {
+              placed = true;
+              radio.setReady(emitter.getWorldPosition(new Vector3()));
+            }
+          }
+          const switchNode = power
+            ? undefined
+            : root.getObjectByName(`${prefix}_Power`);
+          if (switchNode) {
+            power = switchNode;
+            const material = (name: string) => {
+              const node = root.getObjectByName(name);
+              return node instanceof Mesh &&
+                node.material instanceof MeshStandardMaterial
+                ? node.material
+                : undefined;
+            };
+            lamp = material(`${prefix}_Status`);
+            dial = material(`${prefix}_Dial`);
+            radio.sync();
+          }
+        }
+        camera.getWorldPosition(head);
+        camera.getWorldDirection(facing);
+        up.set(0, 1, 0).applyQuaternion(camera.quaternion);
+        radio.listen(head, facing, up);
+      },
+    };
   }
+  // Both sets play from the visitor's arrival and keep playing wherever they
+  // walk (owner's request); each is positional, so it grows louder nearby.
+  const basementRadio = mountRadio(RADIO_TRACK, 'Radio_Basement', 'radio');
+  const livingRadio = mountRadio(LIVING_TRACK, 'Radio_Living', 'livingRadio');
+  for (const { radio } of [basementRadio, livingRadio]) radio.setZone(true);
+  const radios = [basementRadio, livingRadio];
 
   try {
     const exhibits = await loadExhibits();
@@ -124,6 +148,15 @@ async function start() {
     renderDirectory(catalogueList, exhibits, essayViewer.open);
     catalogue.addEventListener('close', () => startButton.focus());
     const gallery = useGreybox ? undefined : await loadGallery(exhibits);
+    const radioAction = (hit: Object3D | undefined) => {
+      const set = hit && radios.find(({ isPower }) => isPower(hit));
+      return (
+        set && {
+          label: radioLabels[set.radio.state],
+          run: () => set.radio.press(),
+        }
+      );
+    };
     const world = gallery
       ? {
           ...gallery,
@@ -137,9 +170,7 @@ async function start() {
                   pause: true,
                   run: () => catalogue.showModal(),
                 }
-              : radioPower && hit === radioPower
-                ? { label: radioLabels[radio.state], run: () => radio.press() }
-                : gallery.actionAt(hit, feet);
+              : (radioAction(hit) ?? gallery.actionAt(hit, feet));
             // Every scene action is a gesture: unlock audio inside it, before
             // the door awaits the basement or the radio its track.
             return (
@@ -169,16 +200,20 @@ async function start() {
       // Below ground, the basement's ambience takes over from the gallery's.
       (feet, camera) => {
         ambience.setZone(feet.y < -1.2 ? 'basement' : 'gallery');
-        followRadio(feet, camera, gallery?.passes[0]);
+        basementRadio.follow(camera, [gallery?.scene, gallery?.passes[0]]);
+        livingRadio.follow(camera, [gallery?.scene]);
       },
     );
     // A blocked radio retries quietly on the visitor's next gesture.
     const retryAudio = () => {
-      if (radio.state === 'blocked') ambience.unlock();
+      // The first click or key starts the sound (browsers hold it until then).
+      ambience.unlock();
     };
     window.addEventListener('pointerdown', retryAudio);
     window.addEventListener('keydown', retryAudio);
-    const hide = () => radio.setHidden(document.hidden);
+    const hide = () => {
+      for (const { radio } of radios) radio.setHidden(document.hidden);
+    };
     document.addEventListener('visibilitychange', hide);
     if (import.meta.hot)
       import.meta.hot.dispose(() => {
@@ -186,7 +221,7 @@ async function start() {
         window.removeEventListener('keydown', retryAudio);
         document.removeEventListener('visibilitychange', hide);
         view.dispose();
-        radio.dispose();
+        for (const { radio } of radios) radio.dispose();
         ambience.dispose();
       });
 
@@ -241,12 +276,12 @@ async function start() {
     sound?.addEventListener('change', () => {
       settings.sound = sound.checked;
       ambience.setEnabled(settings.sound);
-      radio.setSound(settings.sound);
+      for (const { radio } of radios) radio.setSound(settings.sound);
       save();
     });
     startButton.addEventListener('click', () => {
       ambience.setEnabled(settings.sound);
-      radio.setSound(settings.sound);
+      for (const { radio } of radios) radio.setSound(settings.sound);
       // The arrival elevator opens onto the gallery once the walk starts;
       // with reduced motion its doors are simply open.
       gallery?.elevator.open(
